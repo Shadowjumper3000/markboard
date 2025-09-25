@@ -1,0 +1,33 @@
+sequence-diagram
+
+title Security
+Client [icon: monitor, color: gray]
+Server [icon: server, color: blue]
+Service [icon: tool, color: green]
+
+Signup Flow [color: green, label: Sign Up] {
+  Client > Server: Send credentials
+  Server > Service: Hash & store password
+  Service -> Server: Password stored
+  Server > Client: SignUp success
+}
+
+Login Flow [color: blue, label: Login] {
+  Client > Server: Send credentials
+  Server > Service: Compare hash
+  Service -> Server: Login success
+  Server > Client: Auth token
+}
+
+Admin Actions [color: purple, label: Admin Dashboard] {
+  Client > Server: GET /users
+  Server > Service: Query users
+  Service -> Server: User list
+  Server > Client: Return users
+
+  Client > Server: GET /activity_logs
+  Server > Service: Fetch activity logs
+  Service -> Server: Activity data
+  Server > Client: Return activity logs
+}
+
