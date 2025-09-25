@@ -1,0 +1,18 @@
+cloud-architecture-diagram
+
+Client [icon: monitor, color: gray]
+
+Hetzner Server [icon: server, color: blue] {
+    Docker Host [icon: aws-ec2, color: green] {
+        Frontend Container [icon: monitor, color: green]
+        Backend API Container [icon: server, color: blue]
+        MySQL Container [icon: database, color: orange, label: volume-mounted]
+        File Storage Container [icon: aws-simple-storage-service, color: yellow, label: volume-mounted]
+    }
+}
+
+Client > Frontend Container
+Frontend Container > Backend API Container
+Backend API Container > MySQL Container
+Backend API Container > File Storage Container
+

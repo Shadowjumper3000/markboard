@@ -1,0 +1,51 @@
+entity-relationship-diagram
+
+title Database
+user [icon: user, color: blue] {
+  id string pk
+  displayName string
+  email string unique
+  password_hash string
+  is_admin bool
+}
+
+team [color: green] {
+  id string pk
+  displayName string
+  creation_date string
+}
+
+md [color: pink] {
+  id string pk
+  author_id string fk
+  team_id string fk
+  creation_date string
+  update_date string
+  location string
+  title string
+  content string
+}
+
+logs [icon: activity, color: orange] {
+  
+  id string pk
+  user_id string fk
+  action string
+  timestamp string
+  details string
+}
+
+team_members [icon: users, color: lightblue] {
+  id int pk
+  user_id string fk
+  team_id string fk
+  team_role string (owner|member)
+}
+
+
+
+md.author_id > user.id
+md.team_id > team.id
+logs.user_id > user.id
+team_members.user_id > user.id
+team_members.team_id > team.id
