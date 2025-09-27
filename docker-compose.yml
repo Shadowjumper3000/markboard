@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: markboard
+      MYSQL_USER: markboard_user
+      MYSQL_PASSWORD: markboard_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./init_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 20s
+      retries: 10
+
+  backend:
+    build: .
+    environment:
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_USER: markboard_user
+      MYSQL_PASSWORD: markboard_password
+      MYSQL_DATABASE: markboard
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_EXPIRY_HOURS: 24
+      FLASK_ENV: development
+      DEBUG: "true"
+      BCRYPT_ROUNDS: 12
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./app:/app/app:ro # Mount source code for development (read-only)
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: markboard_user
+      PMA_PASSWORD: markboard_password
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  db_data:
+    driver: local
