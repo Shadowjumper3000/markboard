@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { FileText, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -111,7 +111,7 @@ export default function Login() {
 
             <div className="text-center space-y-2">
               <p className="text-sm text-muted-foreground">
-                Try admin@example.com / password for admin access
+                Try admin@markboard.com / password123 for admin access
               </p>
               <p className="text-sm text-muted-foreground">
                 Don't have an account?{' '}

@@ -5,7 +5,7 @@ Authentication endpoints and utilities.
 import bcrypt
 import jwt
 from datetime import datetime, timedelta, timezone
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request
 from app.db import db
 from app.config import Config
 from app.utils import (
@@ -34,16 +34,46 @@ def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
 
 
-def generate_jwt(user_id: int, email: str) -> str:
+def generate_jwt(user_id: int, email: str, is_admin: bool = False) -> str:
     """Generate JWT token for user."""
     payload = {
         "user_id": user_id,
         "email": email,
+        "is_admin": is_admin,
         "iat": datetime.now(timezone.utc),
         "exp": datetime.now(timezone.utc) + timedelta(hours=Config.JWT_EXPIRY_HOURS),
     }
 
     return jwt.encode(payload, Config.JWT_SECRET, algorithm="HS256")
+
+
+def verify_jwt(token: str) -> dict:
+    """Verify and decode JWT token."""
+    try:
+        payload = jwt.decode(token, Config.JWT_SECRET, algorithms=["HS256"])
+        return payload
+    except jwt.ExpiredSignatureError as exc:
+        raise jwt.ExpiredSignatureError("Token has expired") from exc
+    except jwt.InvalidTokenError as exc:
+        raise jwt.InvalidTokenError("Invalid token") from exc
+
+
+def get_current_user():
+    """Get current user from JWT token in request header."""
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return None
+
+    token = auth_header.split(" ")[1]
+    try:
+        payload = verify_jwt(token)
+        user = db.execute_one(
+            "SELECT id, email, is_admin, created_at FROM users WHERE id = %s",
+            (payload["user_id"],),
+        )
+        return user
+    except Exception:
+        return None
 
 
 @auth_bp.route("/signup", methods=["POST"])
@@ -88,14 +118,14 @@ def signup():
         # Log signup activity
         log_activity(user_id, "signup", "user", user_id)
 
-        logger.info(f"New user created: {email} (ID: {user_id})")
+        logger.info("New user created: %s (ID: %s)", email, user_id)
 
         return format_success_response(
             {"user_id": user_id, "email": email}, "Account created successfully", 201
         )
 
     except Exception as e:
-        logger.error(f"Signup error: {e}")
+        logger.error("Signup error: %s", e)
         return format_error_response("Internal server error", 500)
 
 
@@ -116,7 +146,8 @@ def login():
 
         # Find user
         user = db.execute_one(
-            "SELECT id, email, password_hash FROM users WHERE email = %s", (email,)
+            "SELECT id, email, password_hash, is_admin FROM users WHERE email = %s",
+            (email,),
         )
 
         if not user or not verify_password(password, user["password_hash"]):
@@ -126,17 +157,58 @@ def login():
             return format_error_response("Invalid credentials", 401)
 
         # Generate JWT token
-        token = generate_jwt(user["id"], user["email"])
+        token = generate_jwt(user["id"], user["email"], user["is_admin"])
 
         # Log successful login
         log_activity(user["id"], "login", "user", user["id"])
 
-        logger.info(f"User logged in: {email} (ID: {user['id']})")
+        logger.info("User logged in: %s (ID: %s)", email, user["id"])
 
         return format_success_response(
-            {"token": token, "user_id": user["id"], "email": user["email"]}
+            {
+                "token": token,
+                "user_id": user["id"],
+                "email": user["email"],
+                "is_admin": user["is_admin"],
+            }
         )
 
+    except KeyError as e:
+        logger.error(f"Missing key in request data: {e}")
+        return format_error_response("Invalid request data", 400)
+    except ValueError as e:
+        logger.error(f"Value error: {e}")
+        return format_error_response("Invalid input", 400)
     except Exception as e:
-        logger.error(f"Login error: {e}")
+        logger.error(f"Unexpected login error: {e}")
+        return format_error_response("Internal server error", 500)
+
+
+@auth_bp.route("/me", methods=["GET"])
+def get_me():
+    """Get current user information from JWT token."""
+    try:
+        user = get_current_user()
+        if not user:
+            return format_error_response("Authentication required", 401)
+
+        return format_success_response(
+            {
+                "id": user["id"],
+                "email": user["email"],
+                "is_admin": user["is_admin"],
+                "created_at": (
+                    user["created_at"].isoformat() if user["created_at"] else None
+                ),
+            }
+        )
+
+    except KeyError as e:
+        logger.error(f"Missing key in user data: {e}")
+        return format_error_response("Invalid user data", 400)
+    except ValueError as e:
+        logger.error(f"Value error in user data: {e}")
+        return format_error_response("Invalid input", 400)
+    except Exception as e:
+        logger.error(f"Unexpected error in get_me: {e}")
         return format_error_response("Internal server error", 500)
