@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: markboard-db-dev
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: markboard
+      MYSQL_USER: markboard_user
+      MYSQL_PASSWORD: markboard_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./init_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 20s
+      retries: 10
+    networks:
+      - markboard
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: markboard-backend-dev
+    environment:
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_USER: markboard_user
+      MYSQL_PASSWORD: markboard_password
+      MYSQL_DATABASE: markboard
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_EXPIRY_HOURS: 24
+      FLASK_ENV: development
+      FLASK_DEBUG: 1
+      DEBUG: "true"
+      BCRYPT_ROUNDS: 12
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - .:/app # Mount entire project for dev container access
+      - /app/__pycache__ # Exclude pycache
+    # Keep container running for dev container access
+    command: ["python", "-m", "flask", "--app", "app.main", "run", "--host=0.0.0.0", "--port=8000", "--reload", "--debug"]
+    networks:
+      - markboard
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: markboard-frontend-dev
+    ports:
+      - "3000:5173"  # Vite dev server (mapping to same external port as production)
+    volumes:
+      - ./frontend:/app  # Live reload for frontend
+      - /app/node_modules  # Exclude node_modules from host
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - markboard
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: markboard-phpmyadmin-dev
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: markboard_user
+      PMA_PASSWORD: markboard_password
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - markboard
+
+networks:
+  markboard:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local

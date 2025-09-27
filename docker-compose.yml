@@ -1,15 +1,16 @@
+# Docker Production Compose
+# Use this for production deployments
 version: '3.8'
 
 services:
   db:
     image: mysql:8.0
+    container_name: markboard-db
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: markboard
-      MYSQL_USER: markboard_user
-      MYSQL_PASSWORD: markboard_password
-    ports:
-      - "3306:3306"
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
       - ./init_db/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -18,19 +19,22 @@ services:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       timeout: 20s
       retries: 10
+    networks:
+      - markboard
 
   backend:
-    build: .
+    image: ghcr.io/shadowjumper3000/markboard-backend:latest
+    container_name: markboard-backend
     environment:
       MYSQL_HOST: db
       MYSQL_PORT: 3306
-      MYSQL_USER: markboard_user
-      MYSQL_PASSWORD: markboard_password
-      MYSQL_DATABASE: markboard
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRY_HOURS: 24
-      FLASK_ENV: development
-      DEBUG: "true"
+      FLASK_ENV: production
+      DEBUG: "false"
       BCRYPT_ROUNDS: 12
     ports:
       - "8000:8000"
@@ -38,21 +42,32 @@ services:
       db:
         condition: service_healthy
     restart: unless-stopped
-    volumes:
-      - ./app:/app/app:ro # Mount source code for development (read-only)
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - markboard
 
-  phpmyadmin:
-    image: phpmyadmin:latest
-    environment:
-      PMA_HOST: db
-      PMA_PORT: 3306
-      PMA_USER: markboard_user
-      PMA_PASSWORD: markboard_password
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: markboard-frontend
     ports:
-      - "8080:80"
+      - "3000:3000"
     depends_on:
-      - db
+      - backend
     restart: unless-stopped
+    networks:
+      - markboard
+
+networks:
+  markboard:
+    driver: bridge
+  proxy:
+    external: true
 
 volumes:
   db_data:
