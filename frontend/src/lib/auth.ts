@@ -14,7 +14,7 @@ export interface AuthState {
 }
 
 // Backend API base URL
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8001';
 
 export const authService = {
   async login(email: string, password: string): Promise<User> {
@@ -34,8 +34,9 @@ export const authService = {
     const data = await response.json();
     const token = data.token; // Fixed: data.token instead of data.data.token
     
-    // Store JWT token
+    // Store JWT token in both cookie and localStorage for compatibility
     Cookies.set('auth-token', token, { expires: 7 });
+    localStorage.setItem('token', token);
     
     // Decode user info from token or fetch user details
     const userResponse = await fetch(`${API_BASE}/auth/me`, {
@@ -87,10 +88,11 @@ export const authService = {
 
   logout(): void {
     Cookies.remove('auth-token');
+    localStorage.removeItem('token');
   },
 
   getCurrentUser(): User | null {
-    const token = Cookies.get('auth-token');
+    const token = Cookies.get('auth-token') || localStorage.getItem('token');
     if (!token) return null;
     
     try {
@@ -127,6 +129,6 @@ export const authService = {
   },
 
   isAuthenticated(): boolean {
-    return !!Cookies.get('auth-token');
+    return !!(Cookies.get('auth-token') || localStorage.getItem('token'));
   }
 };

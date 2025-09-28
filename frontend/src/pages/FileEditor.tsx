@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { MonacoEditor } from '@/components/editor/MonacoEditor';
 import { MermaidPreview } from '@/components/editor/MermaidPreview';
+import { MonacoEditor } from '@/components/editor/MonacoEditor';
+import { AppSidebar } from '@/components/layout/AppSidebar';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Download, Share2 } from 'lucide-react';
+import { ArrowLeft, Download, Save, Share2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 // Mock file data
 const mockFileContent = `# User Journey Flowchart
@@ -58,6 +60,7 @@ export default function FileEditor() {
   const [fileName, setFileName] = useState('User Journey Flowchart.md');
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date>(new Date());
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
 
   // Auto-save functionality
   useEffect(() => {
@@ -112,6 +115,10 @@ export default function FileEditor() {
     });
   };
 
+  const handleFileSelect = (fileId: string) => {
+    navigate(`/editor/${fileId}`);
+  };
+
   const formatLastSaved = (date: Date): string => {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -127,90 +134,100 @@ export default function FileEditor() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      <Header />
-      
-      {/* Editor Header */}
-      <div className="border-b bg-card/50 backdrop-blur-md">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/dashboard')}
-              className="hover:bg-accent transition-fast"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Button>
-            
-            <div className="flex flex-col">
-              <h1 className="text-xl font-semibold text-foreground">{fileName}</h1>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <span>
-                  {isAutoSaving ? 'Saving...' : `Saved ${formatLastSaved(lastSaved)}`}
-                </span>
-                {isAutoSaving && (
-                  <div className="h-2 w-2 bg-primary rounded-full animate-pulse" />
-                )}
+    <SidebarProvider defaultOpen={false}>
+      <div className="flex h-screen w-full bg-background">
+        <AppSidebar 
+          selectedTeam={selectedTeam}
+          onTeamSelect={setSelectedTeam}
+          onFileSelect={handleFileSelect}
+        />
+        
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Header />
+          
+          {/* Editor Header */}
+          <div className="border-b bg-card/50 backdrop-blur-md">
+            <div className="flex items-center justify-between px-6 py-4">
+              <div className="flex items-center space-x-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/dashboard')}
+                  className="hover:bg-accent transition-fast"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Dashboard
+                </Button>
+                
+                <div className="flex flex-col">
+                  <h1 className="text-xl font-semibold text-foreground">{fileName}</h1>
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                    <span>
+                      {isAutoSaving ? 'Saving...' : `Saved ${formatLastSaved(lastSaved)}`}
+                    </span>
+                    {isAutoSaving && (
+                      <div className="h-2 w-2 bg-primary rounded-full animate-pulse" />
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                <Button
+                  onClick={handleSave}
+                  size="sm"
+                  disabled={isAutoSaving}
+                  className="bg-primary hover:bg-primary-hover transition-fast shadow-elegant-sm"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </Button>
+                
+                <Button
+                  onClick={handleDownload}
+                  variant="outline"
+                  size="sm"
+                  className="transition-fast"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="transition-fast"
+                >
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
               </div>
             </div>
           </div>
-          
-          <div className="flex items-center space-x-3">
-            <Button
-              onClick={handleSave}
-              size="sm"
-              disabled={isAutoSaving}
-              className="bg-primary hover:bg-primary-hover transition-fast shadow-elegant-sm"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              Save
-            </Button>
-            
-            <Button
-              onClick={handleDownload}
-              variant="outline"
-              size="sm"
-              className="transition-fast"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Download
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              className="transition-fast"
-            >
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
+
+          {/* Editor Content */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* Left Panel - Monaco Editor */}
+            <div className="flex-1 p-6 bg-muted/30">
+              <div className="h-full">
+                <MonacoEditor
+                  value={content}
+                  onChange={setContent}
+                  language="markdown"
+                  theme="vs-dark"
+                />
+              </div>
+            </div>
+
+            {/* Right Panel - Mermaid Preview */}
+            <div className="flex-1 p-6 bg-background border-l">
+              <div className="h-full">
+                <MermaidPreview content={content} />
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Editor Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel - Monaco Editor */}
-        <div className="flex-1 p-6 bg-muted/30">
-          <div className="h-full">
-            <MonacoEditor
-              value={content}
-              onChange={setContent}
-              language="markdown"
-              theme="vs-dark"
-            />
-          </div>
-        </div>
-
-        {/* Right Panel - Mermaid Preview */}
-        <div className="flex-1 p-6 bg-background border-l">
-          <div className="h-full">
-            <MermaidPreview content={content} />
-          </div>
-        </div>
-      </div>
-    </div>
+    </SidebarProvider>
   );
 }

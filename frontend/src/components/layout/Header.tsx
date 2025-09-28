@@ -1,5 +1,4 @@
-import React from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -9,13 +8,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { SidebarTrigger } from '@/components/ui/sidebar';
-import { FileText, Upload, Plus, Settings, LogOut, Shield } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
+import { useAuth } from '@/contexts/AuthContext';
+import { ArrowLeft, FileText, LogOut, Plus, Settings, Shield, Upload } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+
+// Safe hook to use sidebar context - returns null if not within SidebarProvider
+function useSidebarSafe() {
+  try {
+    return useSidebar();
+  } catch {
+    return null;
+  }
+}
 
 export function Header() {
   const { user, logout } = useAuth();
+  const sidebarContext = useSidebarSafe();
+  const location = useLocation();
+  const isAdminPage = location.pathname === '/admin';
 
   const handleNewFile = () => {
     // TODO: Implement new file creation
@@ -32,40 +43,51 @@ export function Header() {
       <div className="flex h-full items-center justify-between px-6">
         {/* Left section */}
         <div className="flex items-center space-x-4">
-          <SidebarTrigger className="hover:bg-accent transition-fast" />
+          {sidebarContext && (
+            <SidebarTrigger className="hover:bg-accent transition-fast" />
+          )}
           
-          <div className="flex items-center space-x-2">
-            <FileText className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold text-foreground">UML Editor</span>
-          </div>
+          {isAdminPage ? (
+            <Link to="/dashboard" className="flex items-center space-x-2 hover:opacity-80 transition-fast">
+              <ArrowLeft className="h-5 w-5 text-primary" />
+              <span className="text-lg font-semibold text-foreground">Back to Dashboard</span>
+            </Link>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <FileText className="h-6 w-6 text-primary" />
+              <span className="text-xl font-bold text-foreground">UML Editor</span>
+            </div>
+          )}
         </div>
 
-        {/* Center section */}
-        <div className="flex items-center space-x-3">
-          <Button
-            onClick={handleNewFile}
-            size="sm"
-            className="bg-primary hover:bg-primary-hover transition-fast shadow-elegant-sm"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New File
-          </Button>
-          
-          <Button
-            onClick={handleUpload}
-            variant="outline"
-            size="sm"
-            className="border-border hover:bg-accent transition-fast"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Upload .md
-          </Button>
-        </div>
+        {/* Center section - hide file actions on admin page */}
+        {!isAdminPage && (
+          <div className="flex items-center space-x-3">
+            <Button
+              onClick={handleNewFile}
+              size="sm"
+              className="bg-primary hover:bg-primary-hover transition-fast shadow-elegant-sm"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New File
+            </Button>
+            
+            <Button
+              onClick={handleUpload}
+              variant="outline"
+              size="sm"
+              className="border-border hover:bg-accent transition-fast"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Upload .md
+            </Button>
+          </div>
+        )}
 
         {/* Right section */}
         <div className="flex items-center space-x-4">
-          {/* Admin Dashboard Link */}
-          {user?.role === 'admin' && (
+          {/* Admin Dashboard Link - only show if not already on admin page */}
+          {user?.role === 'admin' && !isAdminPage && (
             <Link to="/admin">
               <Button
                 variant="ghost"

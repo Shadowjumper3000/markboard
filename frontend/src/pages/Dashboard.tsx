@@ -1,82 +1,107 @@
-import React, { useState } from 'react';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { Header } from '@/components/layout/Header';
-import { AppSidebar } from '@/components/layout/AppSidebar';
 import { FileGrid, FileItem } from '@/components/files/FileGrid';
+import { AppSidebar } from '@/components/layout/AppSidebar';
+import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Filter, Grid, List } from 'lucide-react';
+import { Filter, Grid, List, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-// Mock data - replace with real API calls
-const mockFiles: FileItem[] = [
-  {
-    id: '1',
-    name: 'User Journey Flowchart.md',
-    team: 'Product Team',
-    lastModified: '2 hours ago',
-    size: '2.4 KB',
-    starred: true,
-    type: 'team',
-    author: 'Sarah Chen',
-  },
-  {
-    id: '2',
-    name: 'System Architecture Overview.md',
-    team: 'Engineering',
-    lastModified: '1 day ago',
-    size: '5.7 KB',
-    starred: false,
-    type: 'team',
-    author: 'Mike Johnson',
-  },
-  {
-    id: '3',
-    name: 'API Documentation.md',
-    team: 'Engineering',
-    lastModified: '3 days ago',
-    size: '8.2 KB',
-    starred: true,
-    type: 'team',
-    author: 'Alex Rodriguez',
-  },
-  {
-    id: '4',
-    name: 'Component Library Structure.md',
-    team: 'Design System',
-    lastModified: '1 week ago',
-    size: '3.1 KB',
-    starred: false,
-    type: 'team',
-    author: 'Lisa Park',
-  },
-  {
-    id: '5',
-    name: 'Personal Notes.md',
-    team: 'Personal',
-    lastModified: '5 minutes ago',
-    size: '1.2 KB',
-    starred: false,
-    type: 'personal',
-    author: 'You',
-  },
-];
 
 export default function Dashboard() {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [files, setFiles] = useState<FileItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   // Filter files based on selected team and search query
-  const filteredFiles = mockFiles.filter(file => {
+  const filteredFiles = files.filter(file => {
     const matchesTeam = !selectedTeam || file.team === getTeamName(selectedTeam);
     const matchesSearch = file.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          file.team.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTeam && matchesSearch;
   });
+
+  const fetchFiles = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "Please log in to view your files.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await fetch('http://localhost:8001/files', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch files');
+      }
+
+      const data = await response.json();
+      
+      // Convert backend file format to frontend FileItem format
+      const convertedFiles: FileItem[] = data.files?.map((file: any) => {
+        // Calculate time difference for lastModified
+        const updatedAt = new Date(file.updated_at);
+        const now = new Date();
+        const diffMs = now.getTime() - updatedAt.getTime();
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffHours / 24);
+        
+        let lastModified = 'Just now';
+        if (diffHours < 1) {
+          const diffMinutes = Math.floor(diffMs / (1000 * 60));
+          lastModified = diffMinutes <= 1 ? 'Just now' : `${diffMinutes} minutes ago`;
+        } else if (diffHours < 24) {
+          lastModified = diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
+        } else if (diffDays === 1) {
+          lastModified = '1 day ago';
+        } else {
+          lastModified = `${diffDays} days ago`;
+        }
+
+        return {
+          id: file.id.toString(),
+          name: file.name,
+          team: file.team_id ? 'Team File' : 'Personal',
+          lastModified,
+          size: '0 KB', // Backend doesn't return file size in bytes, could calculate from content length
+          starred: false, // Not implemented in backend yet
+          type: file.team_id ? 'team' : 'personal',
+          author: 'You', // Could be enhanced to show actual owner name
+        };
+      }) || [];
+
+      setFiles(convertedFiles);
+
+    } catch (error) {
+      console.error('Error fetching files:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load files.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFiles();
+  }, []);
 
   function getTeamName(teamId: string): string {
     const teams: Record<string, string> = {
@@ -91,19 +116,44 @@ export default function Dashboard() {
     navigate(`/editor/${fileId}`);
   };
 
-  const handleFileDelete = (fileId: string) => {
-    toast({
-      title: "File deleted",
-      description: "The file has been moved to trash.",
-    });
+  const handleFileDelete = async (fileId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`http://localhost:8001/files/${fileId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        toast({
+          title: "File deleted",
+          description: "The file has been moved to trash.",
+        });
+        // Refresh the files list
+        fetchFiles();
+      } else {
+        throw new Error('Failed to delete file');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete file.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleFileToggleStar = (fileId: string) => {
-    const file = mockFiles.find(f => f.id === fileId);
+    const file = files.find(f => f.id === fileId);
     toast({
       title: file?.starred ? "Removed from starred" : "Added to starred",
       description: `${file?.name} ${file?.starred ? 'removed from' : 'added to'} your starred files.`,
     });
+    // TODO: Implement starring functionality in backend
   };
 
   return (

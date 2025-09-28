@@ -1,104 +1,120 @@
-import React, { useState } from 'react';
 import { Header } from '@/components/layout/Header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Users, FileText, Activity, Search, TrendingUp, Clock } from 'lucide-react';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
+import { Activity, Clock, FileText, Search, TrendingUp, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-// Mock data for admin dashboard
-const mockUsers = [
-  {
-    id: '1',
-    email: 'sarah.chen@example.com',
-    name: 'Sarah Chen',
-    role: 'user',
-    createdAt: '2024-01-15',
-    fileCount: 12,
-    lastActive: '2 hours ago',
-    status: 'active',
-  },
-  {
-    id: '2',
-    email: 'mike.johnson@example.com',
-    name: 'Mike Johnson',
-    role: 'user',
-    createdAt: '2024-01-10',
-    fileCount: 28,
-    lastActive: '1 day ago',
-    status: 'active',
-  },
-  {
-    id: '3',
-    email: 'alex.rodriguez@example.com',
-    name: 'Alex Rodriguez',
-    role: 'user',
-    createdAt: '2024-01-08',
-    fileCount: 15,
-    lastActive: '3 days ago',
-    status: 'active',
-  },
-  {
-    id: '4',
-    email: 'lisa.park@example.com',
-    name: 'Lisa Park',
-    role: 'user',
-    createdAt: '2024-01-05',
-    fileCount: 7,
-    lastActive: '1 week ago',
-    status: 'inactive',
-  },
-];
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  createdAt: string;
+  fileCount: number;
+  lastActive: string;
+  status: string;
+}
 
-const mockRecentActivity = [
-  {
-    id: '1',
-    type: 'file_created',
-    user: 'Sarah Chen',
-    action: 'created file "New API Documentation.md"',
-    timestamp: '2 hours ago',
-  },
-  {
-    id: '2',
-    type: 'file_edited',
-    user: 'Mike Johnson',
-    action: 'edited "System Architecture.md"',
-    timestamp: '4 hours ago',
-  },
-  {
-    id: '3',
-    type: 'login',
-    user: 'Alex Rodriguez',
-    action: 'logged into the system',
-    timestamp: '6 hours ago',
-  },
-  {
-    id: '4',
-    type: 'file_shared',
-    user: 'Lisa Park',
-    action: 'shared "Component Library.md" with Product Team',
-    timestamp: '1 day ago',
-  },
-];
+interface Activity {
+  id: string;
+  type: string;
+  user: string;
+  action: string;
+  timestamp: string;
+}
+
+interface Stats {
+  totalUsers: number;
+  activeUsers: number;
+  totalFiles: number;
+  recentActivity: number;
+}
 
 export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [users, setUsers] = useState<User[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [stats, setStats] = useState<Stats>({
+    totalUsers: 0,
+    activeUsers: 0,
+    totalFiles: 0,
+    recentActivity: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const filteredUsers = mockUsers.filter(user =>
+  const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const totalFiles = mockUsers.reduce((sum, user) => sum + user.fileCount, 0);
-  const activeUsers = mockUsers.filter(user => user.status === 'active').length;
+  const fetchAdminData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "Please log in to access admin dashboard.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+
+      // Fetch users, activities, and stats in parallel
+      const [usersResponse, activitiesResponse, statsResponse] = await Promise.all([
+        fetch('http://localhost:8001/admin/users', { headers }),
+        fetch('http://localhost:8001/admin/activity?limit=10', { headers }),
+        fetch('http://localhost:8001/admin/stats', { headers }),
+      ]);
+
+      if (!usersResponse.ok || !activitiesResponse.ok || !statsResponse.ok) {
+        throw new Error('Failed to fetch admin data');
+      }
+
+      const usersData = await usersResponse.json();
+      const activitiesData = await activitiesResponse.json();
+      const statsData = await statsResponse.json();
+
+      setUsers(usersData.users || []);
+      setActivities(activitiesData.activities || []);
+      setStats({
+        totalUsers: statsData.totalUsers || 0,
+        activeUsers: statsData.activeUsers || 0,
+        totalFiles: statsData.totalFiles || 0,
+        recentActivity: statsData.recentActivity || 0,
+      });
+
+    } catch (error) {
+      console.error('Error fetching admin data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load admin dashboard data.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAdminData();
+  }, []);
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -143,10 +159,10 @@ export default function AdminDashboard() {
                 <Users className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-foreground">{mockUsers.length}</div>
+                <div className="text-2xl font-bold text-foreground">{stats.totalUsers}</div>
                 <p className="text-xs text-success flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 mr-1" />
-                  {activeUsers} active users
+                  {stats.activeUsers} active users
                 </p>
               </CardContent>
             </Card>
@@ -159,7 +175,7 @@ export default function AdminDashboard() {
                 <FileText className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-foreground">{totalFiles}</div>
+                <div className="text-2xl font-bold text-foreground">{stats.totalFiles}</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Across all teams
                 </p>
@@ -169,15 +185,15 @@ export default function AdminDashboard() {
             <Card className="bg-gradient-card border-0 shadow-elegant-md">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Activity Score
+                  Recent Activity
                 </CardTitle>
                 <Activity className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-foreground">94%</div>
+                <div className="text-2xl font-bold text-foreground">{stats.recentActivity}</div>
                 <p className="text-xs text-success flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 mr-1" />
-                  +12% from last week
+                  Last 24 hours
                 </p>
               </CardContent>
             </Card>
@@ -211,32 +227,48 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{user.name}</span>
-                            <span className="text-sm text-muted-foreground">{user.email}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="text-xs">
-                            {user.fileCount}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={user.status === 'active' ? 'default' : 'secondary'}
-                            className="capitalize"
-                          >
-                            {user.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {user.lastActive}
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8">
+                          <div className="text-sm text-muted-foreground">Loading users...</div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : filteredUsers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8">
+                          <div className="text-sm text-muted-foreground">
+                            {searchQuery ? 'No users match your search.' : 'No users found.'}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredUsers.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{user.name}</span>
+                              <span className="text-sm text-muted-foreground">{user.email}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className="text-xs">
+                              {user.fileCount}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={user.status === 'active' ? 'default' : 'secondary'}
+                              className="capitalize"
+                            >
+                              {user.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {user.lastActive}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -252,7 +284,16 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockRecentActivity.map((activity) => (
+                  {loading ? (
+                    <div className="text-center py-4">
+                      <div className="text-sm text-muted-foreground">Loading activities...</div>
+                    </div>
+                  ) : activities.length === 0 ? (
+                    <div className="text-center py-4">
+                      <div className="text-sm text-muted-foreground">No recent activity</div>
+                    </div>
+                  ) : (
+                    activities.map((activity) => (
                     <div key={activity.id} className="flex items-start space-x-3">
                       <div className="mt-1">
                         {getActivityIcon(activity.type)}
@@ -269,7 +310,7 @@ export default function AdminDashboard() {
                         </p>
                       </div>
                     </div>
-                  ))}
+                  )))}
                 </div>
               </CardContent>
             </Card>
