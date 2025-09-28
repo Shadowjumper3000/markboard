@@ -1,166 +1,82 @@
-name: CI/CD Pipeline
+name: CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/markboard-backend
+    branches: [ prod ]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: rootpassword
-          MYSQL_DATABASE: markboard_test
-          MYSQL_USER: test_user
-          MYSQL_PASSWORD: test_password
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-        cache: 'pip'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Wait for MySQL
-      run: |
-        while ! mysqladmin ping -h"127.0.0.1" -P3306 -utest_user -ptest_password --silent; do
-          echo "Waiting for MySQL to be ready..."
-          sleep 2
-        done
-        echo "MySQL is ready!"
-
-    - name: Set up test database
-      run: |
-        mysql -h127.0.0.1 -P3306 -utest_user -ptest_password markboard_test < init_db/init.sql
-
-    - name: Run tests
-      env:
-        MYSQL_HOST: 127.0.0.1
-        MYSQL_PORT: 3306
-        MYSQL_USER: test_user
-        MYSQL_PASSWORD: test_password
-        MYSQL_DATABASE: markboard_test
-        JWT_SECRET: test-secret-key-for-ci
-        FLASK_ENV: testing
-      run: |
-        python -m pytest tests/ -v --tb=short
-
-    - name: Test coverage
-      env:
-        MYSQL_HOST: 127.0.0.1
-        MYSQL_PORT: 3306
-        MYSQL_USER: test_user
-        MYSQL_PASSWORD: test_password
-        MYSQL_DATABASE: markboard_test
-        JWT_SECRET: test-secret-key-for-ci
-        FLASK_ENV: testing
-      run: |
-        pip install pytest-cov
-        python -m pytest tests/ --cov=app --cov-report=xml --cov-report=term-missing
-
-  build_and_publish:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Log in to Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-        tags: |
-          type=ref,event=branch
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
-
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        platforms: linux/amd64,linux/arm64
-
   deploy:
-    needs: build_and_publish
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/prod'
     
     environment:
       name: production
-      url: https://markboard.yourdomain.com
+      url: ${{ secrets.PRODUCTION_URL }}
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Deploy to Hetzner
-      uses: appleboy/ssh-action@v1.0.0
+    - name: Add server to known hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H ${{ secrets.HETZNER_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Deploy to Hetzner Server
+      uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.HETZNER_HOST }}
-        username: ${{ secrets.HETZNER_SSH_USER }}
+        username: ${{ secrets.HETZNER_USER }}
         key: ${{ secrets.HETZNER_SSH_KEY }}
-        port: ${{ secrets.HETZNER_SSH_PORT || 22 }}
+        port: ${{ secrets.HETZNER_PORT }}
         script: |
+          set -e
+          
+          # Define application directory
+          APP_DIR="/opt/markboard"
+          REPO_URL="https://github.com/${{ github.repository }}.git"
+          
+          # Create application directory if it doesn't exist
+          if [ ! -d "$APP_DIR" ]; then
+            echo "Creating application directory..."
+            sudo mkdir -p $APP_DIR
+            sudo chown $USER:$USER $APP_DIR
+          fi
+          
           # Navigate to application directory
-          cd /opt/markboard
+          cd $APP_DIR
           
-          # Pull latest images
-          docker compose pull
+          # Clone or update repository
+          if [ ! -d ".git" ]; then
+            echo "Cloning repository..."
+            git clone $REPO_URL .
+          else
+            echo "Updating repository..."
+            git fetch origin
+            git reset --hard origin/prod
+          fi
           
-          # Restart services with new images
-          docker compose up -d --remove-orphans
+          # Create .env file from GitHub secret
+          echo "Creating production environment file..."
+          echo '${{ secrets.ENV_FILE }}' > .env
           
-          # Clean up old images
-          docker image prune -f
+          # Stop existing containers
+          echo "Stopping existing containers..."
+          docker compose down || true
           
-          # Check service health
+          # Remove old images to free space
+          echo "Cleaning up old Docker images..."
+          docker system prune -f
+          
+          # Build and start services
+          echo "Building and starting services..."
+          docker compose up -d --build --remove-orphans
+          
+          # Wait for services to be ready
+          echo "Waiting for services to start..."
           sleep 30
-          curl -f http://localhost:8000/health || exit 1
           
-          echo "Deployment completed successfully!"
+          echo "🚀 Deployment completed successfully!"
+          
+          # Show container status
+          docker compose ps

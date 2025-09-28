@@ -23,7 +23,9 @@ services:
       - internal
 
   backend:
-    image: ghcr.io/shadowjumper3000/markboard-backend:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: markboard-backend
     environment:
       MYSQL_HOST: db
@@ -32,21 +34,24 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRY_HOURS: 24
+      JWT_EXPIRY_HOURS: ${JWT_EXPIRY_HOURS:-24}
       FLASK_ENV: production
       DEBUG: "false"
-      BCRYPT_ROUNDS: 12
+      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"  # Bind to localhost only for external nginx
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
+    volumes:
+      - app_data:/app/data
     healthcheck:
-      test: [ "CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
     networks:
       - internal
 
@@ -56,20 +61,19 @@ services:
       dockerfile: Dockerfile
     container_name: markboard-frontend
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:80"  # Bind to localhost only for external nginx
     depends_on:
       - backend
     restart: unless-stopped
     networks:
       - internal
-      - proxy
 
 networks:
   internal:
     driver: bridge
-  proxy:
-    external: true
 
 volumes:
   db_data:
+    driver: local
+  app_data:
     driver: local
