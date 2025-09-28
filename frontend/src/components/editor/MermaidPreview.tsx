@@ -44,21 +44,17 @@ export function MermaidPreview({ content, className = '' }: MermaidPreviewProps)
           containerRef.current.innerHTML = `
             <div class="flex items-center justify-center h-full text-muted-foreground">
               <div class="text-center space-y-2">
-                <div class="text-lg font-medium">No UML diagrams found</div>
-                <div class="text-sm">Add mermaid diagrams to see live previews</div>
+                <div class="text-lg font-medium">No Mermaid diagrams found</div>
+                <div class="text-sm">Add mermaid diagrams in code blocks to see live previews</div>
                 <div class="text-xs mt-4 p-3 bg-muted rounded-lg font-mono space-y-2">
-                  <div>Using code blocks:</div>
+                  <div>Use code blocks with mermaid language:</div>
                   <div>
                     \`\`\`mermaid<br/>
                     flowchart LR<br/>
                     &nbsp;&nbsp;&nbsp;&nbsp;A[Start] --> B[End]<br/>
                     \`\`\`
                   </div>
-                  <div class="mt-2">Or raw mermaid syntax:</div>
-                  <div>
-                    flowchart LR<br/>
-                    &nbsp;&nbsp;&nbsp;&nbsp;A[Start] --> B[End]
-                  </div>
+                  <div class="mt-2">💡 This allows for comments and multiple diagrams</div>
                 </div>
               </div>
             </div>
@@ -108,20 +104,14 @@ export function MermaidPreview({ content, className = '' }: MermaidPreviewProps)
   const extractMermaidBlocks = (markdown: string): string[] => {
     const blocks: string[] = [];
     
-    // First, try to extract mermaid code blocks
+    // Only extract mermaid code blocks - no fallback to raw syntax
     const codeBlockRegex = /```mermaid\s*([\s\S]*?)```/g;
     let match;
     
     while ((match = codeBlockRegex.exec(markdown)) !== null) {
-      blocks.push(match[1].trim());
-    }
-    
-    // If no code blocks found, check if the entire content is a Mermaid diagram
-    if (blocks.length === 0) {
-      const trimmedContent = markdown.trim();
-      // Check if it starts with common Mermaid diagram types or config
-      if (trimmedContent.match(/^(---[\s\S]*?---\s*)?(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitgraph|mindmap|timeline|sankey|xyChart|quadrantChart|requirement|C4Context|C4Container|C4Component|C4Dynamic|C4Deployment)/m)) {
-        blocks.push(trimmedContent);
+      const blockContent = match[1].trim();
+      if (blockContent) {
+        blocks.push(blockContent);
       }
     }
     

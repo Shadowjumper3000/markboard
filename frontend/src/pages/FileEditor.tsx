@@ -1,5 +1,6 @@
 import { MermaidPreview } from '@/components/editor/MermaidPreview';
 import { MonacoEditor } from '@/components/editor/MonacoEditor';
+import { SimpleMermaidToolbar } from '@/components/editor/SimpleMermaidToolbar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,17 @@ export default function FileEditor() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [teams, setTeams] = useState<Team[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
+
+  // Template insertion handler
+  const handleTemplateInsert = (templateContent: string) => {
+    const newContent = content + (content && !content.endsWith('\n') ? '\n\n' : '\n') + templateContent + '\n';
+    setContent(newContent);
+    
+    toast({
+      title: "Template inserted",
+      description: "Mermaid template has been added to your document.",
+    });
+  };
 
   // Load teams and files data
   useEffect(() => {
@@ -305,14 +317,20 @@ export default function FileEditor() {
           {/* Editor Content */}
           <div className="flex-1 flex overflow-hidden">
             {/* Left Panel - Monaco Editor */}
-            <div className="flex-1 p-6 bg-muted/30">
-              <div className="h-full">
-                <MonacoEditor
-                  value={content}
-                  onChange={setContent}
-                  language="markdown"
-                  theme="vs-dark"
-                />
+            <div className="flex-1 flex flex-col bg-muted/30">
+              {/* Template Toolbar */}
+              <SimpleMermaidToolbar onTemplateInsert={handleTemplateInsert} />
+              
+              {/* Editor */}
+              <div className="flex-1 p-6 pt-0">
+                <div className="h-full">
+                  <MonacoEditor
+                    value={content}
+                    onChange={setContent}
+                    language="markdown"
+                    theme="vs-dark"
+                  />
+                </div>
               </div>
             </div>
 
