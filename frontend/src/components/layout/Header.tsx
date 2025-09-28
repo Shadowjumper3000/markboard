@@ -1,16 +1,16 @@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, FileText, LogOut, Plus, Settings, Shield, Upload } from 'lucide-react';
+import { ArrowLeft, FileText, Home, LogOut, Plus, Settings, Shield, Upload } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 // Safe hook to use sidebar context - returns null if not within SidebarProvider
@@ -28,6 +28,7 @@ export function Header() {
   const location = useLocation();
   const isAdminPage = location.pathname === '/admin';
   const isEditorPage = location.pathname.startsWith('/editor/');
+  const isDashboardPage = location.pathname === '/dashboard';
 
   const handleNewFile = () => {
     // TODO: Implement new file creation
@@ -54,9 +55,23 @@ export function Header() {
               <span className="text-lg font-semibold text-foreground">Back to Dashboard</span>
             </Link>
           ) : (
-            <div className="flex items-center space-x-2">
-              <FileText className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold text-foreground">UML Editor</span>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <FileText className="h-6 w-6 text-primary" />
+                <span className="text-xl font-bold text-foreground">UML Editor</span>
+              </div>
+              {!isDashboardPage && (
+                <Link to="/">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="hover:bg-accent transition-fast"
+                  >
+                    <Home className="h-4 w-4 mr-2" />
+                    Home
+                  </Button>
+                </Link>
+              )}
             </div>
           )}
         </div>

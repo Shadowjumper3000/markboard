@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Loader2 } from 'lucide-react';
+import { ArrowLeft, FileText, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function Signup() {
   const [name, setName] = useState('');
@@ -54,6 +54,17 @@ export default function Signup() {
   return (
     <div className="min-h-screen bg-gradient-subtle flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
+        {/* Back to Home */}
+        <div className="flex justify-start">
+          <Link
+            to="/"
+            className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-fast"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Home</span>
+          </Link>
+        </div>
+
         {/* Logo & Title */}
         <div className="text-center space-y-4">
           <div className="flex justify-center">

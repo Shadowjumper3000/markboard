@@ -1,19 +1,12 @@
 // Welcome page for non-authenticated users
 
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { FileText, Users, Zap, Shield, ArrowRight } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { ArrowRight, FileText, Grid3X3, Users, Zap } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Index = () => {
   const { isAuthenticated } = useAuth();
-
-  // Redirect authenticated users to dashboard
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -26,16 +19,27 @@ const Index = () => {
               <span className="text-2xl font-bold text-foreground">UML Editor</span>
             </div>
             <div className="flex items-center space-x-4">
-              <Link to="/login">
-                <Button variant="ghost" className="hover:bg-accent transition-fast">
-                  Sign In
-                </Button>
-              </Link>
-              <Link to="/signup">
-                <Button className="bg-gradient-primary hover:opacity-90 shadow-elegant-sm transition-smooth">
-                  Get Started
-                </Button>
-              </Link>
+              {isAuthenticated ? (
+                <Link to="/dashboard">
+                  <Button className="bg-gradient-primary hover:opacity-90 shadow-elegant-sm transition-smooth">
+                    <Grid3X3 className="mr-2 h-4 w-4" />
+                    Go to Dashboard
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link to="/login">
+                    <Button variant="ghost" className="hover:bg-accent transition-fast">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link to="/signup">
+                    <Button className="bg-gradient-primary hover:opacity-90 shadow-elegant-sm transition-smooth">
+                      Get Started
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -56,24 +60,39 @@ const Index = () => {
           </div>
           
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <Link to="/signup">
-              <Button 
-                size="lg" 
-                className="bg-gradient-primary hover:opacity-90 shadow-elegant-md transition-smooth text-lg px-8"
-              >
-                Start Creating
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link to="/login">
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="border-border hover:bg-accent transition-fast text-lg px-8"
-              >
-                Sign In
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link to="/dashboard">
+                <Button 
+                  size="lg" 
+                  className="bg-gradient-primary hover:opacity-90 shadow-elegant-md transition-smooth text-lg px-8"
+                >
+                  <Grid3X3 className="mr-2 h-5 w-5" />
+                  Go to Dashboard
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link to="/signup">
+                  <Button 
+                    size="lg" 
+                    className="bg-gradient-primary hover:opacity-90 shadow-elegant-md transition-smooth text-lg px-8"
+                  >
+                    Start Creating
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+                <Link to="/login">
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="border-border hover:bg-accent transition-fast text-lg px-8"
+                  >
+                    Sign In
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -133,15 +152,28 @@ const Index = () => {
           <p className="text-muted-foreground text-lg">
             Join thousands of teams already using UML Editor for their documentation needs.
           </p>
-          <Link to="/signup">
-            <Button 
-              size="lg" 
-              className="bg-gradient-primary hover:opacity-90 shadow-elegant-md transition-smooth text-lg px-8"
-            >
-              Get Started for Free
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
+          {isAuthenticated ? (
+            <Link to="/dashboard">
+              <Button 
+                size="lg" 
+                className="bg-gradient-primary hover:opacity-90 shadow-elegant-md transition-smooth text-lg px-8"
+              >
+                <Grid3X3 className="mr-2 h-5 w-5" />
+                Go to Dashboard
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+          ) : (
+            <Link to="/signup">
+              <Button 
+                size="lg" 
+                className="bg-gradient-primary hover:opacity-90 shadow-elegant-md transition-smooth text-lg px-8"
+              >
+                Get Started for Free
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+          )}
         </div>
       </section>
 
