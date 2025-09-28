@@ -181,8 +181,8 @@ class TestFileEndpoints:
                 {
                     "id": 1,
                     "name": "test.md",
-                    "created_at": test_datetime,
-                    "updated_at": test_datetime,
+                    "created_at": test_datetime.strftime("%Y-%m-%dT%H:%M:%S"),
+                    "updated_at": test_datetime.strftime("%Y-%m-%dT%H:%M:%S"),
                     "owner_id": 1,
                     "team_id": None,
                 }
