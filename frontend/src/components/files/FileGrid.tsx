@@ -1,24 +1,21 @@
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { FileText, Star, MoreHorizontal, Download, Trash2, Edit, Users } from 'lucide-react';
+import { Download, Edit, MoreHorizontal, Star, Trash2 } from 'lucide-react';
 
 export interface FileItem {
   id: string;
   name: string;
   team: string;
   lastModified: string;
-  size: string;
   starred: boolean;
   type: 'personal' | 'team';
-  author: string;
 }
 
 interface FileGridProps {
@@ -40,18 +37,10 @@ export function FileGrid({ files, onFileSelect, onFileDelete, onFileToggleStar }
           <CardContent className="p-6">
             {/* File Header */}
             <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 rounded-lg bg-gradient-primary flex items-center justify-center shadow-elegant-sm">
-                  <FileText className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <div className="flex items-center space-x-2">
-                  {file.starred && (
-                    <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                  )}
-                  {file.type === 'team' && (
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </div>
+              <div className="flex items-center space-x-2">
+                {file.starred && (
+                  <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                )}
               </div>
               
               <DropdownMenu>
@@ -113,11 +102,6 @@ export function FileGrid({ files, onFileSelect, onFileDelete, onFileToggleStar }
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>{file.author}</span>
-                <span>{file.size}</span>
-              </div>
-              
               <div className="text-xs text-muted-foreground">
                 Modified {file.lastModified}
               </div>

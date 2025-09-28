@@ -27,10 +27,8 @@ interface FileItem {
   team_id?: number;
   team_name?: string;
   lastModified: string;
-  size: string;
   starred: boolean;
   type: 'personal' | 'team';
-  author: string;
   owner_id?: number;
 }
 
@@ -117,10 +115,8 @@ export default function FileEditor() {
             team_id: file.team_id,
             team_name: teamName,
             lastModified,
-            size: file.size_formatted || '0 B',
             starred: false,
             type: file.team_id ? 'team' : 'personal',
-            author: 'Unknown',
             owner_id: file.owner_id,
           };
         }) || [];

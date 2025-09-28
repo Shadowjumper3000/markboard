@@ -132,10 +132,8 @@ export default function Dashboard() {
           team_id: file.team_id,
           team_name: teamName,
           lastModified,
-          size: file.size_formatted || '0 B',
           starred: false, // Not implemented in backend yet
           type: file.team_id ? 'team' : 'personal',
-          author: users[file.owner_id]?.email || 'Unknown',
           owner_id: file.owner_id,
         };
       }) || [];

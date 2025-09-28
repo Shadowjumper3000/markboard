@@ -28,10 +28,8 @@ interface FileItem {
   team_id?: number;
   team_name?: string;
   lastModified: string;
-  size: string;
   starred: boolean;
   type: 'personal' | 'team';
-  author: string;
   owner_id?: number;
 }
 
