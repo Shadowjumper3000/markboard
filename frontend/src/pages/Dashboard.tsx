@@ -6,25 +6,89 @@ import { Input } from '@/components/ui/input';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
 import { Filter, Grid, List, Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+interface Team {
+  id: number;
+  name: string;
+  description: string;
+  owner_id: number;
+  file_count?: number;
+}
+
+interface User {
+  id: number;
+  email: string;
+  is_admin: boolean;
+}
 
 export default function Dashboard() {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [files, setFiles] = useState<FileItem[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [users, setUsers] = useState<Record<number, User>>({});
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   // Filter files based on selected team and search query
   const filteredFiles = files.filter(file => {
-    const matchesTeam = !selectedTeam || file.team === getTeamName(selectedTeam);
+    const matchesTeam = !selectedTeam || (file.team_id && file.team_id.toString() === selectedTeam);
     const matchesSearch = file.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         file.team.toLowerCase().includes(searchQuery.toLowerCase());
+                         (file.team_name && file.team_name.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesTeam && matchesSearch;
   });
+
+  const fetchTeams = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:8000/teams', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTeams(data.teams || []);
+      }
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      // Using admin endpoint to get users - we may need a specific endpoint for this
+      const response = await fetch('http://localhost:8000/admin/users', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const usersMap: Record<number, User> = {};
+        data.users?.forEach((user: User) => {
+          usersMap[user.id] = user;
+        });
+        setUsers(usersMap);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      // It's okay if this fails - we'll just show 'Unknown' for authors
+    }
+  };
 
   const fetchFiles = async () => {
     try {
@@ -39,7 +103,7 @@ export default function Dashboard() {
         return;
       }
 
-      const response = await fetch('http://localhost:8001/files', {
+      const response = await fetch('http://localhost:8000/files', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -73,15 +137,22 @@ export default function Dashboard() {
           lastModified = `${diffDays} days ago`;
         }
 
+        // Find team name from teams data
+        const team = teams.find(t => t.id === file.team_id);
+        const teamName = team ? team.name : (file.team_id ? `Team ${file.team_id}` : 'Personal');
+
         return {
           id: file.id.toString(),
           name: file.name,
-          team: file.team_id ? 'Team File' : 'Personal',
+          team: teamName,
+          team_id: file.team_id,
+          team_name: teamName,
           lastModified,
-          size: '0 KB', // Backend doesn't return file size in bytes, could calculate from content length
+          size: file.size_formatted || '0 B',
           starred: false, // Not implemented in backend yet
           type: file.team_id ? 'team' : 'personal',
-          author: 'You', // Could be enhanced to show actual owner name
+          author: users[file.owner_id]?.email || 'Unknown',
+          owner_id: file.owner_id,
         };
       }) || [];
 
@@ -100,16 +171,17 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    fetchFiles();
+    fetchTeams();
+    fetchUsers();
   }, []);
 
+  useEffect(() => {
+    fetchFiles();
+  }, [teams]);
+
   function getTeamName(teamId: string): string {
-    const teams: Record<string, string> = {
-      '1': 'Product Team',
-      '2': 'Engineering',
-      '3': 'Design System',
-    };
-    return teams[teamId] || '';
+    const team = teams.find(t => t.id.toString() === teamId);
+    return team ? team.name : 'Unknown Team';
   }
 
   const handleFileSelect = (fileId: string) => {
@@ -121,7 +193,7 @@ export default function Dashboard() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`http://localhost:8001/files/${fileId}`, {
+      const response = await fetch(`http://localhost:8000/files/${fileId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -163,6 +235,8 @@ export default function Dashboard() {
           selectedTeam={selectedTeam}
           onTeamSelect={setSelectedTeam}
           onFileSelect={handleFileSelect}
+          teams={teams}
+          files={files}
         />
         
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -204,15 +278,15 @@ export default function Dashboard() {
 
                 {/* Search and Filters */}
                 <div className="flex items-center space-x-4">
-                  <div className="relative flex-1 max-w-md">
+                    <div className="relative flex-1 max-w-md">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search files..."
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                       className="pl-10 transition-fast focus:shadow-elegant-sm"
                     />
-                  </div>
+                    </div>
                   <Button variant="outline" size="sm" className="transition-fast">
                     <Filter className="h-4 w-4 mr-2" />
                     Filter
@@ -221,7 +295,11 @@ export default function Dashboard() {
               </div>
 
               {/* Files Grid */}
-              {filteredFiles.length > 0 ? (
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="text-muted-foreground">Loading files...</div>
+                </div>
+              ) : filteredFiles.length > 0 ? (
                 <FileGrid
                   files={filteredFiles}
                   onFileSelect={handleFileSelect}

@@ -78,9 +78,9 @@ export default function AdminDashboard() {
 
       // Fetch users, activities, and stats in parallel
       const [usersResponse, activitiesResponse, statsResponse] = await Promise.all([
-        fetch('http://localhost:8001/admin/users', { headers }),
-        fetch('http://localhost:8001/admin/activity?limit=10', { headers }),
-        fetch('http://localhost:8001/admin/stats', { headers }),
+        fetch('http://localhost:8000/admin/users', { headers }),
+        fetch('http://localhost:8000/admin/activity?limit=10', { headers }),
+        fetch('http://localhost:8000/admin/stats', { headers }),
       ]);
 
       if (!usersResponse.ok || !activitiesResponse.ok || !statsResponse.ok) {

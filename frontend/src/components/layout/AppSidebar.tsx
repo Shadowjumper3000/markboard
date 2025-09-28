@@ -1,47 +1,56 @@
-import React, { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
-import { Folders, Users, FileText, Star, Clock } from 'lucide-react';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    useSidebar,
+} from '@/components/ui/sidebar';
+import { useAuth } from '@/contexts/AuthContext';
+import { Clock, FileText, Folders, Star, Users } from 'lucide-react';
 
-// Mock data - replace with real API calls
-const mockTeams = [
-  { id: '1', name: 'Product Team', fileCount: 12, color: 'bg-blue-500' },
-  { id: '2', name: 'Engineering', fileCount: 28, color: 'bg-green-500' },
-  { id: '3', name: 'Design System', fileCount: 8, color: 'bg-purple-500' },
-];
+interface Team {
+  id: number;
+  name: string;
+  description: string;
+  owner_id: number;
+  file_count?: number;
+}
 
-const mockFiles = [
-  { id: '1', name: 'User Journey.md', team: 'Product Team', lastModified: '2 hours ago', starred: true },
-  { id: '2', name: 'System Architecture.md', team: 'Engineering', lastModified: '1 day ago', starred: false },
-  { id: '3', name: 'API Documentation.md', team: 'Engineering', lastModified: '3 days ago', starred: true },
-  { id: '4', name: 'Component Library.md', team: 'Design System', lastModified: '1 week ago', starred: false },
-];
+interface FileItem {
+  id: string;
+  name: string;
+  team: string;
+  team_id?: number;
+  team_name?: string;
+  lastModified: string;
+  size: string;
+  starred: boolean;
+  type: 'personal' | 'team';
+  author: string;
+  owner_id?: number;
+}
 
 interface AppSidebarProps {
   selectedTeam?: string | null;
   onTeamSelect: (teamId: string | null) => void;
   onFileSelect: (fileId: string) => void;
+  teams?: Team[];
+  files?: FileItem[];
 }
 
-export function AppSidebar({ selectedTeam, onTeamSelect, onFileSelect }: AppSidebarProps) {
+export function AppSidebar({ selectedTeam, onTeamSelect, onFileSelect, teams = [], files = [] }: AppSidebarProps) {
   const { user } = useAuth();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
 
   const filteredFiles = selectedTeam 
-    ? mockFiles.filter(file => file.team === mockTeams.find(t => t.id === selectedTeam)?.name)
-    : mockFiles;
+    ? files.filter(file => file.team_id && file.team_id.toString() === selectedTeam)
+    : files;
 
   return (
     <Sidebar className={`border-r bg-sidebar ${collapsed ? 'w-16' : 'w-sidebar'}`} collapsible="icon">
@@ -67,7 +76,7 @@ export function AppSidebar({ selectedTeam, onTeamSelect, onFileSelect }: AppSide
                     <div className="flex items-center justify-between w-full">
                       <span>All Files</span>
                       <Badge variant="secondary" className="ml-2 text-xs">
-                        {mockFiles.length}
+                        {files.length}
                       </Badge>
                     </div>
                   )}
@@ -75,20 +84,20 @@ export function AppSidebar({ selectedTeam, onTeamSelect, onFileSelect }: AppSide
               </SidebarMenuItem>
 
               {/* Team Options */}
-              {mockTeams.map((team) => (
+              {teams.map((team) => (
                 <SidebarMenuItem key={team.id}>
                   <SidebarMenuButton
-                    onClick={() => onTeamSelect(team.id)}
+                    onClick={() => onTeamSelect(team.id.toString())}
                     className={`w-full justify-start transition-fast hover:bg-sidebar-accent ${
-                      selectedTeam === team.id ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''
+                      selectedTeam === team.id.toString() ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''
                     }`}
                   >
-                    <div className={`h-3 w-3 rounded-full ${team.color} mr-3`} />
+                    <div className="h-3 w-3 rounded-full bg-blue-500 mr-3" />
                     {!collapsed && (
                       <div className="flex items-center justify-between w-full">
                         <span className="truncate">{team.name}</span>
                         <Badge variant="secondary" className="ml-2 text-xs">
-                          {team.fileCount}
+                          {team.file_count || 0}
                         </Badge>
                       </div>
                     )}
