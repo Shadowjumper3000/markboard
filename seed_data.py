@@ -11,7 +11,7 @@ from app.db import db
 logger = logging.getLogger(__name__)
 
 
-def seed_development_data():
+def seed_development_data(force=False):
     """Seed development data including admin and test users."""
     logger.info("🌱 Seeding development data...")
 
@@ -21,11 +21,16 @@ def seed_development_data():
             "SELECT id FROM users WHERE email = %s", ("admin@markboard.com",)
         )
 
-        if existing_admin:
+        if existing_admin and not force:
             print("✅ Development data already exists")
             print("🔐 Admin: admin@markboard.com | password123")
             print("🌐 Frontend: http://localhost:3000")
             return
+        elif existing_admin and force:
+            print("🔄 Force mode: Checking and creating missing data...")
+            admin_id = existing_admin["id"]
+        else:
+            admin_id = None
 
         # Create test password hash
         test_password = "password123"
@@ -34,18 +39,21 @@ def seed_development_data():
             "utf-8"
         )
 
-        # Create admin user
-        admin_id = db.execute_modify(
-            """INSERT INTO users (email, password_hash, is_admin, created_at) 
-               VALUES (%s, %s, %s, %s)""",
-            (
-                "admin@markboard.com",
-                hashed_password,
-                True,
-                datetime.now(timezone.utc),
-            ),
-        )
-        logger.info("Created admin user")
+        # Create admin user if not exists
+        if admin_id is None:
+            admin_id = db.execute_modify(
+                """INSERT INTO users (email, password_hash, is_admin, created_at)
+                   VALUES (%s, %s, %s, %s)""",
+                (
+                    "admin@markboard.com",
+                    hashed_password,
+                    True,
+                    datetime.now(timezone.utc),
+                ),
+            )
+            logger.info("Created admin user")
+        else:
+            logger.info("Admin user already exists")
 
         # Create regular users
         users = [
@@ -56,26 +64,43 @@ def seed_development_data():
 
         user_ids = [admin_id]
         for email in users:
-            user_id = db.execute_modify(
-                """INSERT INTO users (email, password_hash, is_admin, created_at) 
-                   VALUES (%s, %s, %s, %s)""",
-                (email, hashed_password, False, datetime.now(timezone.utc)),
+            # Check if user already exists
+            existing_user = db.execute_one(
+                "SELECT id FROM users WHERE email = %s", (email,)
             )
-            user_ids.append(user_id)
-            logger.info(f"Created user: {email}")
+
+            if existing_user:
+                user_ids.append(existing_user["id"])
+                logger.info(f"User already exists: {email}")
+            else:
+                user_id = db.execute_modify(
+                    """INSERT INTO users (email, password_hash, is_admin, created_at)
+                       VALUES (%s, %s, %s, %s)""",
+                    (email, hashed_password, False, datetime.now(timezone.utc)),
+                )
+                user_ids.append(user_id)
+                logger.info(f"Created user: {email}")
 
         # Create development team
-        team_id = db.execute_modify(
-            """INSERT INTO teams (name, description, owner_id, created_at) 
-               VALUES (%s, %s, %s, %s)""",
-            (
-                "Development Team",
-                "Main development team for testing and development",
-                admin_id,
-                datetime.now(timezone.utc),
-            ),
+        existing_dev_team = db.execute_one(
+            "SELECT id FROM teams WHERE name = %s", ("Development Team",)
         )
-        logger.info("Created Development Team")
+
+        if existing_dev_team:
+            team_id = existing_dev_team["id"]
+            logger.info("Development Team already exists")
+        else:
+            team_id = db.execute_modify(
+                """INSERT INTO teams (name, description, owner_id, created_at)
+                   VALUES (%s, %s, %s, %s)""",
+                (
+                    "Development Team",
+                    "Main development team for testing and development",
+                    admin_id,
+                    datetime.now(timezone.utc),
+                ),
+            )
+            logger.info("Created Development Team")
 
         # Create additional teams
         teams_data = [
@@ -85,21 +110,38 @@ def seed_development_data():
 
         team_ids = [team_id]
         for name, description, owner_id in teams_data:
-            additional_team_id = db.execute_modify(
-                """INSERT INTO teams (name, description, owner_id, created_at) 
-                   VALUES (%s, %s, %s, %s)""",
-                (name, description, owner_id, datetime.now(timezone.utc)),
+            existing_team = db.execute_one(
+                "SELECT id FROM teams WHERE name = %s", (name,)
             )
-            team_ids.append(additional_team_id)
-            logger.info(f"Created team: {name}")
 
-        # Add admin to all teams
+            if existing_team:
+                team_ids.append(existing_team["id"])
+                logger.info(f"Team already exists: {name}")
+            else:
+                additional_team_id = db.execute_modify(
+                    """INSERT INTO teams (name, description, owner_id, created_at)
+                       VALUES (%s, %s, %s, %s)""",
+                    (name, description, owner_id, datetime.now(timezone.utc)),
+                )
+                team_ids.append(additional_team_id)
+                logger.info(f"Created team: {name}")
+
+        # Add admin to all teams (if not already a member)
         for tid in team_ids:
-            db.execute_modify(
-                """INSERT INTO team_members (team_id, user_id, role, joined_at) 
-                   VALUES (%s, %s, %s, %s)""",
-                (tid, admin_id, "admin", datetime.now(timezone.utc)),
+            existing_membership = db.execute_one(
+                "SELECT id FROM team_members WHERE team_id = %s AND user_id = %s",
+                (tid, admin_id),
             )
+
+            if not existing_membership:
+                db.execute_modify(
+                    """INSERT INTO team_members (team_id, user_id, role, joined_at)
+                       VALUES (%s, %s, %s, %s)""",
+                    (tid, admin_id, "admin", datetime.now(timezone.utc)),
+                )
+                logger.info(f"Added admin to team {tid}")
+            else:
+                logger.info(f"Admin already member of team {tid}")
 
         # Add other users to teams as members
         team_memberships = [
@@ -112,11 +154,20 @@ def seed_development_data():
         ]
 
         for team_id, user_id, role in team_memberships:
-            db.execute_modify(
-                """INSERT INTO team_members (team_id, user_id, role, joined_at) 
-                   VALUES (%s, %s, %s, %s)""",
-                (team_id, user_id, role, datetime.now(timezone.utc)),
+            existing_membership = db.execute_one(
+                "SELECT id FROM team_members WHERE team_id = %s AND user_id = %s",
+                (team_id, user_id),
             )
+
+            if not existing_membership:
+                db.execute_modify(
+                    """INSERT INTO team_members (team_id, user_id, role, joined_at)
+                       VALUES (%s, %s, %s, %s)""",
+                    (team_id, user_id, role, datetime.now(timezone.utc)),
+                )
+                logger.info(f"Added user {user_id} to team {team_id} as {role}")
+            else:
+                logger.info(f"User {user_id} already member of team {team_id}")
 
         # Create sample files
         sample_files = [
@@ -327,20 +378,48 @@ Friday 3:00 PM - Sprint Review
             },
         ]
 
+        # Import file storage
+        from app.file_storage import file_storage
+
         for file_data in sample_files:
-            file_id = db.execute_modify(
-                """INSERT INTO files (name, content, owner_id, team_id, 
-                   created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s)""",
-                (
-                    file_data["name"],
-                    file_data["content"],
-                    file_data["owner_id"],
-                    file_data["team_id"],
-                    datetime.now(timezone.utc),
-                    datetime.now(timezone.utc),
-                ),
+            # Check if file already exists
+            existing_file = db.execute_one(
+                "SELECT id FROM files WHERE name = %s AND owner_id = %s",
+                (file_data["name"], file_data["owner_id"]),
             )
-            logger.info(f"Created file: {file_data['name']} (ID: {file_id})")
+
+            if existing_file:
+                logger.info(f"File already exists: {file_data['name']}")
+            else:
+                # First create the database record with placeholder file_path
+                file_id = db.execute_modify(
+                    """INSERT INTO files (name, owner_id, team_id, mime_type, file_path,
+                       created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                    (
+                        file_data["name"],
+                        file_data["owner_id"],
+                        file_data["team_id"],
+                        "text/markdown",
+                        "placeholder",  # Temporary placeholder
+                        datetime.now(timezone.utc),
+                        datetime.now(timezone.utc),
+                    ),
+                )
+
+                # Generate file path and save content to filesystem
+                file_path = file_storage.generate_file_path(file_id, file_data["name"])
+                file_size, checksum = file_storage.save_file(
+                    file_path, file_data["content"]
+                )
+
+                # Update database record with file path, size, and checksum
+                db.execute_modify(
+                    """UPDATE files SET file_path = %s, file_size = %s, checksum = %s
+                       WHERE id = %s""",
+                    (file_path, file_size, checksum, file_id),
+                )
+
+                logger.info(f"Created file: {file_data['name']} (ID: {file_id})")
 
         # Log some activities for demonstration
         activities = [
@@ -391,8 +470,18 @@ Friday 3:00 PM - Sprint Review
 
 if __name__ == "__main__":
     """Run seeding independently."""
+    import argparse
     from app.main import create_app
+
+    parser = argparse.ArgumentParser(description="Seed development data")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Force re-seed, check and create missing users/files",
+    )
+
+    args = parser.parse_args()
 
     app = create_app()
     with app.app_context():
-        seed_development_data()
+        seed_development_data(force=args.force)
