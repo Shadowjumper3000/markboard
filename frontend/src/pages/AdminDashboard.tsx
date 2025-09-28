@@ -11,6 +11,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
+import { apiService } from '@/lib/api';
 import { Activity, Clock, FileText, Search, TrendingUp, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -71,25 +72,12 @@ export default function AdminDashboard() {
         return;
       }
 
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      };
-
-      // Fetch users, activities, and stats in parallel
-      const [usersResponse, activitiesResponse, statsResponse] = await Promise.all([
-        fetch('http://localhost:8000/admin/users', { headers }),
-        fetch('http://localhost:8000/admin/activity?limit=10', { headers }),
-        fetch('http://localhost:8000/admin/stats', { headers }),
+      // Fetch users, activities, and stats in parallel using API service
+      const [usersData, activitiesData, statsData] = await Promise.all([
+        apiService.getAdminUsers(),
+        apiService.getAdminActivity(10),
+        apiService.getAdminStats(),
       ]);
-
-      if (!usersResponse.ok || !activitiesResponse.ok || !statsResponse.ok) {
-        throw new Error('Failed to fetch admin data');
-      }
-
-      const usersData = await usersResponse.json();
-      const activitiesData = await activitiesResponse.json();
-      const statsData = await statsResponse.json();
 
       setUsers(usersData.users || []);
       setActivities(activitiesData.activities || []);
@@ -104,7 +92,7 @@ export default function AdminDashboard() {
       console.error('Error fetching admin data:', error);
       toast({
         title: "Error",
-        description: "Failed to load admin dashboard data.",
+        description: error instanceof Error ? error.message : "Failed to load admin dashboard data.",
         variant: "destructive",
       });
     } finally {

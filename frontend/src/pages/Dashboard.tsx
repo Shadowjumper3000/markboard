@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
+import { apiService } from '@/lib/api';
 import { Filter, Grid, List, Search } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -44,20 +45,8 @@ export default function Dashboard() {
 
   const fetchTeams = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      const response = await fetch('http://localhost:8000/teams', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setTeams(data.teams || []);
-      }
+      const data = await apiService.listTeams();
+      setTeams(data.teams || []);
     } catch (error) {
       console.error('Error fetching teams:', error);
     }
@@ -65,25 +54,12 @@ export default function Dashboard() {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      // Using admin endpoint to get users - we may need a specific endpoint for this
-      const response = await fetch('http://localhost:8000/admin/users', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      const data = await apiService.getAdminUsers();
+      const usersMap: Record<number, User> = {};
+      data.users?.forEach((user: User) => {
+        usersMap[user.id] = user;
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        const usersMap: Record<number, User> = {};
-        data.users?.forEach((user: User) => {
-          usersMap[user.id] = user;
-        });
-        setUsers(usersMap);
-      }
+      setUsers(usersMap);
     } catch (error) {
       console.error('Error fetching users:', error);
       // It's okay if this fails - we'll just show 'Unknown' for authors
@@ -103,18 +79,7 @@ export default function Dashboard() {
         return;
       }
 
-      const response = await fetch('http://localhost:8000/files', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch files');
-      }
-
-      const data = await response.json();
+      const data = await apiService.listFiles();
       
       // Convert backend file format to frontend FileItem format
       const convertedFiles: FileItem[] = data.files?.map((file: any) => {
@@ -190,30 +155,17 @@ export default function Dashboard() {
 
   const handleFileDelete = async (fileId: string) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      const response = await fetch(`http://localhost:8000/files/${fileId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+      await apiService.deleteFile(fileId);
+      toast({
+        title: "File deleted",
+        description: "The file has been moved to trash.",
       });
-
-      if (response.ok) {
-        toast({
-          title: "File deleted",
-          description: "The file has been moved to trash.",
-        });
-        // Refresh the files list
-        fetchFiles();
-      } else {
-        throw new Error('Failed to delete file');
-      }
+      // Refresh the files list
+      fetchFiles();
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to delete file.",
+        description: error instanceof Error ? error.message : "Failed to delete file.",
         variant: "destructive",
       });
     }

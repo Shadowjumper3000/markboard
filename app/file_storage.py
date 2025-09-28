@@ -205,6 +205,22 @@ class FileStorage:
             logger.error(f"Failed to get file info for {file_path}: {e}")
             return None
 
+    def file_exists(self, file_path: str) -> bool:
+        """
+        Check if file exists on filesystem.
+
+        Args:
+            file_path: Full path to the file
+
+        Returns:
+            True if file exists, False otherwise
+        """
+        try:
+            return os.path.exists(file_path)
+        except Exception as e:
+            logger.error(f"Error checking file existence {file_path}: {e}")
+            return False
+
     def verify_file_integrity(self, file_path: str, expected_checksum: str) -> bool:
         """
         Verify file integrity using checksum.

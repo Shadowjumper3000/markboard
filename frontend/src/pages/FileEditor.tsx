@@ -5,93 +5,94 @@ import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Download, Save, Share2 } from 'lucide-react';
+import { apiService } from '@/lib/api';
+import { ArrowLeft, Download, Loader2, Save, Share2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-
-// Mock file data
-const mockFileContent = `# User Journey Flowchart
-
-This document outlines the user journey for our application.
-
-## Login Flow
-
-\`\`\`mermaid
-graph TD
-    A[User visits site] --> B{Is logged in?}
-    B -->|Yes| C[Redirect to Dashboard]
-    B -->|No| D[Show Login Form]
-    D --> E[User enters credentials]
-    E --> F{Valid credentials?}
-    F -->|Yes| G[Create session]
-    F -->|No| H[Show error message]
-    G --> C
-    H --> D
-\`\`\`
-
-## Dashboard Navigation
-
-\`\`\`mermaid
-graph LR
-    A[Dashboard] --> B[My Files]
-    A --> C[Team Files]
-    A --> D[Admin Panel]
-    B --> E[Create New File]
-    B --> F[Edit Existing]
-    C --> G[Join Team]
-    C --> H[Browse Team Files]
-\`\`\`
-
-## File Management Process
-
-The file management system allows users to:
-- Create new UML diagrams
-- Edit existing files
-- Share with team members
-- Export in multiple formats
-`;
 
 export default function FileEditor() {
   const { fileId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [content, setContent] = useState(mockFileContent);
-  const [fileName, setFileName] = useState('User Journey Flowchart.md');
+  const [content, setContent] = useState('');
+  const [fileName, setFileName] = useState('');
   const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [lastSaved, setLastSaved] = useState<Date>(new Date());
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Load file data when component mounts or fileId changes
+  useEffect(() => {
+    const loadFile = async () => {
+      if (!fileId) {
+        navigate('/dashboard');
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const fileData = await apiService.getFile(fileId);
+        
+        setContent(fileData.content || '');
+        setFileName(fileData.name);
+        setLastSaved(new Date(fileData.updated_at));
+        setHasUnsavedChanges(false);
+        
+      } catch (error) {
+        console.error('Error loading file:', error);
+        toast({
+          variant: "destructive",
+          title: "Error loading file",
+          description: error instanceof Error ? error.message : "Failed to load file content.",
+        });
+        navigate('/dashboard');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadFile();
+  }, [fileId, navigate, toast]);
 
   // Auto-save functionality
   useEffect(() => {
-    if (!content) return;
+    if (!content || isLoading || !fileId || !hasUnsavedChanges) return;
 
     const autoSaveTimer = setTimeout(async () => {
-      setIsAutoSaving(true);
-      // Mock API call - replace with real backend
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setLastSaved(new Date());
-      setIsAutoSaving(false);
+      await handleSave(true); // Auto-save
     }, 2000);
 
     return () => clearTimeout(autoSaveTimer);
+  }, [content, isLoading, fileId, hasUnsavedChanges]);
+
+  // Track content changes
+  useEffect(() => {
+    setHasUnsavedChanges(true);
   }, [content]);
 
-  const handleSave = async () => {
+  const handleSave = async (isAutoSave = false) => {
+    if (!fileId || isAutoSaving) return;
+
     setIsAutoSaving(true);
     try {
-      // Mock API call - replace with real backend
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await apiService.updateFile(fileId, { content });
       setLastSaved(new Date());
-      toast({
-        title: "File saved",
-        description: "Your changes have been saved successfully.",
-      });
+      setHasUnsavedChanges(false);
+      
+      if (!isAutoSave) {
+        toast({
+          title: "File saved",
+          description: "Your changes have been saved successfully.",
+        });
+      }
     } catch (error) {
+      console.error('Error saving file:', error);
       toast({
         variant: "destructive",
         title: "Save failed",
-        description: "Unable to save file. Please try again.",
+        description: error instanceof Error ? error.message : "Unable to save file. Please try again.",
       });
     } finally {
       setIsAutoSaving(false);
@@ -133,6 +134,18 @@ export default function FileEditor() {
     return date.toLocaleDateString();
   };
 
+  // Show loading spinner while file is loading
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full bg-background items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground">Loading file...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider defaultOpen={false}>
       <div className="flex h-screen w-full bg-background">
@@ -163,10 +176,13 @@ export default function FileEditor() {
                   <h1 className="text-xl font-semibold text-foreground">{fileName}</h1>
                   <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <span>
-                      {isAutoSaving ? 'Saving...' : `Saved ${formatLastSaved(lastSaved)}`}
+                      {isAutoSaving ? 'Saving...' : hasUnsavedChanges ? 'Unsaved changes' : `Saved ${formatLastSaved(lastSaved)}`}
                     </span>
                     {isAutoSaving && (
-                      <div className="h-2 w-2 bg-primary rounded-full animate-pulse" />
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    )}
+                    {hasUnsavedChanges && !isAutoSaving && (
+                      <div className="h-2 w-2 bg-yellow-500 rounded-full" />
                     )}
                   </div>
                 </div>
@@ -174,12 +190,16 @@ export default function FileEditor() {
               
               <div className="flex items-center space-x-3">
                 <Button
-                  onClick={handleSave}
+                  onClick={() => handleSave()}
                   size="sm"
-                  disabled={isAutoSaving}
+                  disabled={isAutoSaving || !hasUnsavedChanges}
                   className="bg-primary hover:bg-primary-hover transition-fast shadow-elegant-sm"
                 >
-                  <Save className="h-4 w-4 mr-2" />
+                  {isAutoSaving ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
                   Save
                 </Button>
                 

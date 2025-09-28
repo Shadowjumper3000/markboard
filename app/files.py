@@ -235,7 +235,7 @@ def update_file(file_id):
 
         # Get current file data
         current_file = db.execute_one(
-            "SELECT name, content FROM files WHERE id = %s", (file_id,)
+            "SELECT name, file_path FROM files WHERE id = %s", (file_id,)
         )
 
         if not current_file:
@@ -255,18 +255,17 @@ def update_file(file_id):
             updates.append("name = %s")
             params.append(new_name)
 
-        if new_content is not None:
-            updates.append("content = %s")
-            params.append(new_content)
+        # Content is handled separately via filesystem operations
+        # (don't add content to database updates since it's not stored in DB)
 
-        if not updates:
+        if not updates and new_content is None:
             return format_error_response("No updates provided", 400)
 
-        # Update timestamp
+        # Always update timestamp if there are any changes (name or content)
         now = datetime.now(timezone.utc)
-        updates.append("updated_at = %s")
-        params.append(now)
-        params.append(file_id)
+        if updates or new_content is not None:
+            updates.append("updated_at = %s")
+            params.append(now)
 
         # Create file version before update if content is changing
         if new_content is not None:
@@ -285,7 +284,7 @@ def update_file(file_id):
                     """,
                     (
                         file_id,
-                        "",
+                        "",  # Will be updated after file copy
                         current_file_full["file_size"],
                         current_file_full["checksum"],
                         now,
@@ -293,36 +292,43 @@ def update_file(file_id):
                 )
 
                 # Copy current file to version location
-                version_path = file_storage.generate_version_path(
-                    file_id, version_id, current_file["name"]
-                )
-                file_storage.copy_file(current_file_full["file_path"], version_path)
+                try:
+                    version_path = file_storage.generate_version_path(
+                        file_id, version_id, current_file["name"]
+                    )
+                    # Check if source file exists before copying
+                    if file_storage.file_exists(current_file_full["file_path"]):
+                        file_storage.copy_file(
+                            current_file_full["file_path"], version_path
+                        )
 
-                # Update version record with actual path
-                db.execute_modify(
-                    "UPDATE file_versions SET version_path = %s WHERE id = %s",
-                    (version_path, version_id),
-                )
+                        # Update version record with actual path
+                        db.execute_modify(
+                            "UPDATE file_versions SET version_path = %s WHERE id = %s",
+                            (version_path, version_id),
+                        )
+                except Exception as e:
+                    logger.warning(f"Failed to create file version: {e}")
+                    # Continue with update even if versioning fails
 
         # Handle content update - save to filesystem
         if new_content is not None:
-            current_file_record = db.execute_one(
-                "SELECT file_path FROM files WHERE id = %s", (file_id,)
-            )
-
-            if current_file_record and current_file_record["file_path"]:
+            if current_file and current_file["file_path"]:
                 # Save new content and get updated file info
                 file_size, checksum = file_storage.save_file(
-                    current_file_record["file_path"], new_content
+                    current_file["file_path"], new_content
                 )
 
                 # Add file size and checksum to updates
                 updates.extend(["file_size = %s", "checksum = %s"])
                 params.extend([file_size, checksum])
 
-        # Update file metadata in database
-        query = f"UPDATE files SET {', '.join(updates)} WHERE id = %s"
-        db.execute_modify(query, tuple(params))
+        # Update file metadata in database (only if there are updates)
+        if updates:
+            # Add file_id as the last parameter for WHERE clause
+            params.append(file_id)
+            query = f"UPDATE files SET {', '.join(updates)} WHERE id = %s"
+            db.execute_modify(query, tuple(params))
 
         # Log activity
         changes = []
@@ -338,7 +344,7 @@ def update_file(file_id):
         # Get updated file data
         updated_file = db.execute_one(
             """
-            SELECT id, name, content, owner_id, team_id, created_at, updated_at
+            SELECT id, name, owner_id, team_id, created_at, updated_at
             FROM files
             WHERE id = %s
             """,
