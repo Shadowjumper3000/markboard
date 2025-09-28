@@ -1,12 +1,12 @@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,6 +27,7 @@ export function Header() {
   const sidebarContext = useSidebarSafe();
   const location = useLocation();
   const isAdminPage = location.pathname === '/admin';
+  const isEditorPage = location.pathname.startsWith('/editor/');
 
   const handleNewFile = () => {
     // TODO: Implement new file creation
@@ -60,8 +61,8 @@ export function Header() {
           )}
         </div>
 
-        {/* Center section - hide file actions on admin page */}
-        {!isAdminPage && (
+        {/* Center section - hide file actions on admin and editor pages */}
+        {!isAdminPage && !isEditorPage && (
           <div className="flex items-center space-x-3">
             <Button
               onClick={handleNewFile}

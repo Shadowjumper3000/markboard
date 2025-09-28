@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/lib/api';
-import { ArrowLeft, Download, Loader2, Save, Share2 } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, Share2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -189,20 +189,6 @@ export default function FileEditor() {
               </div>
               
               <div className="flex items-center space-x-3">
-                <Button
-                  onClick={() => handleSave()}
-                  size="sm"
-                  disabled={isAutoSaving || !hasUnsavedChanges}
-                  className="bg-primary hover:bg-primary-hover transition-fast shadow-elegant-sm"
-                >
-                  {isAutoSaving ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4 mr-2" />
-                  )}
-                  Save
-                </Button>
-                
                 <Button
                   onClick={handleDownload}
                   variant="outline"
