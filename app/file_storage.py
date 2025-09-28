@@ -1,0 +1,301 @@
+"""
+File storage utilities for managing files on the filesystem.
+"""
+
+import os
+import hashlib
+import shutil
+import mimetypes
+from pathlib import Path
+from datetime import datetime
+from typing import Optional, Tuple
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class FileStorage:
+    """Handles file storage operations on the filesystem."""
+
+    def __init__(self, base_path: str = "/app/data"):
+        """Initialize file storage with base path."""
+        self.base_path = Path(base_path)
+        self.files_dir = self.base_path / "files"
+        self.versions_dir = self.base_path / "versions"
+
+        # Create directories if they don't exist
+        self.files_dir.mkdir(parents=True, exist_ok=True)
+        self.versions_dir.mkdir(parents=True, exist_ok=True)
+
+        logger.info(f"File storage initialized at {self.base_path}")
+
+    def generate_file_path(self, file_id: int, filename: str) -> str:
+        """Generate a structured file path based on file ID."""
+        # Create subdirectories based on file ID to avoid too many files per directory
+        subdir = str(file_id // 1000).zfill(3)  # Groups of 1000 files per directory
+        file_dir = self.files_dir / subdir
+        file_dir.mkdir(exist_ok=True)
+
+        # Clean filename and add file ID to avoid conflicts
+        clean_name = self._sanitize_filename(filename)
+        return str(file_dir / f"{file_id}_{clean_name}")
+
+    def generate_version_path(
+        self, file_id: int, version_id: int, filename: str
+    ) -> str:
+        """Generate a path for a file version."""
+        subdir = str(file_id // 1000).zfill(3)
+        version_dir = self.versions_dir / subdir / str(file_id)
+        version_dir.mkdir(parents=True, exist_ok=True)
+
+        clean_name = self._sanitize_filename(filename)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        return str(version_dir / f"{version_id}_{timestamp}_{clean_name}")
+
+    def save_file(self, file_path: str, content: str) -> Tuple[int, str]:
+        """
+        Save content to file and return size and checksum.
+
+        Args:
+            file_path: Full path where to save the file
+            content: File content to save
+
+        Returns:
+            Tuple of (file_size, checksum)
+        """
+        try:
+            # Ensure directory exists
+            Path(file_path).parent.mkdir(parents=True, exist_ok=True)
+
+            # Write content to file
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(content)
+
+            # Calculate file size and checksum
+            file_size = os.path.getsize(file_path)
+            checksum = self._calculate_checksum(file_path)
+
+            logger.info(
+                f"File saved: {file_path} ({file_size} bytes, checksum: {checksum[:8]}...)"
+            )
+            return file_size, checksum
+
+        except Exception as e:
+            logger.error(f"Failed to save file {file_path}: {e}")
+            raise
+
+    def read_file(self, file_path: str) -> str:
+        """
+        Read content from file.
+
+        Args:
+            file_path: Full path to the file
+
+        Returns:
+            File content as string
+        """
+        try:
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"File not found: {file_path}")
+
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            logger.debug(f"File read: {file_path} ({len(content)} characters)")
+            return content
+
+        except Exception as e:
+            logger.error(f"Failed to read file {file_path}: {e}")
+            raise
+
+    def delete_file(self, file_path: str) -> bool:
+        """
+        Delete file from filesystem.
+
+        Args:
+            file_path: Full path to the file
+
+        Returns:
+            True if deleted successfully, False otherwise
+        """
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                logger.info(f"File deleted: {file_path}")
+                return True
+            else:
+                logger.warning(f"File not found for deletion: {file_path}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Failed to delete file {file_path}: {e}")
+            return False
+
+    def move_file(self, src_path: str, dst_path: str) -> bool:
+        """
+        Move file from source to destination.
+
+        Args:
+            src_path: Source file path
+            dst_path: Destination file path
+
+        Returns:
+            True if moved successfully, False otherwise
+        """
+        try:
+            # Ensure destination directory exists
+            Path(dst_path).parent.mkdir(parents=True, exist_ok=True)
+
+            shutil.move(src_path, dst_path)
+            logger.info(f"File moved: {src_path} -> {dst_path}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to move file {src_path} -> {dst_path}: {e}")
+            return False
+
+    def copy_file(self, src_path: str, dst_path: str) -> bool:
+        """
+        Copy file from source to destination.
+
+        Args:
+            src_path: Source file path
+            dst_path: Destination file path
+
+        Returns:
+            True if copied successfully, False otherwise
+        """
+        try:
+            # Ensure destination directory exists
+            Path(dst_path).parent.mkdir(parents=True, exist_ok=True)
+
+            shutil.copy2(src_path, dst_path)
+            logger.info(f"File copied: {src_path} -> {dst_path}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to copy file {src_path} -> {dst_path}: {e}")
+            return False
+
+    def get_file_info(self, file_path: str) -> Optional[dict]:
+        """
+        Get file information including size, modified time, etc.
+
+        Args:
+            file_path: Full path to the file
+
+        Returns:
+            Dictionary with file info or None if file doesn't exist
+        """
+        try:
+            if not os.path.exists(file_path):
+                return None
+
+            stat = os.stat(file_path)
+            mime_type, _ = mimetypes.guess_type(file_path)
+
+            return {
+                "size": stat.st_size,
+                "modified": datetime.fromtimestamp(stat.st_mtime),
+                "mime_type": mime_type or "text/plain",
+                "checksum": self._calculate_checksum(file_path),
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to get file info for {file_path}: {e}")
+            return None
+
+    def verify_file_integrity(self, file_path: str, expected_checksum: str) -> bool:
+        """
+        Verify file integrity using checksum.
+
+        Args:
+            file_path: Full path to the file
+            expected_checksum: Expected SHA-256 checksum
+
+        Returns:
+            True if file is intact, False otherwise
+        """
+        try:
+            if not os.path.exists(file_path):
+                return False
+
+            actual_checksum = self._calculate_checksum(file_path)
+            is_valid = actual_checksum == expected_checksum
+
+            if not is_valid:
+                logger.warning(f"File integrity check failed for {file_path}")
+                logger.warning(f"Expected: {expected_checksum}")
+                logger.warning(f"Actual: {actual_checksum}")
+
+            return is_valid
+
+        except Exception as e:
+            logger.error(f"Failed to verify file integrity for {file_path}: {e}")
+            return False
+
+    def cleanup_orphaned_files(self) -> int:
+        """
+        Clean up orphaned files that are not referenced in the database.
+        This should be called periodically as a maintenance task.
+
+        Returns:
+            Number of files cleaned up
+        """
+        # This would require database integration to check which files are referenced
+        # For now, just log that it should be implemented
+        logger.info(
+            "Orphaned file cleanup not implemented yet - requires database integration"
+        )
+        return 0
+
+    def _sanitize_filename(self, filename: str) -> str:
+        """
+        Sanitize filename to be safe for filesystem.
+
+        Args:
+            filename: Original filename
+
+        Returns:
+            Sanitized filename
+        """
+        # Remove/replace dangerous characters
+        safe_chars = []
+        for char in filename:
+            if char.isalnum() or char in ".-_":
+                safe_chars.append(char)
+            elif char in " ":
+                safe_chars.append("_")
+
+        sanitized = "".join(safe_chars)
+
+        # Ensure it's not empty and not too long
+        if not sanitized:
+            sanitized = "untitled"
+
+        if len(sanitized) > 200:
+            name, ext = os.path.splitext(sanitized)
+            sanitized = name[: 200 - len(ext)] + ext
+
+        return sanitized
+
+    def _calculate_checksum(self, file_path: str) -> str:
+        """
+        Calculate SHA-256 checksum of a file.
+
+        Args:
+            file_path: Full path to the file
+
+        Returns:
+            SHA-256 checksum as hex string
+        """
+        sha256_hash = hashlib.sha256()
+        with open(file_path, "rb") as f:
+            # Read in chunks to handle large files
+            for chunk in iter(lambda: f.read(4096), b""):
+                sha256_hash.update(chunk)
+        return sha256_hash.hexdigest()
+
+
+# Global file storage instance
+file_storage = FileStorage()

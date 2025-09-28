@@ -5,6 +5,7 @@ File management endpoints.
 from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify, g
 from app.db import db
+from app.file_storage import file_storage
 from app.utils import (
     require_auth,
     check_file_access,
@@ -14,10 +15,27 @@ from app.utils import (
     format_success_response,
 )
 import logging
+import mimetypes
 
 logger = logging.getLogger(__name__)
 
 files_bp = Blueprint("files", __name__, url_prefix="/files")
+
+
+def _format_file_size(size_bytes: int) -> str:
+    """Format file size in human readable format."""
+    if size_bytes == 0:
+        return "0 B"
+
+    size_names = ["B", "KB", "MB", "GB", "TB"]
+    size = float(size_bytes)
+    i = 0
+
+    while size >= 1024.0 and i < len(size_names) - 1:
+        size /= 1024.0
+        i += 1
+
+    return f"{size:.1f} {size_names[i]}"
 
 
 @files_bp.route("", methods=["GET"])
@@ -28,19 +46,24 @@ def list_files():
         user_id = g.current_user_id
 
         query = """
-            SELECT DISTINCT f.id, f.name, f.created_at, f.updated_at, f.owner_id, f.team_id
+            SELECT DISTINCT f.id, f.name, f.file_size, f.mime_type,
+                   f.created_at, f.updated_at, f.owner_id, f.team_id
             FROM files f
-            LEFT JOIN team_members tm ON f.team_id = tm.team_id AND tm.user_id = %s
-            WHERE f.owner_id = %s OR tm.user_id IS NOT NULL
+            LEFT JOIN team_members tm ON f.team_id = tm.team_id 
+                     AND tm.user_id = %s
+            WHERE (f.owner_id = %s OR tm.user_id IS NOT NULL) 
+                  AND f.deleted_at IS NULL
             ORDER BY f.updated_at DESC
         """
 
         files = db.execute_query(query, (user_id, user_id))
 
-        # Convert datetime objects to ISO format
+        # Convert datetime objects to ISO format and add file size info
         for file in files:
             file["created_at"] = file["created_at"].isoformat()
             file["updated_at"] = file["updated_at"].isoformat()
+            # Convert file size to human readable format
+            file["size_formatted"] = _format_file_size(file["file_size"])
 
         return format_success_response({"files": files})
 
@@ -79,14 +102,30 @@ def create_file():
             if not team_member:
                 return format_error_response("Access denied to team", 403)
 
-        # Create file
+        # Create file record first to get ID
         now = datetime.now(timezone.utc)
+        mime_type = mimetypes.guess_type(name)[0] or "text/markdown"
+
         file_id = db.execute_modify(
             """
-            INSERT INTO files (name, content, owner_id, team_id, created_at, updated_at)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO files (name, file_path, file_size, mime_type, 
+                             owner_id, team_id, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """,
-            (name, content, user_id, team_id, now, now),
+            (name, "", 0, mime_type, user_id, team_id, now, now),
+        )
+
+        # Generate file path and save content to filesystem
+        file_path = file_storage.generate_file_path(file_id, name)
+        file_size, checksum = file_storage.save_file(file_path, content)
+
+        # Update database with actual file path, size, and checksum
+        db.execute_modify(
+            """
+            UPDATE files SET file_path = %s, file_size = %s, checksum = %s
+            WHERE id = %s
+            """,
+            (file_path, file_size, checksum, file_id),
         )
 
         # Log activity
@@ -96,14 +135,18 @@ def create_file():
         file_data = {
             "id": file_id,
             "name": name,
-            "content": content,
+            "file_size": file_size,
+            "size_formatted": _format_file_size(file_size),
+            "mime_type": mime_type,
             "owner_id": user_id,
             "team_id": team_id,
             "created_at": now.isoformat(),
             "updated_at": now.isoformat(),
         }
 
-        logger.info(f"File created: {name} (ID: {file_id}) by user {user_id}")
+        logger.info(
+            f"File created: {name} (ID: {file_id}, {file_size} bytes) by user {user_id}"
+        )
 
         return format_success_response(file_data, "File created successfully", 201)
 
@@ -123,12 +166,13 @@ def get_file(file_id):
         if not check_file_access(user_id, file_id):
             return format_error_response("File not found or access denied", 404)
 
-        # Get file data
+        # Get file metadata
         file_data = db.execute_one(
             """
-            SELECT id, name, content, owner_id, team_id, created_at, updated_at
+            SELECT id, name, file_path, file_size, mime_type, checksum,
+                   owner_id, team_id, created_at, updated_at
             FROM files
-            WHERE id = %s
+            WHERE id = %s AND deleted_at IS NULL
             """,
             (file_id,),
         )
@@ -136,9 +180,31 @@ def get_file(file_id):
         if not file_data:
             return format_error_response("File not found", 404)
 
+        # Read file content from filesystem
+        try:
+            content = file_storage.read_file(file_data["file_path"])
+        except FileNotFoundError:
+            logger.error(
+                f"File content missing for ID {file_id}: {file_data['file_path']}"
+            )
+            return format_error_response("File content not found", 404)
+
+        # Verify file integrity
+        if file_data["checksum"]:
+            if not file_storage.verify_file_integrity(
+                file_data["file_path"], file_data["checksum"]
+            ):
+                logger.warning(f"File integrity check failed for ID {file_id}")
+
         # Convert datetime objects to ISO format
         file_data["created_at"] = file_data["created_at"].isoformat()
         file_data["updated_at"] = file_data["updated_at"].isoformat()
+        file_data["content"] = content
+        file_data["size_formatted"] = _format_file_size(file_data["file_size"])
+
+        # Remove internal fields from response
+        file_data.pop("file_path", None)
+        file_data.pop("checksum", None)
 
         # Log activity
         log_activity(
@@ -202,16 +268,59 @@ def update_file(file_id):
         params.append(now)
         params.append(file_id)
 
-        # Create file version before update
-        db.execute_modify(
-            """
-            INSERT INTO file_versions (file_id, content, created_at)
-            VALUES (%s, %s, %s)
-            """,
-            (file_id, current_file["content"], now),
-        )
+        # Create file version before update if content is changing
+        if new_content is not None:
+            # Get current file path
+            current_file_full = db.execute_one(
+                "SELECT file_path, file_size, checksum FROM files WHERE id = %s",
+                (file_id,),
+            )
 
-        # Update file
+            if current_file_full and current_file_full["file_path"]:
+                # Create version
+                version_id = db.execute_modify(
+                    """
+                    INSERT INTO file_versions (file_id, version_path, file_size, checksum, created_at)
+                    VALUES (%s, %s, %s, %s, %s)
+                    """,
+                    (
+                        file_id,
+                        "",
+                        current_file_full["file_size"],
+                        current_file_full["checksum"],
+                        now,
+                    ),
+                )
+
+                # Copy current file to version location
+                version_path = file_storage.generate_version_path(
+                    file_id, version_id, current_file["name"]
+                )
+                file_storage.copy_file(current_file_full["file_path"], version_path)
+
+                # Update version record with actual path
+                db.execute_modify(
+                    "UPDATE file_versions SET version_path = %s WHERE id = %s",
+                    (version_path, version_id),
+                )
+
+        # Handle content update - save to filesystem
+        if new_content is not None:
+            current_file_record = db.execute_one(
+                "SELECT file_path FROM files WHERE id = %s", (file_id,)
+            )
+
+            if current_file_record and current_file_record["file_path"]:
+                # Save new content and get updated file info
+                file_size, checksum = file_storage.save_file(
+                    current_file_record["file_path"], new_content
+                )
+
+                # Add file size and checksum to updates
+                updates.extend(["file_size = %s", "checksum = %s"])
+                params.extend([file_size, checksum])
+
+        # Update file metadata in database
         query = f"UPDATE files SET {', '.join(updates)} WHERE id = %s"
         db.execute_modify(query, tuple(params))
 

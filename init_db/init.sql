@@ -44,11 +44,14 @@ CREATE TABLE team_members (
     INDEX idx_user_id (user_id)
 );
 
--- Files table
+-- Files table (metadata only - actual content stored on filesystem)
 CREATE TABLE files (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    content LONGTEXT,
+    file_path VARCHAR(500) NOT NULL, -- Path to file on filesystem
+    file_size BIGINT DEFAULT 0, -- File size in bytes
+    mime_type VARCHAR(100) DEFAULT 'text/markdown', -- File MIME type
+    checksum VARCHAR(64), -- SHA-256 checksum for integrity
     owner_id INT NOT NULL,
     team_id INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -59,16 +62,19 @@ CREATE TABLE files (
     INDEX idx_owner_id (owner_id),
     INDEX idx_team_id (team_id),
     INDEX idx_name (name),
+    INDEX idx_file_path (file_path),
     INDEX idx_created_at (created_at),
     INDEX idx_updated_at (updated_at),
     INDEX idx_deleted_at (deleted_at)
 );
 
--- File versions table for tracking changes
+-- File versions table for tracking changes (metadata only)
 CREATE TABLE file_versions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     file_id INT NOT NULL,
-    content LONGTEXT,
+    version_path VARCHAR(500) NOT NULL, -- Path to versioned file on filesystem
+    file_size BIGINT DEFAULT 0, -- Version file size in bytes
+    checksum VARCHAR(64), -- SHA-256 checksum for this version
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE,
     INDEX idx_file_id (file_id),
