@@ -209,6 +209,7 @@ export default function Dashboard() {
           onFileSelect={handleFileSelect}
           teams={teams}
           files={files}
+          onTeamsChange={fetchTeams}
         />
         
         <main className="flex-1 flex flex-col overflow-hidden">

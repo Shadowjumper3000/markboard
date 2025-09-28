@@ -1,4 +1,6 @@
+import { TeamManagementModal } from '@/components/teams/TeamManagementModal';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Sidebar,
   SidebarContent,
@@ -11,7 +13,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Clock, FileText, Folders, Star, Users } from 'lucide-react';
+import { Clock, FileText, Folders, Settings, Star, Users } from 'lucide-react';
 
 interface Team {
   id: number;
@@ -39,9 +41,10 @@ interface AppSidebarProps {
   onFileSelect: (fileId: string) => void;
   teams?: Team[];
   files?: FileItem[];
+  onTeamsChange?: () => void;
 }
 
-export function AppSidebar({ selectedTeam, onTeamSelect, onFileSelect, teams = [], files = [] }: AppSidebarProps) {
+export function AppSidebar({ selectedTeam, onTeamSelect, onFileSelect, teams = [], files = [], onTeamsChange }: AppSidebarProps) {
   const { user } = useAuth();
   const { state } = useSidebar();
   const isCollapsed = state === 'collapsed';
@@ -61,10 +64,24 @@ export function AppSidebar({ selectedTeam, onTeamSelect, onFileSelect, teams = [
       <SidebarContent className="p-4">
         {/* My Teams Section */}
         <SidebarGroup>
-          <SidebarGroupLabel className="flex items-center gap-2 text-sidebar-foreground font-medium">
-            <Users className="h-4 w-4" />
-            My Teams
-          </SidebarGroupLabel>
+          <div className="flex items-center justify-between mb-2">
+            <SidebarGroupLabel className="flex items-center gap-2 text-sidebar-foreground font-medium">
+              <Users className="h-4 w-4" />
+              My Teams
+            </SidebarGroupLabel>
+            <TeamManagementModal 
+              teams={teams} 
+              onTeamsChange={onTeamsChange || (() => {})}
+            >
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="h-6 w-6 p-0 hover:bg-accent"
+              >
+                <Settings className="h-3 w-3" />
+              </Button>
+            </TeamManagementModal>
+          </div>
           <SidebarGroupContent className="mt-2">
             <SidebarMenu className="space-y-1">
               {/* All Files Option */}

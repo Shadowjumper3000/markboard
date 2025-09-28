@@ -138,11 +138,84 @@ class ApiService {
       description: string;
       owner_id: number;
       file_count?: number;
+      member_count?: number;
+      role?: string;
       created_at: string;
     }>;
   }> {
     const response = await fetch(`${API_BASE}/teams`, {
       method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+
+    return this.handleResponse(response);
+  }
+
+  async createTeam(data: {
+    name: string;
+    description?: string;
+  }): Promise<{
+    id: number;
+    name: string;
+    description: string;
+    owner_id: number;
+    created_at: string;
+  }> {
+    const response = await fetch(`${API_BASE}/teams`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    return this.handleResponse(response);
+  }
+
+  async joinTeam(teamId: number): Promise<{
+    message: string;
+  }> {
+    const response = await fetch(`${API_BASE}/teams/${teamId}/join`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+    });
+
+    return this.handleResponse(response);
+  }
+
+  async getAvailableTeams(): Promise<{
+    teams: Array<{
+      id: number;
+      name: string;
+      description: string;
+      owner_id: number;
+      file_count?: number;
+      member_count?: number;
+      created_at: string;
+    }>;
+  }> {
+    const response = await fetch(`${API_BASE}/teams/available`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+
+    return this.handleResponse(response);
+  }
+
+  async leaveTeam(teamId: number): Promise<{
+    message: string;
+  }> {
+    const response = await fetch(`${API_BASE}/teams/${teamId}/leave`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+    });
+
+    return this.handleResponse(response);
+  }
+
+  async disbandTeam(teamId: number): Promise<{
+    message: string;
+  }> {
+    const response = await fetch(`${API_BASE}/teams/${teamId}`, {
+      method: 'DELETE',
       headers: this.getAuthHeaders(),
     });
 
