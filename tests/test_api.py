@@ -93,6 +93,7 @@ class TestAuthEndpoints:
                 "id": 1,
                 "email": "test@example.com",
                 "password_hash": "hashed_password",
+                "is_admin": False,
             }
             mock_verify.return_value = True
 
@@ -172,13 +173,16 @@ class TestFileEndpoints:
             # Mock JWT verification
             mock_decode.return_value = {"user_id": 1, "email": "test@example.com"}
 
-            # Mock database response
+            # Mock database response with datetime objects
+            from datetime import datetime
+
+            test_datetime = datetime.fromisoformat("2024-01-01T00:00:00")
             mock_db.execute_query.return_value = [
                 {
                     "id": 1,
                     "name": "test.md",
-                    "created_at": "2024-01-01T00:00:00",
-                    "updated_at": "2024-01-01T00:00:00",
+                    "created_at": test_datetime,
+                    "updated_at": test_datetime,
                     "owner_id": 1,
                     "team_id": None,
                 }
