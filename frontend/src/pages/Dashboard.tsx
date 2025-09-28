@@ -10,6 +10,14 @@ import { Filter, Grid, List, Search } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+// Utility function to format file name for display (hide .md extension)
+const formatDisplayName = (fileName: string): string => {
+  if (fileName.toLowerCase().endsWith('.md')) {
+    return fileName.slice(0, -3);
+  }
+  return fileName;
+};
+
 interface Team {
   id: number;
   name: string;
@@ -37,7 +45,18 @@ export default function Dashboard() {
 
   // Filter files based on selected team and search query
   const filteredFiles = files.filter(file => {
-    const matchesTeam = !selectedTeam || (file.team_id && file.team_id.toString() === selectedTeam);
+    let matchesTeam;
+    if (!selectedTeam) {
+      // Show all files
+      matchesTeam = true;
+    } else if (selectedTeam === 'personal') {
+      // Show only personal files (no team_id)
+      matchesTeam = !file.team_id;
+    } else {
+      // Show only files from specific team
+      matchesTeam = file.team_id && file.team_id.toString() === selectedTeam;
+    }
+    
     const matchesSearch = file.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          (file.team_name && file.team_name.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesTeam && matchesSearch;
@@ -108,7 +127,7 @@ export default function Dashboard() {
 
         return {
           id: file.id.toString(),
-          name: file.name,
+          name: formatDisplayName(file.name),
           team: teamName,
           team_id: file.team_id,
           team_name: teamName,
@@ -145,6 +164,9 @@ export default function Dashboard() {
   }, [teams]);
 
   function getTeamName(teamId: string): string {
+    if (teamId === 'personal') {
+      return 'Personal Files';
+    }
     const team = teams.find(t => t.id.toString() === teamId);
     return team ? team.name : 'Unknown Team';
   }

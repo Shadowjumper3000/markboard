@@ -4,10 +4,11 @@ import { SimpleMermaidToolbar } from '@/components/editor/SimpleMermaidToolbar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/lib/api';
-import { ArrowLeft, Download, Loader2, Share2 } from 'lucide-react';
+import { ArrowLeft, Check, Download, Edit3, Loader2, Share2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -47,6 +48,8 @@ export default function FileEditor() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [teams, setTeams] = useState<Team[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
+  const [isEditingFileName, setIsEditingFileName] = useState(false);
+  const [editedFileName, setEditedFileName] = useState('');
 
   // Template insertion handler
   const handleTemplateInsert = (templateContent: string) => {
@@ -99,9 +102,17 @@ export default function FileEditor() {
           const team = teams.find(t => t.id === file.team_id);
           const teamName = team ? team.name : (file.team_id ? `Team ${file.team_id}` : 'Personal');
 
+          // Helper function to format display name (hide .md extension)
+          const formatDisplayName = (fileName: string): string => {
+            if (fileName.toLowerCase().endsWith('.md')) {
+              return fileName.slice(0, -3);
+            }
+            return fileName;
+          };
+
           return {
             id: file.id.toString(),
-            name: file.name,
+            name: formatDisplayName(file.name),
             team: teamName,
             team_id: file.team_id,
             team_name: teamName,
@@ -137,6 +148,7 @@ export default function FileEditor() {
         const fileData = await apiService.getFile(fileId);
         
         setContent(fileData.content || '');
+        // Store the full file name (with extension) for editing
         setFileName(fileData.name);
         setLastSaved(new Date(fileData.updated_at));
         setHasUnsavedChanges(false);
@@ -221,6 +233,51 @@ export default function FileEditor() {
     navigate(`/editor/${fileId}`);
   };
 
+  const handleStartEditing = () => {
+    setIsEditingFileName(true);
+    // Show file name without .md extension for editing
+    const displayName = fileName.toLowerCase().endsWith('.md') ? fileName.slice(0, -3) : fileName;
+    setEditedFileName(displayName);
+  };
+
+  const handleSaveFileName = async () => {
+    if (!fileId || !editedFileName.trim()) {
+      setIsEditingFileName(false);
+      return;
+    }
+
+    try {
+      const trimmedName = editedFileName.trim();
+      // Ensure .md extension is preserved
+      const finalName = trimmedName.toLowerCase().endsWith('.md') ? trimmedName : `${trimmedName}.md`;
+      
+      if (finalName === fileName) {
+        setIsEditingFileName(false);
+        return;
+      }
+
+      await apiService.updateFile(fileId, { name: finalName });
+      setFileName(finalName);
+      setIsEditingFileName(false);
+      toast({
+        title: "File renamed",
+        description: "The file name has been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating file name:', error);
+      toast({
+        variant: "destructive",
+        title: "Rename failed",
+        description: error instanceof Error ? error.message : "Unable to rename file. Please try again.",
+      });
+    }
+  };
+
+  const handleCancelEditing = () => {
+    setIsEditingFileName(false);
+    setEditedFileName('');
+  };
+
   const formatLastSaved = (date: Date): string => {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -264,7 +321,7 @@ export default function FileEditor() {
           {/* Editor Header */}
           <div className="border-b bg-card/50 backdrop-blur-md">
             <div className="flex items-center justify-between px-6 py-4">
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-4 group">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -276,7 +333,55 @@ export default function FileEditor() {
                 </Button>
                 
                 <div className="flex flex-col">
-                  <h1 className="text-xl font-semibold text-foreground">{fileName}</h1>
+                  <div className="flex items-center space-x-2">
+                    {isEditingFileName ? (
+                      <div className="flex items-center space-x-2">
+                        <Input
+                          value={editedFileName}
+                          onChange={(e) => setEditedFileName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleSaveFileName();
+                            } else if (e.key === 'Escape') {
+                              handleCancelEditing();
+                            }
+                          }}
+                          className="text-xl font-semibold bg-background border-input"
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleSaveFileName}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleCancelEditing}
+                          className="h-8 w-8 p-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <h1 className="text-xl font-semibold text-foreground">
+                          {fileName.toLowerCase().endsWith('.md') ? fileName.slice(0, -3) : fileName}
+                        </h1>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleStartEditing}
+                          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <span>
                       {isAutoSaving ? 'Saving...' : hasUnsavedChanges ? 'Unsaved changes' : `Saved ${formatLastSaved(lastSaved)}`}

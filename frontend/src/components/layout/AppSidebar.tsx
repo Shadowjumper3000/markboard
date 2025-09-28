@@ -48,7 +48,13 @@ export function AppSidebar({ selectedTeam, onTeamSelect, onFileSelect, teams = [
   const { state } = useSidebar();
   const isCollapsed = state === 'collapsed';
 
-  const filteredFiles = selectedTeam 
+  // Get counts for each category
+  const personalFiles = files.filter(file => !file.team_id);
+  const teamFiles = files.filter(file => file.team_id);
+
+  const filteredFiles = selectedTeam === 'personal'
+    ? personalFiles
+    : selectedTeam 
     ? files.filter(file => file.team_id && file.team_id.toString() === selectedTeam)
     : files;
 
@@ -74,6 +80,22 @@ export function AppSidebar({ selectedTeam, onTeamSelect, onFileSelect, teams = [
                     <span>All Files</span>
                     <Badge variant="secondary" className="ml-2 text-xs">
                       {files.length}
+                    </Badge>
+                  </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* Personal Files Option */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => onTeamSelect('personal')}
+                  isActive={selectedTeam === 'personal'}
+                >
+                  <FileText className="h-4 w-4" />
+                  <div className="flex items-center justify-between w-full">
+                    <span>Personal Files</span>
+                    <Badge variant="secondary" className="ml-2 text-xs">
+                      {personalFiles.length}
                     </Badge>
                   </div>
                 </SidebarMenuButton>
