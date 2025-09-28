@@ -12,7 +12,7 @@ The project avoids heavy frameworks in critical areas to demonstrate manual impl
 
 ## Features
 - **Authentication**: sign up, login, JWT-based sessions, password hashing (manual implementation in Python) 
-- **File Management**: CRUD for `.md`  UML files (DB + volume-backed storage) 
+- **File Management**: CRUD for `.md` UML files (metadata in DB, content on filesystem with version control) 
 - **Live Preview**: Monaco editor + Mermaid.js renderer 
 - **Upload**: Import existing `.md`  UML files 
 - **Admin Dashboard** (post-MVP): manage users, track file counts, view activity logs
@@ -33,7 +33,7 @@ The project avoids heavy frameworks in critical areas to demonstrate manual impl
 
 - Responsibilities: 
     - Authentication (signup, login, JWT validation) 
-    - File CRUD with `.md`  content in DB and volume-backed storage 
+    - File CRUD with `.md` metadata in DB and content on filesystem with checksums 
     - Admin endpoints (basic stats, activity logs)
 
 ---

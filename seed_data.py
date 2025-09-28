@@ -30,9 +30,9 @@ def seed_development_data():
         # Create test password hash
         test_password = "password123"
         salt = bcrypt.gensalt(rounds=Config.BCRYPT_ROUNDS)
-        hashed_password = bcrypt.hashpw(
-            test_password.encode("utf-8"), salt
-        ).decode("utf-8")
+        hashed_password = bcrypt.hashpw(test_password.encode("utf-8"), salt).decode(
+            "utf-8"
+        )
 
         # Create admin user
         admin_id = db.execute_modify(
@@ -105,9 +105,9 @@ def seed_development_data():
         team_memberships = [
             (team_ids[0], user_ids[1], "member"),  # John to Development Team
             (team_ids[0], user_ids[2], "member"),  # Sarah to Development Team
-            (team_ids[1], user_ids[1], "admin"),   # John as admin of Product Team
+            (team_ids[1], user_ids[1], "admin"),  # John as admin of Product Team
             (team_ids[1], user_ids[3], "member"),  # Mike to Product Team
-            (team_ids[2], user_ids[2], "admin"),   # Sarah as admin of Design Team
+            (team_ids[2], user_ids[2], "admin"),  # Sarah as admin of Design Team
             (team_ids[2], user_ids[3], "member"),  # Mike to Design Team
         ]
 
@@ -122,7 +122,8 @@ def seed_development_data():
         sample_files = [
             {
                 "name": "Welcome to Markboard.md",
-                "content": """# Welcome to Markboard
+                "content": """
+# Welcome to Markboard
 
 ## Getting Started
 This is your first markdown file! You can edit this content using the built-in editor.

@@ -61,24 +61,29 @@ class Database:
 
     def execute_query(self, query: str, params: tuple = None) -> List[Dict[str, Any]]:
         """Execute a SELECT query and return results."""
+        logger.debug(f"Executing query: {query} with params: {params}")
         with self.get_connection() as conn:
             cursor = conn.cursor(dictionary=True)
             cursor.execute(query, params)
             results = cursor.fetchall()
+            logger.debug(f"Query returned {len(results)} rows")
             cursor.close()
             return results
 
     def execute_one(self, query: str, params: tuple = None) -> Optional[Dict[str, Any]]:
         """Execute a SELECT query and return single result."""
+        logger.debug(f"Executing single query: {query} with params: {params}")
         with self.get_connection() as conn:
             cursor = conn.cursor(dictionary=True)
             cursor.execute(query, params)
             result = cursor.fetchone()
+            logger.debug(f"Query returned: {'1 row' if result else 'no rows'}")
             cursor.close()
             return result
 
     def execute_modify(self, query: str, params: tuple = None) -> int:
         """Execute INSERT, UPDATE, or DELETE query and return affected rows."""
+        logger.debug(f"Executing modify query: {query} with params: {params}")
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(query, params)
@@ -86,25 +91,29 @@ class Database:
             affected_rows = cursor.rowcount
             last_id = cursor.lastrowid
             cursor.close()
-            return (
-                last_id if query.strip().upper().startswith("INSERT") else affected_rows
-            )
+            is_insert = query.strip().upper().startswith("INSERT")
+            result = last_id if is_insert else affected_rows
+            logger.debug(f"Query affected {affected_rows} rows, returned {result}")
+            return result
 
     def execute_transaction(self, queries: List[tuple]) -> bool:
         """Execute multiple queries in a transaction."""
+        logger.debug(f"Executing transaction with {len(queries)} queries")
         with self.get_connection() as conn:
             cursor = conn.cursor()
             try:
                 conn.start_transaction()
-                for query, params in queries:
+                for i, (query, params) in enumerate(queries):
+                    logger.debug(f"Transaction query {i+1}: {query} with {params}")
                     cursor.execute(query, params)
                 conn.commit()
+                logger.debug("Transaction committed successfully")
                 cursor.close()
                 return True
             except Error as e:
                 conn.rollback()
+                logger.error(f"Transaction failed and rolled back: {e}")
                 cursor.close()
-                logger.error(f"Transaction failed: {e}")
                 raise
 
     def test_connection(self) -> bool:
