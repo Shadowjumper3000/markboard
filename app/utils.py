@@ -112,6 +112,31 @@ def require_auth(f):
     return decorated_function
 
 
+def require_admin(f):
+    """Decorator to require admin privileges for endpoints."""
+
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        from app.db import db
+
+        try:
+            # Check if current user is admin
+            user = db.execute_one(
+                "SELECT is_admin FROM users WHERE id = %s", (g.current_user_id,)
+            )
+
+            if not user or not user["is_admin"]:
+                return jsonify({"error": "Admin privileges required"}), 403
+
+        except Exception as e:
+            logger.error(f"Admin check error: {e}")
+            return jsonify({"error": "Authorization check failed"}), 500
+
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
 def check_file_access(user_id: int, file_id: int) -> bool:
     """Check if user has access to a file (owner or team member)."""
     from app.db import db
