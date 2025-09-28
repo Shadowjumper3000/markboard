@@ -10,6 +10,28 @@ import { ArrowLeft, Download, Loader2, Share2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+interface Team {
+  id: number;
+  name: string;
+  description: string;
+  owner_id: number;
+  file_count?: number;
+}
+
+interface FileItem {
+  id: string;
+  name: string;
+  team: string;
+  team_id?: number;
+  team_name?: string;
+  lastModified: string;
+  size: string;
+  starred: boolean;
+  type: 'personal' | 'team';
+  author: string;
+  owner_id?: number;
+}
+
 export default function FileEditor() {
   const { fileId } = useParams();
   const navigate = useNavigate();
@@ -22,6 +44,73 @@ export default function FileEditor() {
   const [lastSaved, setLastSaved] = useState<Date>(new Date());
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [files, setFiles] = useState<FileItem[]>([]);
+
+  // Load teams and files data
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const data = await apiService.listTeams();
+        setTeams(data.teams || []);
+      } catch (error) {
+        console.error('Error fetching teams:', error);
+      }
+    };
+
+    const fetchFiles = async () => {
+      try {
+        const data = await apiService.listFiles();
+        
+        // Convert backend file format to frontend FileItem format
+        const convertedFiles: FileItem[] = data.files?.map((file: any) => {
+          // Calculate time difference for lastModified
+          const updatedAt = new Date(file.updated_at);
+          const now = new Date();
+          const diffMs = now.getTime() - updatedAt.getTime();
+          const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+          const diffDays = Math.floor(diffHours / 24);
+          
+          let lastModified = 'Just now';
+          if (diffHours < 1) {
+            const diffMinutes = Math.floor(diffMs / (1000 * 60));
+            lastModified = diffMinutes <= 1 ? 'Just now' : `${diffMinutes} minutes ago`;
+          } else if (diffHours < 24) {
+            lastModified = diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
+          } else if (diffDays === 1) {
+            lastModified = '1 day ago';
+          } else {
+            lastModified = `${diffDays} days ago`;
+          }
+
+          // Find team name from teams data
+          const team = teams.find(t => t.id === file.team_id);
+          const teamName = team ? team.name : (file.team_id ? `Team ${file.team_id}` : 'Personal');
+
+          return {
+            id: file.id.toString(),
+            name: file.name,
+            team: teamName,
+            team_id: file.team_id,
+            team_name: teamName,
+            lastModified,
+            size: file.size_formatted || '0 B',
+            starred: false,
+            type: file.team_id ? 'team' : 'personal',
+            author: 'Unknown',
+            owner_id: file.owner_id,
+          };
+        }) || [];
+
+        setFiles(convertedFiles);
+      } catch (error) {
+        console.error('Error fetching files:', error);
+      }
+    };
+
+    fetchTeams();
+    fetchFiles();
+  }, []);
 
   // Load file data when component mounts or fileId changes
   useEffect(() => {
@@ -153,9 +242,11 @@ export default function FileEditor() {
           selectedTeam={selectedTeam}
           onTeamSelect={setSelectedTeam}
           onFileSelect={handleFileSelect}
+          teams={teams}
+          files={files}
         />
         
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 flex flex-col overflow-hidden">
           <Header />
           
           {/* Editor Header */}
@@ -232,7 +323,7 @@ export default function FileEditor() {
               </div>
             </div>
           </div>
-        </div>
+        </main>
       </div>
     </SidebarProvider>
   );

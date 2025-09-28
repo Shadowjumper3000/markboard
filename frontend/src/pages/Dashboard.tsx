@@ -191,10 +191,10 @@ export default function Dashboard() {
           files={files}
         />
         
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 flex flex-col overflow-hidden">
           <Header />
           
-          <main className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto">
             <div className="container mx-auto p-6 space-y-6">
               {/* Page Header */}
               <div className="flex flex-col space-y-4">
@@ -269,8 +269,8 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
     </SidebarProvider>
   );
