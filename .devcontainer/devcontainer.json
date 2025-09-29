@@ -14,7 +14,8 @@
         "ms-python.mypy-type-checker",
         "ms-python.pylint",
         "ms-vscode.test-adapter-converter",
-        "littlefoxteam.vscode-python-test-adapter"
+        "littlefoxteam.vscode-python-test-adapter",
+        "AbdelhalemKassara.env-example-auto-generator"
       ],
       "settings": {
         "python.defaultInterpreterPath": "/usr/local/bin/python",
