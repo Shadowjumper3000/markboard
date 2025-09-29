@@ -1,31 +1,31 @@
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
@@ -75,6 +75,15 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
       toast({
         title: "Error",
         description: "Team name is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (user?.role !== 'admin' && teams.length >= 3) {
+      toast({
+        title: "Limit Reached",
+        description: "You can only create up to 3 teams.",
         variant: "destructive",
       });
       return;
@@ -188,6 +197,9 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
     }
   }, [open]);
 
+  // Update the CSS for team cards to make them square
+  const teamCardStyle = "aspect-square flex flex-col justify-between";
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -220,7 +232,7 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
                 </div>
               ) : (
                 teams.map((team) => (
-                  <Card key={team.id}>
+                  <Card key={team.id} className={teamCardStyle}>
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg flex items-center gap-2">
@@ -393,7 +405,7 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
                   </div>
                 ) : (
                   filteredAvailableTeams.map((team) => (
-                    <Card key={team.id}>
+                    <Card key={team.id} className={teamCardStyle}>
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-base">{team.name}</CardTitle>
