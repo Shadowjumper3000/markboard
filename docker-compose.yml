@@ -59,7 +59,6 @@ services:
       start_period: 40s
     networks:
       - internal
-      - proxy
 
   frontend:
     build:
