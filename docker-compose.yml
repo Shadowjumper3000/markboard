@@ -42,6 +42,9 @@ services:
       FLASK_ENV: production
       DEBUG: "false"
       BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
+      DOMAIN: ${DOMAIN}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     # No ports exposed - internal access only
     depends_on:
       db:
