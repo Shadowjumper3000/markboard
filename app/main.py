@@ -1,11 +1,10 @@
 """
 Main Flask application.
 """
-
-from flask import Flask, jsonify
-from flask_cors import CORS
 import logging
 import sys
+from flask import Flask, jsonify
+from flask_cors import CORS
 from app.config import Config
 from app.db import db
 from app.auth import auth_bp
@@ -98,14 +97,16 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
 
-    # Seed development data on startup
-    if Config.DEBUG:  # Only seed data in development environment
-        with app.app_context():
-            try:
-                from seed_data import seed_development_data
+    # Seed data on startup
+    with app.app_context():
+        try:
+            from app.seed_data import seed_development_data, seed_production_data
 
+            if Config.DEBUG:
                 seed_development_data()
-            except ImportError:
-                logging.warning("seed_development_data function is not available.")
+            else:
+                seed_production_data()
+        except ImportError:
+            logging.warning("seed_data functions are not available.")
 
     app.run(host="0.0.0.0", port=8000, debug=Config.DEBUG)

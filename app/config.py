@@ -30,6 +30,10 @@ class Config:
     # Security
     BCRYPT_ROUNDS = int(os.getenv("BCRYPT_ROUNDS", 12))
 
+    # Admin user credentials
+    ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@example.com")
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "adminpassword")
+
     @classmethod
     def get_db_connection_string(cls):
         """Get MySQL connection string."""
