@@ -1,3 +1,14 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,10 +18,19 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   Tabs,
   TabsContent,
   TabsList,
@@ -74,38 +94,10 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
       return;
     }
 
-    if (newTeamName.length > MAX_TEAM_NAME_LENGTH) {
+    if (user?.role !== 'admin' && teams.length >= 3) {
       toast({
-        title: "Error",
-        description: `Team name cannot exceed ${MAX_TEAM_NAME_LENGTH} characters.`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (newTeamDescription.length > MAX_TEAM_DESCRIPTION_LENGTH) {
-      toast({
-        title: "Error",
-        description: `Team description cannot exceed ${MAX_TEAM_DESCRIPTION_LENGTH} characters.`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const teamCountResponse = await apiService.getUserTeamCount();
-      if (user?.role !== 'admin' && teamCountResponse.count >= 3) {
-        toast({
-          title: "Limit Reached",
-          description: "You can only create up to 3 teams.",
-          variant: "destructive",
-        });
-        return;
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to validate team count. Please try again later.",
+        title: "Limit Reached",
+        description: "You can only create up to 3 teams.",
         variant: "destructive",
       });
       return;
@@ -253,8 +245,8 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
     }
   }, [open]);
 
-  // Adjust the teamCardStyle to make the cards smaller and more compact
-  const teamCardStyle = "flex flex-col justify-between items-center p-3 bg-card shadow-md hover:shadow-lg transition-shadow rounded-md";
+  // Update the CSS for team cards to make them square
+  const teamCardStyle = "aspect-square flex flex-col justify-between";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -287,42 +279,110 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {teams.map((team) => (
-                    <Card key={team.id} className={teamCardStyle}>
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg flex items-center gap-2">
-                            {team.name}
-                            {team.role === 'admin' && (
-                              <Crown className="h-4 w-4 text-yellow-500" />
-                            )}
-                          </CardTitle>
-                          <Badge variant="secondary">
-                            {team.file_count || 0} files
-                          </Badge>
-                        </div>
-                        {team.description && (
-                          <CardDescription>{team.description}</CardDescription>
-                        )}
-                      </CardHeader>
-                      <CardContent className="pt-0 flex flex-col gap-2">
-                        <div className="flex items-center justify-between text-sm text-muted-foreground">
-                          <span>{team.member_count || 0} members</span>
+                teams.map((team) => (
+                  <Card key={team.id} className={teamCardStyle}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          {team.name}
                           {team.role === 'admin' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleOpenUserPopup(team)}
-                            >
-                              <Settings className="h-4 w-4" />
-                            </Button>
+                            <Crown className="h-4 w-4 text-yellow-500" />
                           )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                        </CardTitle>
+                        <Badge variant="secondary">
+                          {team.file_count || 0} files
+                        </Badge>
+                      </div>
+                      {team.description && (
+                        <CardDescription>{team.description}</CardDescription>
+                      )}
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm text-muted-foreground">
+                          {team.member_count || 0} members
+                        </span>
+                        <Badge variant={team.role === 'admin' ? 'default' : 'secondary'}>
+                          {team.role || 'member'}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        {team.owner_id.toString() === user?.id ? (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                className="flex-1"
+                                disabled={isDisbanding}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Disband Team
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Disband Team</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to disband "{team.name}"? This action cannot be undone. 
+                                  All team members will be removed and the team will be permanently deleted.
+                                  {team.file_count && team.file_count > 0 && (
+                                    <span className="block mt-2 font-medium text-destructive">
+                                      This team has {team.file_count} files. Move or delete all files before disbanding.
+                                    </span>
+                                  )}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDisbandTeam(team.id, team.name)}
+                                  className="bg-destructive hover:bg-destructive/90"
+                                  disabled={isDisbanding || (team.file_count && team.file_count > 0)}
+                                >
+                                  {isDisbanding ? 'Disbanding...' : 'Disband Team'}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        ) : (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="flex-1"
+                                disabled={isLeaving}
+                              >
+                                <LogOut className="h-4 w-4 mr-2" />
+                                Leave Team
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Leave Team</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to leave "{team.name}"? You will lose access to all team files 
+                                  and will need to be re-invited to join again.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleLeaveTeam(team.id, team.name)}
+                                  disabled={isLeaving}
+                                >
+                                  {isLeaving ? 'Leaving...' : 'Leave Team'}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
               )}
             </div>
           </TabsContent>
@@ -393,6 +453,7 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
                   </div>
                 ) : (
                   filteredAvailableTeams.map((team) => (
+                    <Card key={team.id} className={teamCardStyle}>
                     <Card key={team.id} className={teamCardStyle}>
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
