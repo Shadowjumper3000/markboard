@@ -76,10 +76,13 @@ services:
     restart: unless-stopped
     networks:
       - internal
+      - proxy
 
 networks:
   internal:
     driver: bridge
+  proxy:
+    external: true
 
 volumes:
   db_data:
