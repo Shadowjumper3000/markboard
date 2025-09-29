@@ -6,6 +6,9 @@ services:
   db:
     image: mysql:8.0
     container_name: markboard-db
+    labels:
+      - "com.docker.compose.project=markboard"
+      - "app=markboard"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -27,6 +30,9 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: markboard-backend
+    labels:
+      - "com.docker.compose.project=markboard"
+      - "app=markboard"
     environment:
       MYSQL_HOST: db
       MYSQL_PORT: 3306
@@ -60,6 +66,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: markboard-frontend
+    labels:
+      - "com.docker.compose.project=markboard"
+      - "app=markboard"
     ports:
       - "127.0.0.1:3000:80"  # Bind to localhost only for external nginx
     depends_on:
