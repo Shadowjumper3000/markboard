@@ -8,10 +8,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/prod'
-    
-    environment:
-      name: production
-      url: ${{ secrets.PRODUCTION_URL }}
 
     steps:
     - name: Checkout code

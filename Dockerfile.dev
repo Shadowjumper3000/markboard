@@ -30,7 +30,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application code (will be overridden by volume in dev)
 COPY app/ ./app/
 COPY tests/ ./tests/
-COPY .env.example .env
+COPY .env-example .env
 
 # Expose port
 EXPOSE 8000
