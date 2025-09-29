@@ -1,3 +1,4 @@
+import { CreateFileModal } from '@/components/files/CreateFileModal';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,7 +11,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, FileText, Home, LogOut, Plus, Settings, Shield, Upload } from 'lucide-react';
+import { apiService } from '@/lib/api';
+import { ArrowLeft, FileText, Home, LogOut, Plus, Settings, Shield } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 // Safe hook to use sidebar context - returns null if not within SidebarProvider
@@ -22,6 +25,14 @@ function useSidebarSafe() {
   }
 }
 
+interface Team {
+  id: number;
+  name: string;
+  description: string;
+  owner_id: number;
+  file_count?: number;
+}
+
 export function Header() {
   const { user, logout } = useAuth();
   const sidebarContext = useSidebarSafe();
@@ -29,15 +40,33 @@ export function Header() {
   const isAdminPage = location.pathname === '/admin';
   const isEditorPage = location.pathname.startsWith('/editor/');
   const isDashboardPage = location.pathname === '/dashboard';
+  
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [teams, setTeams] = useState<Team[]>([]);
+
+  // Fetch teams when component mounts
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const data = await apiService.listTeams();
+        setTeams(data.teams || []);
+      } catch (error) {
+        console.error('Error fetching teams:', error);
+      }
+    };
+
+    fetchTeams();
+  }, []);
 
   const handleNewFile = () => {
-    // TODO: Implement new file creation
-    console.log('New file');
+    setIsCreateModalOpen(true);
   };
 
-  const handleUpload = () => {
-    // TODO: Implement file upload
-    console.log('Upload file');
+  const handleCreateModalSuccess = () => {
+    // Refresh the page or trigger a refresh in parent component
+    if (isDashboardPage) {
+      window.location.reload();
+    }
   };
 
   return (
@@ -45,7 +74,7 @@ export function Header() {
       <div className="flex h-full items-center justify-between px-6">
         {/* Left section */}
         <div className="flex items-center space-x-4">
-          {sidebarContext && (
+          {sidebarContext && !isEditorPage && (
             <SidebarTrigger className="hover:bg-accent transition-fast" />
           )}
           
@@ -60,7 +89,7 @@ export function Header() {
                 <FileText className="h-6 w-6 text-primary" />
                 <span className="text-xl font-bold text-foreground">UML Editor</span>
               </div>
-              {!isDashboardPage && (
+              {!isDashboardPage && !isEditorPage && (
                 <Link to="/">
                   <Button
                     variant="ghost"
@@ -86,16 +115,6 @@ export function Header() {
             >
               <Plus className="h-4 w-4 mr-2" />
               New File
-            </Button>
-            
-            <Button
-              onClick={handleUpload}
-              variant="outline"
-              size="sm"
-              className="border-border hover:bg-accent transition-fast"
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Upload .md
             </Button>
           </div>
         )}
@@ -154,6 +173,14 @@ export function Header() {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Create File Modal */}
+      <CreateFileModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={handleCreateModalSuccess}
+        teams={teams}
+      />
     </header>
   );
 }
