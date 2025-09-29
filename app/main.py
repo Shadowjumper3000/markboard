@@ -1,6 +1,7 @@
 """
 Main Flask application.
 """
+
 import logging
 import sys
 from flask import Flask, jsonify
@@ -36,17 +37,18 @@ def create_app():
         logging.error("Failed to connect to database")
         sys.exit(1)
 
-    # Configure CORS
-    CORS(
-        app,
-        origins=[
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "http://127.0.0.1:3000",
-        ],
-        allow_headers=["Content-Type", "Authorization"],
-        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    )
+    # Configure CORS for development only
+    if Config.DEBUG:
+        CORS(
+            app,
+            origins=[
+                "http://localhost:3000",
+                "http://localhost:5173",
+                "http://127.0.0.1:3000",
+            ],
+            allow_headers=["Content-Type", "Authorization"],
+            methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        )
 
     # Register blueprints
     app.register_blueprint(auth_bp)

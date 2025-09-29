@@ -31,8 +31,8 @@ class Config:
     BCRYPT_ROUNDS = int(os.getenv("BCRYPT_ROUNDS", 12))
 
     # Admin user credentials
-    ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@example.com")
-    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "adminpassword")
+    ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 
     @classmethod
     def get_db_connection_string(cls):

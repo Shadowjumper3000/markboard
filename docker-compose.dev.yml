@@ -41,6 +41,9 @@ services:
       FLASK_DEBUG: 1
       DEBUG: "true"
       BCRYPT_ROUNDS: 12
+      DOMAIN: localhost
+      ADMIN_EMAIL: dev@example.com
+      ADMIN_PASSWORD: devpassword
     ports:
       - "8000:8000"  # Backend API
     depends_on:
