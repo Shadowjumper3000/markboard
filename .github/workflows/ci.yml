@@ -10,82 +10,131 @@ jobs:
     if: github.ref == 'refs/heads/prod'
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Add server to known hosts
-      run: |
-        mkdir -p ~/.ssh
-        ssh-keyscan -H ${{ secrets.HETZNER_HOST }} >> ~/.ssh/known_hosts
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.HETZNER_HOST }} >> ~/.ssh/known_hosts
 
-    - name: Deploy to Hetzner Server
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.HETZNER_HOST }}
-        username: ${{ secrets.HETZNER_USER }}
-        key: ${{ secrets.HETZNER_SSH_KEY }}
-        port: ${{ secrets.HETZNER_PORT }}
-        script: |
-          set -e
-          
-          # Define application directory in hetzner user's home directory
-          APP_DIR="/home/${{secrets.HETZNER_USER}}/markboard"
-          REPO_URL="https://github.com/${{ github.repository }}.git"
-          
-          # Create application directory if it doesn't exist (no sudo needed in user's home)
-          if [ ! -d "$APP_DIR" ]; then
-            echo "Creating application directory..."
-            mkdir -p $APP_DIR
-          fi
-          
-          # Navigate to application directory
-          cd $APP_DIR
-          
-          # Clone or update repository
-          if [ ! -d ".git" ]; then
-            echo "Cloning repository..."
-            git clone $REPO_URL .
-          else
-            echo "Updating repository..."
-            git fetch origin
-            git reset --hard origin/prod
-            git clean -fd
-          fi
-          
-          # Create .env file from GitHub secret
-          echo "Creating production environment file..."
-          echo '${{ secrets.ENV_FILE }}' > .env
-          
-          # Stop existing containers (only for this project)
-          echo "Stopping existing containers..."
-          docker compose down --remove-orphans || true
-          
-          # Remove only this project's Docker images and containers to free space
-          echo "Cleaning up project Docker resources..."
-          docker compose down --volumes --remove-orphans || true
-          
-          # Remove only markboard-related images and containers
-          echo "Removing old markboard images..."
-          docker images --filter "label=app=markboard" -q | xargs -r docker rmi -f || true
-          docker container prune -f --filter "label=app=markboard" || true
-          
-          # Build and start services
-          echo "Building and starting services..."
-          docker compose up -d --build --remove-orphans
-          
-          # Wait for services to be ready
-          echo "Waiting for services to start..."
-          sleep 30
-          
-          # Verify deployment
-          echo "Verifying deployment..."
-          if docker compose ps | grep -q "Up"; then
-            echo "🚀 Deployment completed successfully!"
-          else
-            echo "❌ Deployment verification failed!"
-            docker compose logs --tail=50
-            exit 1
-          fi
-          
-          # Show container status
-          docker compose ps
+      - name: Deploy: Create application directory
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          port: ${{ secrets.HETZNER_PORT }}
+          script: |
+            set -e
+            APP_DIR="/home/${{secrets.HETZNER_USER}}/markboard"
+            if [ ! -d "$APP_DIR" ]; then
+              echo "Creating application directory..."
+              mkdir -p $APP_DIR
+            fi
+
+      - name: Deploy: Clone or update repository
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          port: ${{ secrets.HETZNER_PORT }}
+          script: |
+            set -e
+            APP_DIR="/home/${{secrets.HETZNER_USER}}/markboard"
+            REPO_URL="https://github.com/${{ github.repository }}.git"
+            cd $APP_DIR
+            if [ ! -d ".git" ]; then
+              echo "Cloning repository..."
+              git clone $REPO_URL .
+            else
+              echo "Updating repository..."
+              git fetch origin
+              git reset --hard origin/prod
+              git clean -fd
+            fi
+
+      - name: Deploy: Create .env file
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          port: ${{ secrets.HETZNER_PORT }}
+          script: |
+            set -e
+            APP_DIR="/home/${{secrets.HETZNER_USER}}/markboard"
+            cd $APP_DIR
+            echo "Creating production environment file..."
+            echo '${{ secrets.ENV_FILE }}' > .env
+
+      - name: Deploy: Stop and clean up Docker resources
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          port: ${{ secrets.HETZNER_PORT }}
+          script: |
+            set -e
+            APP_DIR="/home/${{secrets.HETZNER_USER}}/markboard"
+            cd $APP_DIR
+            echo "Stopping existing containers..."
+            docker compose down --remove-orphans || true
+            echo "Cleaning up project Docker resources..."
+            docker compose down --volumes --remove-orphans || true
+            echo "Removing old markboard images..."
+            docker images --filter "label=app=markboard" -q | xargs -r docker rmi -f || true
+            docker container prune -f --filter "label=app=markboard" || true
+
+      - name: Deploy: Build and start services
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          port: ${{ secrets.HETZNER_PORT }}
+          script: |
+            set -e
+            APP_DIR="/home/${{secrets.HETZNER_USER}}/markboard"
+            cd $APP_DIR
+            echo "Building and starting services..."
+            docker compose up -d --build --remove-orphans
+            echo "Waiting for services to start..."
+            sleep 30
+
+      - name: Deploy: Remove .env after compose up
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          port: ${{ secrets.HETZNER_PORT }}
+          script: |
+            set -e
+            APP_DIR="/home/${{secrets.HETZNER_USER}}/markboard"
+            cd $APP_DIR
+            echo "Removing .env file for security..."
+            rm -f .env
+
+      - name: Deploy: Verify deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          port: ${{ secrets.HETZNER_PORT }}
+          script: |
+            set -e
+            APP_DIR="/home/${{secrets.HETZNER_USER}}/markboard"
+            cd $APP_DIR
+            echo "Verifying deployment..."
+            if docker compose ps | grep -q "Up"; then
+              echo "🚀 Deployment completed successfully!"
+            else
+              echo "❌ Deployment verification failed!"
+              docker compose logs --tail=50
+              exit 1
+            fi
+            docker compose ps

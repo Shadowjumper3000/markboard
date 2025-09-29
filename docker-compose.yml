@@ -43,7 +43,6 @@ services:
       DEBUG: "false"
       BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
       DOMAIN: ${DOMAIN}
-      VITE_API_URL: ${VITE_API_URL}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     # No ports exposed - internal access only
@@ -67,6 +66,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL}
     container_name: markboard-frontend
     labels:
       - "com.docker.compose.project=markboard"
