@@ -94,6 +94,24 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
       return;
     }
 
+    if (newTeamName.length > MAX_TEAM_NAME_LENGTH) {
+      toast({
+        title: "Error",
+        description: `Team name cannot exceed ${MAX_TEAM_NAME_LENGTH} characters.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newTeamDescription.length > MAX_TEAM_DESCRIPTION_LENGTH) {
+      toast({
+        title: "Error",
+        description: `Team description cannot exceed ${MAX_TEAM_DESCRIPTION_LENGTH} characters.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (user?.role !== 'admin' && teams.length >= 3) {
       toast({
         title: "Limit Reached",
