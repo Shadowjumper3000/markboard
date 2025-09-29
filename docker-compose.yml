@@ -59,6 +59,7 @@ services:
       start_period: 40s
     networks:
       - internal
+      - proxy
 
   frontend:
     build:
@@ -72,7 +73,6 @@ services:
       - backend
     restart: unless-stopped
     networks:
-      - internal
       - proxy
 
 networks:
