@@ -44,9 +44,6 @@ def create_app():
             "http://localhost:3000",
             "http://localhost:5173",
             "http://127.0.0.1:3000",
-            # Add your domain here
-            # "https://your-domain.com",
-            # "http://your-domain.com",
         ],
         allow_headers=["Content-Type", "Authorization"],
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -101,18 +98,14 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
 
-    # Seed development data on startup (only in debug/development mode)
-    if Config.DEBUG:
-        try:
-            from seed_data import seed_development_data
+    # Seed development data on startup
+    if Config.DEBUG:  # Only seed data in development environment
+        with app.app_context():
+            try:
+                from seed_data import seed_development_data
 
-            with app.app_context():
                 seed_development_data()
-        except ImportError:
-            logging.warning(
-                "seed_data module not found - skipping development data seeding"
-            )
-        except Exception as e:
-            logging.error(f"Failed to seed development data: {e}")
+            except ImportError:
+                logging.warning("seed_development_data function is not available.")
 
     app.run(host="0.0.0.0", port=8000, debug=Config.DEBUG)
