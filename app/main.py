@@ -1,10 +1,10 @@
 """
 Main Flask application.
 """
-import logging
 
 from flask import Flask, jsonify
 from flask_cors import CORS
+import logging
 import sys
 from app.config import Config
 from app.db import db
@@ -41,11 +41,7 @@ def create_app():
     # Configure CORS
     CORS(
         app,
-        origins=[
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "http://127.0.0.1:3000",
-        ],
+        origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000"],
         allow_headers=["Content-Type", "Authorization"],
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     )
@@ -59,9 +55,11 @@ def create_app():
     @app.route("/")
     def index():
         """Root endpoint."""
-        return jsonify(
-            {"message": "Markboard API", "version": "1.0.0", "status": "running"}
-        )
+        return jsonify({
+            "message": "Markboard API",
+            "version": "1.0.0",
+            "status": "running"
+        })
 
     @app.route("/health")
     def health():
@@ -69,19 +67,18 @@ def create_app():
         try:
             # Test database connection
             db_status = db.test_connection()
-
-            return jsonify(
-                {
-                    "status": "healthy" if db_status else "unhealthy",
-                    "database": "connected" if db_status else "disconnected",
-                    "timestamp": db.execute_one("SELECT NOW() as now")[
-                        "now"
-                    ].isoformat(),
-                }
-            ), (200 if db_status else 503)
-
+            
+            return jsonify({
+                "status": "healthy" if db_status else "unhealthy",
+                "database": "connected" if db_status else "disconnected",
+                "timestamp": db.execute_one("SELECT NOW() as now")["now"].isoformat()
+            }), 200 if db_status else 503
+            
         except Exception as e:
-            return jsonify({"status": "unhealthy", "error": str(e)}), 503
+            return jsonify({
+                "status": "unhealthy",
+                "error": str(e)
+            }), 503
 
     @app.errorhandler(404)
     def not_found(error):
@@ -94,6 +91,9 @@ def create_app():
         return jsonify({"error": "Internal server error"}), 500
 
     return app
+
+
+
 
 
 if __name__ == "__main__":

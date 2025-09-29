@@ -1,36 +1,16 @@
 import { MermaidPreview } from '@/components/editor/MermaidPreview';
 import { MonacoEditor } from '@/components/editor/MonacoEditor';
 import { SimpleMermaidToolbar } from '@/components/editor/SimpleMermaidToolbar';
-import { AppSidebar } from '@/components/layout/AppSidebar';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { SidebarProvider } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/lib/api';
 import { ArrowLeft, Check, Download, Edit3, Loader2, Share2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-interface Team {
-  id: number;
-  name: string;
-  description: string;
-  owner_id: number;
-  file_count?: number;
-}
 
-interface FileItem {
-  id: string;
-  name: string;
-  team: string;
-  team_id?: number;
-  team_name?: string;
-  lastModified: string;
-  starred: boolean;
-  type: 'personal' | 'team';
-  owner_id?: number;
-}
 
 export default function FileEditor() {
   const { fileId } = useParams();
@@ -42,10 +22,7 @@ export default function FileEditor() {
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [lastSaved, setLastSaved] = useState<Date>(new Date());
-  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [files, setFiles] = useState<FileItem[]>([]);
   const [isEditingFileName, setIsEditingFileName] = useState(false);
   const [editedFileName, setEditedFileName] = useState('');
 
@@ -60,76 +37,7 @@ export default function FileEditor() {
     });
   };
 
-  // Load teams and files data
-  useEffect(() => {
-    const fetchTeams = async () => {
-      try {
-        const data = await apiService.listTeams();
-        setTeams(data.teams || []);
-      } catch (error) {
-        console.error('Error fetching teams:', error);
-      }
-    };
 
-    const fetchFiles = async () => {
-      try {
-        const data = await apiService.listFiles();
-        
-        // Convert backend file format to frontend FileItem format
-        const convertedFiles: FileItem[] = data.files?.map((file: any) => {
-          // Calculate time difference for lastModified
-          const updatedAt = new Date(file.updated_at);
-          const now = new Date();
-          const diffMs = now.getTime() - updatedAt.getTime();
-          const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-          const diffDays = Math.floor(diffHours / 24);
-          
-          let lastModified = 'Just now';
-          if (diffHours < 1) {
-            const diffMinutes = Math.floor(diffMs / (1000 * 60));
-            lastModified = diffMinutes <= 1 ? 'Just now' : `${diffMinutes} minutes ago`;
-          } else if (diffHours < 24) {
-            lastModified = diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
-          } else if (diffDays === 1) {
-            lastModified = '1 day ago';
-          } else {
-            lastModified = `${diffDays} days ago`;
-          }
-
-          // Find team name from teams data
-          const team = teams.find(t => t.id === file.team_id);
-          const teamName = team ? team.name : (file.team_id ? `Team ${file.team_id}` : 'Personal');
-
-          // Helper function to format display name (hide .md extension)
-          const formatDisplayName = (fileName: string): string => {
-            if (fileName.toLowerCase().endsWith('.md')) {
-              return fileName.slice(0, -3);
-            }
-            return fileName;
-          };
-
-          return {
-            id: file.id.toString(),
-            name: formatDisplayName(file.name),
-            team: teamName,
-            team_id: file.team_id,
-            team_name: teamName,
-            lastModified,
-            starred: false,
-            type: file.team_id ? 'team' : 'personal',
-            owner_id: file.owner_id,
-          };
-        }) || [];
-
-        setFiles(convertedFiles);
-      } catch (error) {
-        console.error('Error fetching files:', error);
-      }
-    };
-
-    fetchTeams();
-    fetchFiles();
-  }, []);
 
   // Load file data when component mounts or fileId changes
   useEffect(() => {
@@ -225,9 +133,7 @@ export default function FileEditor() {
     });
   };
 
-  const handleFileSelect = (fileId: string) => {
-    navigate(`/editor/${fileId}`);
-  };
+
 
   const handleStartEditing = () => {
     setIsEditingFileName(true);
@@ -301,17 +207,8 @@ export default function FileEditor() {
   }
 
   return (
-    <SidebarProvider defaultOpen={false}>
-      <div className="flex h-screen w-full bg-background">
-        <AppSidebar 
-          selectedTeam={selectedTeam}
-          onTeamSelect={setSelectedTeam}
-          onFileSelect={handleFileSelect}
-          teams={teams}
-          files={files}
-        />
-        
-        <main className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex h-screen w-full bg-background">
+      <main className="flex-1 flex flex-col overflow-hidden">
           <Header />
           
           {/* Editor Header */}
@@ -444,6 +341,5 @@ export default function FileEditor() {
           </div>
         </main>
       </div>
-    </SidebarProvider>
   );
 }
