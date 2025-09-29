@@ -79,8 +79,7 @@ networks:
   internal:
     driver: bridge
   proxy:
-    driver: bridge
-    name: markboard_proxy
+    external: true
 
 volumes:
   db_data:
