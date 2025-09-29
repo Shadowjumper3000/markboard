@@ -122,9 +122,6 @@ export default function Login() {
 
             <div className="text-center space-y-2">
               <p className="text-sm text-muted-foreground">
-                Try admin@markboard.com / password123 for admin access
-              </p>
-              <p className="text-sm text-muted-foreground">
                 Don't have an account?{' '}
                 <Link
                   to="/signup"
