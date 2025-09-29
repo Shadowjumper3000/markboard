@@ -44,6 +44,9 @@ def create_app():
             "http://localhost:3000",
             "http://localhost:5173",
             "http://127.0.0.1:3000",
+            # Add your domain here
+            # "https://your-domain.com",
+            # "http://your-domain.com",
         ],
         allow_headers=["Content-Type", "Authorization"],
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],

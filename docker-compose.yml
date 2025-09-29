@@ -44,8 +44,7 @@ services:
       FLASK_ENV: production
       DEBUG: "false"
       BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
-    ports:
-      - "127.0.0.1:8000:8000"  # Bind to localhost only for external nginx
+    # No ports exposed - internal access only
     depends_on:
       db:
         condition: service_healthy
@@ -60,6 +59,7 @@ services:
       start_period: 40s
     networks:
       - internal
+      - proxy
 
   frontend:
     build:
@@ -69,8 +69,6 @@ services:
     labels:
       - "com.docker.compose.project=markboard"
       - "app=markboard"
-    ports:
-      - "127.0.0.1:3000:80"  # Bind to localhost only for external nginx
     depends_on:
       - backend
     restart: unless-stopped
@@ -82,7 +80,8 @@ networks:
   internal:
     driver: bridge
   proxy:
-    external: true
+    driver: bridge
+    name: markboard_proxy
 
 volumes:
   db_data:
