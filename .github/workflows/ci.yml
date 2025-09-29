@@ -18,7 +18,7 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.HETZNER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy: Create application directory
+      - name: Deploy - Create application directory
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HETZNER_HOST }}
@@ -33,7 +33,7 @@ jobs:
               mkdir -p $APP_DIR
             fi
 
-      - name: Deploy: Clone or update repository
+      - name: Deploy - Clone or update repository
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HETZNER_HOST }}
@@ -55,7 +55,7 @@ jobs:
               git clean -fd
             fi
 
-      - name: Deploy: Create .env file
+      - name: Deploy - Create .env file
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HETZNER_HOST }}
@@ -69,7 +69,7 @@ jobs:
             echo "Creating production environment file..."
             echo '${{ secrets.ENV_FILE }}' > .env
 
-      - name: Deploy: Stop and clean up Docker resources
+      - name: Deploy - Stop and clean up Docker resources
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HETZNER_HOST }}
@@ -88,7 +88,7 @@ jobs:
             docker images --filter "label=app=markboard" -q | xargs -r docker rmi -f || true
             docker container prune -f --filter "label=app=markboard" || true
 
-      - name: Deploy: Build and start services
+      - name: Deploy - Build and start services
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HETZNER_HOST }}
@@ -104,7 +104,7 @@ jobs:
             echo "Waiting for services to start..."
             sleep 30
 
-      - name: Deploy: Remove .env after compose up
+      - name: Deploy - Remove .env after compose up
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HETZNER_HOST }}
@@ -118,7 +118,7 @@ jobs:
             echo "Removing .env file for security..."
             rm -f .env
 
-      - name: Deploy: Verify deployment
+      - name: Deploy - Verify deployment
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HETZNER_HOST }}
