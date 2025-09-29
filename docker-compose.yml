@@ -1,7 +1,5 @@
 # Docker Production Compose
 # Use this for production deployments
-version: '3.8'
-
 services:
   db:
     image: mysql:8.0
