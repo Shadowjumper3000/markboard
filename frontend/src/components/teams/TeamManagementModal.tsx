@@ -34,6 +34,8 @@ import { apiService } from '@/lib/api';
 import { Crown, LogOut, Plus, Search, Trash2, UserPlus, Users } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
+const MAX_TEAM_NAME_LENGTH = 100;
+const MAX_TEAM_DESCRIPTION_LENGTH = 500;
 interface Team {
   id: number;
   name: string;
@@ -75,6 +77,24 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
       toast({
         title: "Error",
         description: "Team name is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newTeamName.length > MAX_TEAM_NAME_LENGTH) {
+      toast({
+        title: "Error",
+        description: `Team name cannot exceed ${MAX_TEAM_NAME_LENGTH} characters.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newTeamDescription.length > MAX_TEAM_DESCRIPTION_LENGTH) {
+      toast({
+        title: "Error",
+        description: `Team description cannot exceed ${MAX_TEAM_DESCRIPTION_LENGTH} characters.`,
         variant: "destructive",
       });
       return;

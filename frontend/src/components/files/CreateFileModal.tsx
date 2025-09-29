@@ -1,20 +1,20 @@
 import { Button } from '@/components/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
@@ -37,6 +37,10 @@ interface CreateFileModalProps {
   onSuccess: () => void;
   teams: Team[];
 }
+
+const MAX_FILE_SIZE_MB = 10; // Maximum file size in megabytes
+const MAX_CONTENT_LENGTH = 2000; // Maximum length for initial content
+const MAX_FILE_NAME_LENGTH = 20; // Maximum file name length
 
 export function CreateFileModal({ isOpen, onClose, onSuccess, teams }: CreateFileModalProps) {
   const [activeTab, setActiveTab] = useState<'new' | 'upload'>('new');
@@ -71,6 +75,17 @@ export function CreateFileModal({ isOpen, onClose, onSuccess, teams }: CreateFil
         return;
       }
 
+      // Validate file size
+      const fileSizeMB = file.size / (1024 * 1024);
+      if (fileSizeMB > MAX_FILE_SIZE_MB) {
+        toast({
+          title: 'File too large',
+          description: `Please upload a file smaller than ${MAX_FILE_SIZE_MB}MB.`,
+          variant: 'destructive',
+        });
+        return;
+      }
+
       setUploadFile(file);
       setFileName(file.name);
 
@@ -86,11 +101,29 @@ export function CreateFileModal({ isOpen, onClose, onSuccess, teams }: CreateFil
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!fileName.trim()) {
       toast({
         title: 'File name required',
         description: 'Please enter a file name.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (fileName.length > MAX_FILE_NAME_LENGTH) {
+      toast({
+        title: 'File name too long',
+        description: `File name cannot exceed ${MAX_FILE_NAME_LENGTH} characters.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (fileContent.length > MAX_CONTENT_LENGTH) {
+      toast({
+        title: 'Content too long',
+        description: `Initial content cannot exceed ${MAX_CONTENT_LENGTH} characters.`,
         variant: 'destructive',
       });
       return;
