@@ -318,6 +318,15 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
                       <CardContent className="pt-0 flex flex-col gap-2">
                         <div className="flex items-center justify-between text-sm text-muted-foreground">
                           <span>{team.member_count || 0} members</span>
+                          {team.role === 'admin' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenUserPopup(team)}
+                            >
+                              <Settings className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
