@@ -34,8 +34,8 @@ import { apiService } from '@/lib/api';
 import { Crown, LogOut, Plus, Search, Trash2, UserPlus, Users } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
-const MAX_TEAM_NAME_LENGTH = 100;
-const MAX_TEAM_DESCRIPTION_LENGTH = 500;
+const MAX_TEAM_NAME_LENGTH = 20;
+const MAX_TEAM_DESCRIPTION_LENGTH = 100;
 interface Team {
   id: number;
   name: string;
@@ -100,10 +100,20 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
       return;
     }
 
-    if (user?.role !== 'admin' && teams.length >= 3) {
+    try {
+      const teamCountResponse = await apiService.getUserTeamCount();
+      if (user?.role !== 'admin' && teamCountResponse.count >= 3) {
+        toast({
+          title: "Limit Reached",
+          description: "You can only create up to 3 teams.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (error) {
       toast({
-        title: "Limit Reached",
-        description: "You can only create up to 3 teams.",
+        title: "Error",
+        description: "Failed to validate team count. Please try again later.",
         variant: "destructive",
       });
       return;

@@ -1,3 +1,4 @@
+import { useToast } from '@/hooks/use-toast';
 import mermaid from 'mermaid';
 import { useEffect, useRef, useState } from 'react';
 
@@ -9,7 +10,7 @@ interface MermaidPreviewProps {
 export function MermaidPreview({ content, className = '' }: MermaidPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Configure Mermaid
@@ -34,7 +35,6 @@ export function MermaidPreview({ content, className = '' }: MermaidPreviewProps)
       }
 
       setIsLoading(true);
-      setError(null);
 
       try {
         // Extract mermaid code blocks from markdown
@@ -54,7 +54,9 @@ export function MermaidPreview({ content, className = '' }: MermaidPreviewProps)
                     &nbsp;&nbsp;&nbsp;&nbsp;A[Start] --> B[End]<br/>
                     \`\`\`
                   </div>
-                  <div class="mt-2">💡 This allows for comments and multiple diagrams</div>
+                  <div class="mt-2">
+                    💡 This allows for comments and multiple diagrams
+                  </div>
                 </div>
               </div>
             </div>
@@ -78,12 +80,11 @@ export function MermaidPreview({ content, className = '' }: MermaidPreviewProps)
               </div>
             `;
           } catch (renderError) {
-            htmlContent += `
-              <div class="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                <div class="text-destructive font-medium mb-2">Diagram Error:</div>
-                <pre class="text-xs text-destructive/80">${renderError instanceof Error ? renderError.message : 'Unknown error'}</pre>
-              </div>
-            `;
+            toast({
+              variant: 'destructive',
+              title: 'Mermaid Diagram Error',
+              description: renderError instanceof Error ? renderError.message : 'Unknown error occurred while rendering the diagram.',
+            });
           }
         }
         
@@ -91,7 +92,11 @@ export function MermaidPreview({ content, className = '' }: MermaidPreviewProps)
         containerRef.current.innerHTML = htmlContent;
         
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to render diagram');
+        toast({
+          variant: 'destructive',
+          title: 'Mermaid Rendering Error',
+          description: err instanceof Error ? err.message : 'Failed to render Mermaid diagrams.',
+        });
       } finally {
         setIsLoading(false);
       }
@@ -99,7 +104,7 @@ export function MermaidPreview({ content, className = '' }: MermaidPreviewProps)
 
     const debounceTimer = setTimeout(renderDiagram, 500);
     return () => clearTimeout(debounceTimer);
-  }, [content]);
+  }, [content, toast]);
 
   const extractMermaidBlocks = (markdown: string): string[] => {
     const blocks: string[] = [];
@@ -126,13 +131,6 @@ export function MermaidPreview({ content, className = '' }: MermaidPreviewProps)
             <div className="text-center space-y-2">
               <div className="animate-pulse text-muted-foreground">Rendering diagrams...</div>
             </div>
-          </div>
-        )}
-        
-        {error && (
-          <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-            <div className="text-destructive font-medium mb-2">Error:</div>
-            <pre className="text-xs text-destructive/80">{error}</pre>
           </div>
         )}
         

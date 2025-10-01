@@ -1,4 +1,3 @@
-
 // Backend API base URL
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -272,6 +271,17 @@ class ApiService {
     }
 
     const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+
+    return this.handleResponse(response);
+  }
+
+  async getUserTeamCount(): Promise<{
+    count: number;
+  }> {
+    const response = await fetch(`${API_BASE}/teams/count`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });
