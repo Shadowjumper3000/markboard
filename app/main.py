@@ -1,17 +1,21 @@
-"""
-Main Flask application.
-"""
-
 import logging
 import sys
+import os
 from flask import Flask, jsonify
-from flask_cors import CORS
 from app.config import Config
 from app.db import db
 from app.auth import auth_bp
 from app.files import files_bp
 from app.admin import admin_bp
 from app.teams import teams_bp
+
+# Only import flask_cors in development
+CORS = None
+if os.getenv("FLASK_ENV", "production") != "production":
+    try:
+        from flask_cors import CORS
+    except ImportError:
+        CORS = None
 
 
 def create_app():
@@ -38,7 +42,7 @@ def create_app():
         sys.exit(1)
 
     # Configure CORS for development only
-    if Config.DEBUG:
+    if Config.DEBUG and CORS:
         CORS(
             flask_app,
             origins=[
