@@ -18,6 +18,28 @@ logger = logging.getLogger(__name__)
 teams_bp = Blueprint("teams", __name__, url_prefix="/teams")
 
 
+# Endpoint to get the total count of teams
+@teams_bp.route("/count", methods=["GET"])
+@require_auth
+def get_team_count():
+    """Get the number of teams the authenticated user is a member of."""
+    try:
+        user_id = g.current_user_id
+        result = db.execute_one(
+            """
+            SELECT COUNT(DISTINCT t.id) as count
+            FROM teams t
+            INNER JOIN team_members tm ON t.id = tm.team_id
+            WHERE tm.user_id = %s
+            """,
+            (user_id,),
+        )
+        return format_success_response({"count": result["count"]})
+    except Exception as e:
+        logger.error("Get team count error: %s", e)
+        return format_error_response("Internal server error", 500)
+
+
 @teams_bp.route("", methods=["GET"])
 @require_auth
 def list_teams():
