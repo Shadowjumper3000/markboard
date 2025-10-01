@@ -20,7 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/lib/api';
-import { Crown, Plus, Search, UserPlus, Users } from 'lucide-react';
+import { Crown, Plus, Search, Settings, UserPlus, Users, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 const MAX_TEAM_NAME_LENGTH = 20;
@@ -52,6 +52,9 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
   const [searchQuery, setSearchQuery] = useState('');
   const [isLeaving, setIsLeaving] = useState(false);
   const [isDisbanding, setIsDisbanding] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [isUserPopupOpen, setIsUserPopupOpen] = useState(false);
+  const [teamUsers, setTeamUsers] = useState([]);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -210,6 +213,40 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
     }
   };
 
+  const loadTeamUsers = async (teamId: number) => {
+    try {
+      const response = await apiService.getTeamUsers(teamId);
+      setTeamUsers(response.users || []);
+    } catch (error) {
+      console.error('Error loading team users:', error);
+    }
+  };
+
+  const handleOpenUserPopup = (team: Team) => {
+    setSelectedTeam(team);
+    loadTeamUsers(team.id);
+    setIsUserPopupOpen(true);
+  };
+
+  const handleKickUser = async (userId: number) => {
+    if (!selectedTeam) return;
+
+    try {
+      await apiService.kickUserFromTeam(selectedTeam.id, userId);
+      toast({
+        title: 'User kicked',
+        description: 'The user has been removed from the team.',
+      });
+      loadTeamUsers(selectedTeam.id);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to kick user.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   useEffect(() => {
     if (open) {
       loadAvailableTeams();
@@ -272,6 +309,15 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
                       <CardContent className="pt-0 flex flex-col gap-2">
                         <div className="flex items-center justify-between text-sm text-muted-foreground">
                           <span>{team.member_count || 0} members</span>
+                          {team.role === 'admin' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenUserPopup(team)}
+                            >
+                              <Settings className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -378,6 +424,32 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* User Management Popup */}
+        {selectedTeam && (
+          <Dialog open={isUserPopupOpen} onOpenChange={setIsUserPopupOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Manage Users in {selectedTeam.name}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                {teamUsers.map((user) => (
+                  <div key={user.id} className="flex items-center justify-between">
+                    <span>{user.name}</span>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleKickUser(user.id)}
+                    >
+                      <X className="h-4 w-4" />
+                      Kick
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </DialogContent>
     </Dialog>
   );
