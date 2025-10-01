@@ -11,6 +11,8 @@ from app.file_storage import file_storage
 
 logger = logging.getLogger(__name__)
 
+logger.info("\ud83c\udf31 Seeding admin user...")
+
 
 def seed_admin_user(force=False):
     """Seed only the admin user. Returns admin_id."""
