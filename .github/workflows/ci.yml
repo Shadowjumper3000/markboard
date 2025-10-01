@@ -118,8 +118,6 @@ jobs:
             cd $APP_DIR
             echo "Removing .env file for security..."
             rm -f .env
-            echo "Final data directory status:"
-            ls -la ./data
 
       - name: Deploy - Verify deployment
         uses: appleboy/ssh-action@v1.0.3
