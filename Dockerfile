@@ -29,9 +29,6 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Create app user for security
-RUN groupadd -r appuser && useradd -r -g appuser appuser
-
 # Install runtime dependencies only
 RUN apt-get update && apt-get install -y \
     default-libmysqlclient-dev \
@@ -48,11 +45,7 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 # Copy application code
 COPY app/ ./app/
 
-
-
-# Create data directories and set ownership before switching to appuser
-RUN mkdir -p /app/data/files /app/data/versions && \
-    chown -R appuser:appuser /app
+RUN mkdir -p /app/data/files /app/data/versions
 
 # Expose port
 EXPOSE 8000
