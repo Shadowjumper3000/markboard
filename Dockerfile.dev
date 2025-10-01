@@ -34,6 +34,7 @@ COPY .env-example .env
 
 # Expose port
 EXPOSE 8000
+EXPOSE 8080
 
 # Default command (can be overridden in docker-compose)
 CMD ["python", "-m", "app.main"]

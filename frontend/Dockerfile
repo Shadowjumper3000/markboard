@@ -33,7 +33,6 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 RUN addgroup -g 1001 -S nginx-user && \
     adduser -S nginx-user -u 1001 -G nginx-user
 
-# Expose port 80
 EXPOSE 80
 
 # Health check

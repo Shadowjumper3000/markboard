@@ -17,7 +17,7 @@ RUN bun install
 COPY . .
 
 # Expose port for Vite dev server
-EXPOSE 5173
+EXPOSE 80
 
 # Start development server with host binding for Docker
 CMD ["bun", "run", "dev", "--host", "0.0.0.0"]
