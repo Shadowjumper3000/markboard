@@ -1,4 +1,3 @@
-import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,10 +11,11 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Download, Edit, FileImage, FileText as FileTextIcon, MoreHorizontal, Star, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/lib/api';
 import { renderMermaidToPng } from '@/lib/mermaidToPng';
-import { useToast } from '@/hooks/use-toast';
+import { Download, Edit, FileImage, FileText as FileTextIcon, MoreHorizontal, Star, Trash2 } from 'lucide-react';
+import React from 'react';
 
 export interface FileItem {
   id: string;

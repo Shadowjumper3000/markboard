@@ -1,21 +1,21 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Download, Edit, FileImage, FileText as FileTextIcon, MoreHorizontal, Trash2 } from 'lucide-react';
-import { FileItem } from './FileGrid';
+import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/lib/api';
 import { renderMermaidToPng } from '@/lib/mermaidToPng';
-import { useToast } from '@/hooks/use-toast';
+import { Download, Edit, FileImage, FileText as FileTextIcon, MoreHorizontal, Trash2 } from 'lucide-react';
+import React from 'react';
+import { FileItem } from './FileGrid';
 
 interface FileListProps {
   files: FileItem[];
