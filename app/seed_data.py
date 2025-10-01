@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import bcrypt
 from app.config import Config
 from app.db import db
-from app.file_storage import file_storage
+from app.utils import file_storage
 
 logger = logging.getLogger(__name__)
 
@@ -164,9 +164,6 @@ def seed_other_data(admin_id):
                 logger.info("Added user %d to team %d as %s", user_id, team_id, role)
             else:
                 logger.info("User %d already member of team %d", user_id, team_id)
-
-        # Create sample files using file storage logic
-        from app.file_storage import file_storage
 
         sample_files = [
             {
