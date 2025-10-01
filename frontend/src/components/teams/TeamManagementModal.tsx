@@ -315,6 +315,30 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
                             </Button>
                           )}
                         </div>
+                        {/* Disband Team button logic */}
+                        {team.role === 'admin' && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="mt-2"
+                            disabled={isDisbanding}
+                            onClick={() => {
+                              if (team.member_count === 1) {
+                                if (window.confirm('Disbanding this team will also delete all files associated with it. Are you sure you want to continue?')) {
+                                  handleDisbandTeam(team.id, team.name);
+                                }
+                              } else if (team.file_count > 0) {
+                                window.alert('You must delete or move all files before disbanding a team with multiple members.');
+                              } else {
+                                if (window.confirm('Are you sure you want to disband this team?')) {
+                                  handleDisbandTeam(team.id, team.name);
+                                }
+                              }
+                            }}
+                          >
+                            {isDisbanding ? 'Disbanding...' : 'Disband Team'}
+                          </Button>
+                        )}
                       </CardContent>
                     </Card>
                   ))}

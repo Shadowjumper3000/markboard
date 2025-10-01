@@ -326,15 +326,26 @@ def disband_team(team_id):
         if team["owner_id"] != user_id:
             return format_error_response("Only team owners can disband teams", 403)
 
-        # Check if team has files
-        file_count = db.execute_one(
-            "SELECT COUNT(*) as count FROM files WHERE team_id = %s AND deleted_at IS NULL",
-            (team_id,),
+        # Check number of team members
+        member_count = db.execute_one(
+            "SELECT COUNT(*) as count FROM team_members WHERE team_id = %s", (team_id,)
         )
-
-        if file_count and file_count["count"] > 0:
-            return format_error_response(
-                "Cannot disband team with files. Move or delete files first.", 400
+        if not member_count or member_count["count"] > 1:
+            # If more than one member, keep old logic (require files to be deleted first)
+            file_count = db.execute_one(
+                "SELECT COUNT(*) as count FROM files WHERE team_id = %s AND deleted_at IS NULL",
+                (team_id,),
+            )
+            if file_count and file_count["count"] > 0:
+                return format_error_response(
+                    "Cannot disband team with files. Move or delete files first.", 400
+                )
+        else:
+            # If only one member, allow disband and soft-delete all files
+            now = datetime.now(timezone.utc)
+            db.execute_modify(
+                "UPDATE files SET deleted_at = %s WHERE team_id = %s AND deleted_at IS NULL",
+                (now, team_id),
             )
 
         # Remove all team members first
