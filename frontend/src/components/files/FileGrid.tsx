@@ -141,14 +141,6 @@ export function FileGrid({ files, onFileSelect, onFileDelete, onFileToggleStar }
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={(e) => {
-                    e.stopPropagation();
-                    onFileSelect(file.id);
-                  }}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                  </DropdownMenuItem>
-                  {/* Star/Unstar removed from dropdown */}
                   <DropdownMenuSeparator />
                   
                   <DropdownMenuSub>
