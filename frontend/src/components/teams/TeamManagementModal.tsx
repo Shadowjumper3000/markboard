@@ -1,14 +1,3 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -273,8 +262,8 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
     }
   }, [open]);
 
-  // Update the CSS for team cards to make them square
-  const teamCardStyle = "aspect-square flex flex-col justify-between";
+  // Adjust the teamCardStyle to make the cards smaller and more compact
+  const teamCardStyle = "flex flex-col justify-between items-center p-3 bg-card shadow-md hover:shadow-lg transition-shadow rounded-md";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -307,110 +296,33 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
                   </p>
                 </div>
               ) : (
-                teams.map((team) => (
-                  <Card key={team.id} className={teamCardStyle}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          {team.name}
-                          {team.role === 'admin' && (
-                            <Crown className="h-4 w-4 text-yellow-500" />
-                          )}
-                        </CardTitle>
-                        <Badge variant="secondary">
-                          {team.file_count || 0} files
-                        </Badge>
-                      </div>
-                      {team.description && (
-                        <CardDescription>{team.description}</CardDescription>
-                      )}
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm text-muted-foreground">
-                          {team.member_count || 0} members
-                        </span>
-                        <Badge variant={team.role === 'admin' ? 'default' : 'secondary'}>
-                          {team.role || 'member'}
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        {team.owner_id.toString() === user?.id ? (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="destructive" 
-                                size="sm"
-                                className="flex-1"
-                                disabled={isDisbanding}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Disband Team
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Disband Team</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to disband "{team.name}"? This action cannot be undone. 
-                                  All team members will be removed and the team will be permanently deleted.
-                                  {team.file_count && team.file_count > 0 && (
-                                    <span className="block mt-2 font-medium text-destructive">
-                                      This team has {team.file_count} files. Move or delete all files before disbanding.
-                                    </span>
-                                  )}
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDisbandTeam(team.id, team.name)}
-                                  className="bg-destructive hover:bg-destructive/90"
-                                  disabled={isDisbanding || (team.file_count && team.file_count > 0)}
-                                >
-                                  {isDisbanding ? 'Disbanding...' : 'Disband Team'}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        ) : (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="flex-1"
-                                disabled={isLeaving}
-                              >
-                                <LogOut className="h-4 w-4 mr-2" />
-                                Leave Team
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Leave Team</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to leave "{team.name}"? You will lose access to all team files 
-                                  and will need to be re-invited to join again.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleLeaveTeam(team.id, team.name)}
-                                  disabled={isLeaving}
-                                >
-                                  {isLeaving ? 'Leaving...' : 'Leave Team'}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {teams.map((team) => (
+                    <Card key={team.id} className={teamCardStyle}>
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            {team.name}
+                            {team.role === 'admin' && (
+                              <Crown className="h-4 w-4 text-yellow-500" />
+                            )}
+                          </CardTitle>
+                          <Badge variant="secondary">
+                            {team.file_count || 0} files
+                          </Badge>
+                        </div>
+                        {team.description && (
+                          <CardDescription>{team.description}</CardDescription>
                         )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+                      </CardHeader>
+                      <CardContent className="pt-0 flex flex-col gap-2">
+                        <div className="flex items-center justify-between text-sm text-muted-foreground">
+                          <span>{team.member_count || 0} members</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               )}
             </div>
           </TabsContent>
