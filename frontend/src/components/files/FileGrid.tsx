@@ -26,6 +26,18 @@ interface FileGridProps {
 }
 
 export function FileGrid({ files, onFileSelect, onFileDelete, onFileToggleStar }: FileGridProps) {
+  const handleDownload = (file: FileItem) => {
+    const blob = new Blob([file.name], { type: 'text/markdown' }); // Ensure MIME type is for Markdown
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${file.name}.md`; // Append .md extension to the file name
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {files.map((file) => (
@@ -54,7 +66,6 @@ export function FileGrid({ files, onFileSelect, onFileDelete, onFileToggleStar }
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {/* Removed Edit Option */}
                   <DropdownMenuItem onClick={(e) => {
                     e.stopPropagation();
                     onFileToggleStar(file.id);
@@ -62,7 +73,10 @@ export function FileGrid({ files, onFileSelect, onFileDelete, onFileToggleStar }
                     <Star className="mr-2 h-4 w-4" />
                     {file.starred ? 'Unstar' : 'Star'}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenuItem onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownload(file);
+                  }}>
                     <Download className="mr-2 h-4 w-4" />
                     Download
                   </DropdownMenuItem>
