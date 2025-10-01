@@ -167,11 +167,21 @@ def seed_other_data(admin_id, force=False):
             else:
                 logger.info("User %d already member of team %d", user_id, team_id)
 
-        # Create sample files
-        sample_files = [
-            # ...existing code...
-        ]
+        # Create sample files using file storage logic
         from app.file_storage import file_storage
+
+        sample_files = [
+            {
+                "name": "mermaid_flow_1.md",
+                "owner_id": admin_id,
+                "content": """```mermaid\ngraph TD;\n    A-->B;\n    B-->C;\n```""",
+            },
+            {
+                "name": "mermaid_flow_2.md",
+                "owner_id": admin_id,
+                "content": """```mermaid\nflowchart LR\n    X-->Y\n    Y-->Z\n```""",
+            },
+        ]
 
         for file_data in sample_files:
             existing_file = db.execute_one(
@@ -181,6 +191,36 @@ def seed_other_data(admin_id, force=False):
             if existing_file:
                 logger.info("File already exists: %s", file_data["name"])
             else:
+                now = datetime.now(timezone.utc)
+                # Insert file metadata (empty path/size)
+                file_id = db.execute_modify(
+                    """
+                    INSERT INTO files (name, file_path, file_size, mime_type, owner_id, team_id, created_at, updated_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        file_data["name"],
+                        "",  # file_path
+                        0,  # file_size
+                        "text/markdown",
+                        file_data["owner_id"],
+                        None,
+                        now,
+                        now,
+                    ),
+                )
+                # Generate file path and save content
+                file_path = file_storage.generate_file_path(file_id, file_data["name"])
+                file_size, checksum = file_storage.save_file(
+                    file_path, file_data["content"]
+                )
+                # Update DB with file_path, file_size, checksum
+                db.execute_modify(
+                    """
+                    UPDATE files SET file_path = %s, file_size = %s, checksum = %s WHERE id = %s
+                    """,
+                    (file_path, file_size, checksum, file_id),
+                )
                 logger.info("Created file: %s (ID: %d)", file_data["name"], file_id)
 
         # Log some activities for demonstration
