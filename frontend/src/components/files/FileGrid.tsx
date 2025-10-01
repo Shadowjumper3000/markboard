@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Download, Edit, MoreHorizontal, Star, Trash2 } from 'lucide-react';
+import { Download, MoreHorizontal, Star, Trash2 } from 'lucide-react';
 
 export interface FileItem {
   id: string;
@@ -54,13 +54,7 @@ export function FileGrid({ files, onFileSelect, onFileDelete, onFileToggleStar }
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={(e) => {
-                    e.stopPropagation();
-                    onFileSelect(file.id);
-                  }}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                  </DropdownMenuItem>
+                  {/* Removed Edit Option */}
                   <DropdownMenuItem onClick={(e) => {
                     e.stopPropagation();
                     onFileToggleStar(file.id);
