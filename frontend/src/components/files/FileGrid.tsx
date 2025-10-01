@@ -1,3 +1,4 @@
+import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -5,9 +6,16 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Download, MoreHorizontal, Star, Trash2 } from 'lucide-react';
+import { Download, Edit, FileImage, FileText as FileTextIcon, MoreHorizontal, Star, Trash2 } from 'lucide-react';
+import { apiService } from '@/lib/api';
+import { renderMermaidToPng } from '@/lib/mermaidToPng';
+import { useToast } from '@/hooks/use-toast';
 
 export interface FileItem {
   id: string;
@@ -26,16 +34,83 @@ interface FileGridProps {
 }
 
 export function FileGrid({ files, onFileSelect, onFileDelete, onFileToggleStar }: FileGridProps) {
-  const handleDownload = (file: FileItem) => {
-    const blob = new Blob([file.name], { type: 'text/markdown' }); // Ensure MIME type is for Markdown
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${file.name}.md`; // Append .md extension to the file name
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const { toast } = useToast();
+
+  const handleDownloadMd = async (file: FileItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      // Fetch file content
+      const fileData = await apiService.getFile(file.id);
+      const blob = new Blob([fileData.content], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileData.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Markdown downloaded",
+        description: `${fileData.name} has been downloaded to your computer.`,
+      });
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast({
+        variant: "destructive",
+        title: "Download failed",
+        description: "Unable to download the file. Please try again.",
+      });
+    }
+  };
+
+  const handleDownloadPng = async (file: FileItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      // Fetch file content and render as PNG
+      const fileData = await apiService.getFile(file.id);
+      const pngBlob = await renderMermaidToPng(fileData.content);
+      if (pngBlob) {
+        const url = URL.createObjectURL(pngBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${fileData.name.replace('.md', '.png')}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        toast({
+          title: "PNG downloaded",
+          description: `${fileData.name.replace('.md', '.png')} has been downloaded to your computer.`,
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Download failed",
+          description: "No Mermaid diagrams found to export as PNG.",
+        });
+      }
+    } catch (error) {
+      console.error('Error downloading PNG:', error);
+      toast({
+        variant: "destructive",
+        title: "Download failed",
+        description: "Unable to generate PNG from diagrams.",
+      });
+    }
+  };
+
+  const handleDownloadBoth = async (file: FileItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Download MD file
+    await handleDownloadMd(file, e);
+    
+    // Download PNG file with a small delay
+    setTimeout(() => {
+      handleDownloadPng(file, e);
+    }, 500);
   };
 
   return (
@@ -68,18 +143,45 @@ export function FileGrid({ files, onFileSelect, onFileDelete, onFileToggleStar }
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={(e) => {
                     e.stopPropagation();
+                    onFileSelect(file.id);
+                  }}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => {
+                    e.stopPropagation();
                     onFileToggleStar(file.id);
                   }}>
                     <Star className="mr-2 h-4 w-4" />
                     {file.starred ? 'Unstar' : 'Star'}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={(e) => {
-                    e.stopPropagation();
-                    handleDownload(file);
-                  }}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download
-                  </DropdownMenuItem>
+                  
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Download className="mr-2 h-4 w-4" />
+                      Download
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem onClick={(e) => handleDownloadMd(file, e)}>
+                        <FileTextIcon className="mr-2 h-4 w-4" />
+                        Download as .md
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => handleDownloadPng(file, e)}>
+                        <FileImage className="mr-2 h-4 w-4" />
+                        Download as .png
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={(e) => handleDownloadBoth(file, e)}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Download both formats
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+
+                  <DropdownMenuSeparator />
+
                   <DropdownMenuItem 
                     className="text-destructive focus:text-destructive"
                     onClick={(e) => {

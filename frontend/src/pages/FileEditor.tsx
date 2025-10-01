@@ -4,9 +4,27 @@ import { SimpleMermaidToolbar } from '@/components/editor/SimpleMermaidToolbar';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/lib/api';
-import { ArrowLeft, Check, Download, Edit3, Loader2, Share2, X } from 'lucide-react';
+import { renderMermaidToPng } from '@/lib/mermaidToPng';
+import { 
+  ArrowLeft, 
+  Check, 
+  Download, 
+  Edit3, 
+  FileImage, 
+  FileText as FileTextIcon,
+  Loader2, 
+  Share2, 
+  X 
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -116,7 +134,7 @@ export default function FileEditor() {
     }
   };
 
-  const handleDownload = () => {
+  const handleDownloadMd = () => {
     const blob = new Blob([content], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -128,9 +146,53 @@ export default function FileEditor() {
     URL.revokeObjectURL(url);
     
     toast({
-      title: "File downloaded",
+      title: "Markdown downloaded",
       description: `${fileName} has been downloaded to your computer.`,
     });
+  };
+
+  const handleDownloadPng = async () => {
+    try {
+      const pngBlob = await renderMermaidToPng(content);
+      if (pngBlob) {
+        const url = URL.createObjectURL(pngBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${fileName.replace('.md', '.png')}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        toast({
+          title: "PNG downloaded",
+          description: `${fileName.replace('.md', '.png')} has been downloaded to your computer.`,
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Download failed",
+          description: "No Mermaid diagrams found to export as PNG.",
+        });
+      }
+    } catch (error) {
+      console.error('Error downloading PNG:', error);
+      toast({
+        variant: "destructive",
+        title: "Download failed",
+        description: "Unable to generate PNG from diagrams.",
+      });
+    }
+  };
+
+  const handleDownloadBoth = async () => {
+    // Download MD file
+    handleDownloadMd();
+    
+    // Download PNG file
+    setTimeout(() => {
+      handleDownloadPng();
+    }, 500); // Small delay to avoid browser blocking multiple downloads
   };
 
 
@@ -290,15 +352,33 @@ export default function FileEditor() {
               </div>
               
               <div className="flex items-center space-x-3">
-                <Button
-                  onClick={handleDownload}
-                  variant="outline"
-                  size="sm"
-                  className="transition-fast"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="transition-fast"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleDownloadMd}>
+                      <FileTextIcon className="mr-2 h-4 w-4" />
+                      Download as .md
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleDownloadPng}>
+                      <FileImage className="mr-2 h-4 w-4" />
+                      Download as .png
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleDownloadBoth}>
+                      <Download className="mr-2 h-4 w-4" />
+                      Download both formats
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 
                 <Button
                   variant="outline"
