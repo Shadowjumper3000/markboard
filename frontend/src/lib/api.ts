@@ -9,6 +9,31 @@ interface ApiResponse<T = any> {
 }
 
 class ApiService {
+  async kickUserFromTeam(teamId: number, userId: number): Promise<{ message: string }> {
+    const response = await fetch(`${API_BASE}/teams/${teamId}/kick`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ user_id: userId }),
+    });
+    return this.handleResponse(response);
+  }
+  // Get users of a team
+  async getTeamUsers(teamId: number): Promise<{
+    users: Array<{
+      id: number;
+      email: string;
+      is_admin?: boolean;
+      created_at?: string;
+      last_login?: string | null;
+      role?: string;
+    }>;
+  }> {
+    const response = await fetch(`${API_BASE}/teams/${teamId}/users`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+    return this.handleResponse(response);
+  }
   private getAuthHeaders(): HeadersInit {
     const token = localStorage.getItem('token');
     return {

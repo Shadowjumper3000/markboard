@@ -337,3 +337,96 @@ def disband_team(team_id):
     except Exception as e:
         logger.error("Disband team error: %s", e)
         return format_error_response("Internal server error", 500)
+
+
+# List users in a team
+@teams_bp.route("/<int:team_id>/users", methods=["GET"])
+@require_auth
+def list_team_users(team_id):
+    """Get list of users in a team."""
+    try:
+        user_id = g.current_user_id
+
+        # Check if requesting user is a member of the team
+        team_member = db.execute_one(
+            "SELECT id FROM team_members WHERE team_id = %s AND user_id = %s",
+            (team_id, user_id),
+        )
+        if not team_member:
+            return format_error_response("Team not found or access denied", 404)
+
+        # Get all users in the team
+        query = """
+            SELECT u.id, u.email, u.is_admin, u.created_at, tm.role
+            FROM users u
+            INNER JOIN team_members tm ON u.id = tm.user_id
+            WHERE tm.team_id = %s
+            ORDER BY u.email
+        """
+        users = db.execute_query(query, (team_id,))
+
+        # Convert datetimes to isoformat
+        for user in users:
+            if user.get("created_at"):
+                user["created_at"] = user["created_at"].isoformat()
+
+        return format_success_response({"users": users})
+    except Exception as e:
+        logger.error("List team users error: %s", e)
+        return format_error_response("Internal server error", 500)
+
+
+# Kick a user from a team
+@teams_bp.route("/<int:team_id>/kick", methods=["POST"])
+@require_auth
+def kick_user_from_team(team_id):
+    """Kick a user from a team (admin/owner only)."""
+    try:
+        user_id = g.current_user_id
+        data = request.get_json()
+        target_user_id = data.get("user_id")
+        if not target_user_id:
+            return format_error_response("user_id is required", 400)
+
+        # Check if the requester is an admin or owner in the team
+        member = db.execute_one(
+            "SELECT role FROM team_members WHERE team_id = %s AND user_id = %s",
+            (team_id, user_id),
+        )
+        if not member or member["role"] not in ("admin", "owner"):
+            return format_error_response(
+                "Only team admins or owners can kick members", 403
+            )
+
+        # Prevent kicking the owner
+        team = db.execute_one("SELECT owner_id FROM teams WHERE id = %s", (team_id,))
+        if team and target_user_id == team["owner_id"]:
+            return format_error_response("Cannot kick the team owner", 400)
+
+        # Check if target user is a member
+        target_member = db.execute_one(
+            "SELECT id FROM team_members WHERE team_id = %s AND user_id = %s",
+            (team_id, target_user_id),
+        )
+        if not target_member:
+            return format_error_response("User is not a member of this team", 404)
+
+        # Remove the user from the team
+        db.execute_modify(
+            "DELETE FROM team_members WHERE team_id = %s AND user_id = %s",
+            (team_id, target_user_id),
+        )
+
+        # Log activity
+        log_activity(
+            user_id,
+            "kick",
+            "team",
+            team_id,
+            f"Kicked user {target_user_id} from team {team_id}",
+        )
+
+        return format_success_response({"message": "User kicked from team"})
+    except Exception as e:
+        logger.error("Kick user from team error: %s", e)
+        return format_error_response("Internal server error", 500)

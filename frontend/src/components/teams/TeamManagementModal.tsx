@@ -216,7 +216,12 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
   const loadTeamUsers = async (teamId: number) => {
     try {
       const response = await apiService.getTeamUsers(teamId);
-      setTeamUsers(response.users || []);
+      // Add a 'name' property for each user (use email prefix as fallback)
+      const usersWithName = (response.users || []).map((user) => ({
+        ...user,
+        name: user.name || (user.email ? user.email.split('@')[0].replace(/\./g, ' ').replace(/(^|\s)\S/g, l => l.toUpperCase()) : 'Unknown'),
+      }));
+      setTeamUsers(usersWithName);
     } catch (error) {
       console.error('Error loading team users:', error);
     }
