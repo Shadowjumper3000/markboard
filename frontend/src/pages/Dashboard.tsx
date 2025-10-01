@@ -1,4 +1,5 @@
 import { FileGrid, FileItem } from '@/components/files/FileGrid';
+import { FileList } from '@/components/files/FileList';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
@@ -267,18 +268,27 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Files Grid */}
+              {/* Files Grid/List */}
               {loading ? (
                 <div className="text-center py-12">
                   <div className="text-muted-foreground">Loading files...</div>
                 </div>
               ) : filteredFiles.length > 0 ? (
-                <FileGrid
-                  files={filteredFiles}
-                  onFileSelect={handleFileSelect}
-                  onFileDelete={handleFileDelete}
-                  onFileToggleStar={handleFileToggleStar}
-                />
+                viewMode === 'grid' ? (
+                  <FileGrid
+                    files={filteredFiles}
+                    onFileSelect={handleFileSelect}
+                    onFileDelete={handleFileDelete}
+                    onFileToggleStar={handleFileToggleStar}
+                  />
+                ) : (
+                  <FileList
+                    files={filteredFiles}
+                    onFileSelect={handleFileSelect}
+                    onFileDelete={handleFileDelete}
+                    onFileToggleStar={handleFileToggleStar}
+                  />
+                )
               ) : (
                 <div className="text-center py-12">
                   <div className="text-muted-foreground mb-4">
