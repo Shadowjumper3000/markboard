@@ -84,7 +84,7 @@ jobs:
             echo "Stopping existing containers..."
             docker compose down --remove-orphans || true
             echo "Cleaning up project Docker resources..."
-            docker compose down --volumes --remove-orphans || true
+            docker compose down --remove-orphans || true
             echo "Removing old markboard images..."
             docker images --filter "label=app=markboard" -q | xargs -r docker rmi -f || true
             docker container prune -f --filter "label=app=markboard" || true
