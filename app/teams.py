@@ -48,7 +48,7 @@ def list_teams():
         return format_success_response({"teams": teams})
 
     except Exception as e:
-        logger.error(f"List teams error: {e}")
+        logger.error("List teams error: %s", e)
         return format_error_response("Internal server error", 500)
 
 
@@ -90,7 +90,7 @@ def get_team(team_id):
         return format_success_response(team)
 
     except Exception as e:
-        logger.error(f"Get team error: {e}")
+        logger.error("Get team error: %s", e)
         return format_error_response("Internal server error", 500)
 
 
@@ -148,12 +148,12 @@ def create_team():
             "created_at": now.isoformat(),
         }
 
-        logger.info(f"Team created: {name} (ID: {team_id}) by user {user_id}")
+        logger.info("Team created: %s (ID: %d) by user %d", name, team_id, user_id)
 
         return format_success_response(team_data, "Team created successfully", 201)
 
     except Exception as e:
-        logger.error(f"Create team error: {e}")
+        logger.error("Create team error: %s", e)
         return format_error_response("Internal server error", 500)
 
 
@@ -192,14 +192,14 @@ def join_team(team_id):
         # Log activity
         log_activity(user_id, "join", "team", team_id, f"Joined team: {team['name']}")
 
-        logger.info(f"User {user_id} joined team {team['name']} (ID: {team_id})")
+        logger.info("User %d joined team %s (ID: %d)", user_id, team["name"], team_id)
 
         return format_success_response(
             {"message": f"Successfully joined {team['name']}"}
         )
 
     except Exception as e:
-        logger.error(f"Join team error: {e}")
+        logger.error("Join team error: %s", e)
         return format_error_response("Internal server error", 500)
 
 
@@ -234,7 +234,7 @@ def get_available_teams():
         return format_success_response({"teams": teams})
 
     except Exception as e:
-        logger.error(f"Get available teams error: {e}")
+        logger.error("Get available teams error: %s", e)
         return format_error_response("Internal server error", 500)
 
 
@@ -277,12 +277,12 @@ def leave_team(team_id):
         # Log activity
         log_activity(user_id, "leave", "team", team_id, f"Left team: {team['name']}")
 
-        logger.info(f"User {user_id} left team {team['name']} (ID: {team_id})")
+        logger.info("User %d left team %s (ID: %d)", user_id, team["name"], team_id)
 
         return format_success_response({"message": f"Successfully left {team['name']}"})
 
     except Exception as e:
-        logger.error(f"Leave team error: {e}")
+        logger.error("Leave team error: %s", e)
         return format_error_response("Internal server error", 500)
 
 
@@ -326,12 +326,14 @@ def disband_team(team_id):
             user_id, "disband", "team", team_id, f"Disbanded team: {team['name']}"
         )
 
-        logger.info(f"Team disbanded: {team['name']} (ID: {team_id}) by user {user_id}")
+        logger.info(
+            "Team disbanded: %s (ID: %d) by user %d", team["name"], team_id, user_id
+        )
 
         return format_success_response(
             {"message": f"Successfully disbanded {team['name']}"}
         )
 
     except Exception as e:
-        logger.error(f"Disband team error: {e}")
+        logger.error("Disband team error: %s", e)
         return format_error_response("Internal server error", 500)

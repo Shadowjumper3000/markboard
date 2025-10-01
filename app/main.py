@@ -29,7 +29,7 @@ def create_app():
     try:
         Config.validate()
     except ValueError as e:
-        logging.error(f"Configuration error: {e}")
+        logging.error("Configuration error: %s", e)
         sys.exit(1)
 
     # Test database connection

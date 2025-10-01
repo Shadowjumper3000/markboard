@@ -27,7 +27,7 @@ class FileStorage:
         self.files_dir.mkdir(parents=True, exist_ok=True)
         self.versions_dir.mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"File storage initialized at {self.base_path}")
+        logger.info("File storage initialized at %s", self.base_path)
 
     def generate_file_path(self, file_id: int, filename: str) -> str:
         """Generate a structured file path based on file ID."""
@@ -76,12 +76,15 @@ class FileStorage:
             checksum = self._calculate_checksum(file_path)
 
             logger.info(
-                f"File saved: {file_path} ({file_size} bytes, checksum: {checksum[:8]}...)"
+                "File saved: %s (%d bytes, checksum: %s...)",
+                file_path,
+                file_size,
+                checksum[:8],
             )
             return file_size, checksum
 
         except Exception as e:
-            logger.error(f"Failed to save file {file_path}: {e}")
+            logger.error("Failed to save file %s: %s", file_path, e)
             raise
 
     def read_file(self, file_path: str) -> str:
@@ -101,11 +104,11 @@ class FileStorage:
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-            logger.debug(f"File read: {file_path} ({len(content)} characters)")
+            logger.debug("File read: %s (%d characters)", file_path, len(content))
             return content
 
         except Exception as e:
-            logger.error(f"Failed to read file {file_path}: {e}")
+            logger.error("Failed to read file %s: %s", file_path, e)
             raise
 
     def delete_file(self, file_path: str) -> bool:
@@ -121,14 +124,14 @@ class FileStorage:
         try:
             if os.path.exists(file_path):
                 os.remove(file_path)
-                logger.info(f"File deleted: {file_path}")
+                logger.info("File deleted: %s", file_path)
                 return True
             else:
-                logger.warning(f"File not found for deletion: {file_path}")
+                logger.warning("File not found for deletion: %s", file_path)
                 return False
 
         except Exception as e:
-            logger.error(f"Failed to delete file {file_path}: {e}")
+            logger.error("Failed to delete file %s: %s", file_path, e)
             return False
 
     def move_file(self, src_path: str, dst_path: str) -> bool:
@@ -147,11 +150,11 @@ class FileStorage:
             Path(dst_path).parent.mkdir(parents=True, exist_ok=True)
 
             shutil.move(src_path, dst_path)
-            logger.info(f"File moved: {src_path} -> {dst_path}")
+            logger.info("File moved: %s -> %s", src_path, dst_path)
             return True
 
         except Exception as e:
-            logger.error(f"Failed to move file {src_path} -> {dst_path}: {e}")
+            logger.error("Failed to move file %s -> %s: %s", src_path, dst_path, e)
             return False
 
     def copy_file(self, src_path: str, dst_path: str) -> bool:
@@ -170,11 +173,11 @@ class FileStorage:
             Path(dst_path).parent.mkdir(parents=True, exist_ok=True)
 
             shutil.copy2(src_path, dst_path)
-            logger.info(f"File copied: {src_path} -> {dst_path}")
+            logger.info("File copied: %s -> %s", src_path, dst_path)
             return True
 
         except Exception as e:
-            logger.error(f"Failed to copy file {src_path} -> {dst_path}: {e}")
+            logger.error("Failed to copy file %s -> %s: %s", src_path, dst_path, e)
             return False
 
     def get_file_info(self, file_path: str) -> Optional[dict]:
@@ -202,7 +205,7 @@ class FileStorage:
             }
 
         except Exception as e:
-            logger.error(f"Failed to get file info for {file_path}: {e}")
+            logger.error("Failed to get file info for %s: %s", file_path, e)
             return None
 
     def file_exists(self, file_path: str) -> bool:
@@ -218,7 +221,7 @@ class FileStorage:
         try:
             return os.path.exists(file_path)
         except Exception as e:
-            logger.error(f"Error checking file existence {file_path}: {e}")
+            logger.error("Error checking file existence %s: %s", file_path, e)
             return False
 
     def verify_file_integrity(self, file_path: str, expected_checksum: str) -> bool:
@@ -240,14 +243,14 @@ class FileStorage:
             is_valid = actual_checksum == expected_checksum
 
             if not is_valid:
-                logger.warning(f"File integrity check failed for {file_path}")
-                logger.warning(f"Expected: {expected_checksum}")
-                logger.warning(f"Actual: {actual_checksum}")
+                logger.warning("File integrity check failed for %s", file_path)
+                logger.warning("Expected: %s", expected_checksum)
+                logger.warning("Actual: %s", actual_checksum)
 
             return is_valid
 
         except Exception as e:
-            logger.error(f"Failed to verify file integrity for {file_path}: {e}")
+            logger.error("Failed to verify file integrity for %s: %s", file_path, e)
             return False
 
     def cleanup_orphaned_files(self) -> int:

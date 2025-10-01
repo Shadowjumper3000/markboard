@@ -75,7 +75,7 @@ def log_activity(
         )
         db.execute_modify(query, params)
     except Exception as e:
-        logger.error(f"Failed to log activity: {e}")
+        logger.error("Failed to log activity: %s", e)
 
 
 def require_auth(f):
@@ -104,7 +104,7 @@ def require_auth(f):
         except jwt.InvalidTokenError:
             return jsonify({"error": "Invalid token"}), 401
         except Exception as e:
-            logger.error(f"Auth error: {e}")
+            logger.error("Auth error: %s", e)
             return jsonify({"error": "Authentication failed"}), 401
 
         return f(*args, **kwargs)
@@ -129,7 +129,7 @@ def require_admin(f):
                 return jsonify({"error": "Admin privileges required"}), 403
 
         except Exception as e:
-            logger.error(f"Admin check error: {e}")
+            logger.error("Admin check error: %s", e)
             return jsonify({"error": "Authorization check failed"}), 500
 
         return f(*args, **kwargs)

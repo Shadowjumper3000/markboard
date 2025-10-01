@@ -1,12 +1,11 @@
 """
 Database connection and query utilities.
 """
-
-import mysql.connector
-from mysql.connector import pooling, Error
 from contextlib import contextmanager
 from typing import Optional, List, Dict, Any
 import logging
+from mysql.connector.pooling import MySQLConnectionPool
+from mysql.connector import Error
 from app.config import Config
 
 logger = logging.getLogger(__name__)
@@ -36,11 +35,11 @@ class Database:
                 "collation": "utf8mb4_unicode_ci",
             }
 
-            self.pool = pooling.MySQLConnectionPool(**config)
+            self.pool = MySQLConnectionPool(**config)
             logger.info("Database connection pool initialized successfully")
 
         except Error as e:
-            logger.error(f"Failed to create connection pool: {e}")
+            logger.error("Failed to create connection pool: %s", e)
             raise
 
     @contextmanager
@@ -53,37 +52,41 @@ class Database:
         except Error as e:
             if connection:
                 connection.rollback()
-            logger.error(f"Database error: {e}")
+            logger.error("Database error: %s", e)
             raise
         finally:
             if connection and connection.is_connected():
                 connection.close()
 
-    def execute_query(self, query: str, params: tuple = None) -> List[Dict[str, Any]]:
+    def execute_query(
+        self, query: str, params: Optional[tuple] = None
+    ) -> List[Dict[str, Any]]:
         """Execute a SELECT query and return results."""
-        logger.debug(f"Executing query: {query} with params: {params}")
+        logger.debug("Executing query: %s with params: %s", query, params)
         with self.get_connection() as conn:
             cursor = conn.cursor(dictionary=True)
             cursor.execute(query, params)
             results = cursor.fetchall()
-            logger.debug(f"Query returned {len(results)} rows")
+            logger.debug("Query returned %s rows", len(results))
             cursor.close()
             return results
 
-    def execute_one(self, query: str, params: tuple = None) -> Optional[Dict[str, Any]]:
+    def execute_one(
+        self, query: str, params: Optional[tuple] = None
+    ) -> Optional[Dict[str, Any]]:
         """Execute a SELECT query and return single result."""
-        logger.debug(f"Executing single query: {query} with params: {params}")
+        logger.debug("Executing single query: %s with params: %s", query, params)
         with self.get_connection() as conn:
             cursor = conn.cursor(dictionary=True)
             cursor.execute(query, params)
             result = cursor.fetchone()
-            logger.debug(f"Query returned: {'1 row' if result else 'no rows'}")
+            logger.debug("Query returned: %s", result)
             cursor.close()
             return result
 
-    def execute_modify(self, query: str, params: tuple = None) -> int:
+    def execute_modify(self, query: str, params: Optional[tuple] = None) -> int:
         """Execute INSERT, UPDATE, or DELETE query and return affected rows."""
-        logger.debug(f"Executing modify query: {query} with params: {params}")
+        logger.debug("Executing modify query: %s with params: %s", query, params)
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(query, params)
@@ -93,18 +96,20 @@ class Database:
             cursor.close()
             is_insert = query.strip().upper().startswith("INSERT")
             result = last_id if is_insert else affected_rows
-            logger.debug(f"Query affected {affected_rows} rows, returned {result}")
+            logger.debug("Query affected %s rows, returned %s", affected_rows, result)
             return result
 
     def execute_transaction(self, queries: List[tuple]) -> bool:
         """Execute multiple queries in a transaction."""
-        logger.debug(f"Executing transaction with {len(queries)} queries")
+        logger.debug("Executing transaction with %s queries", len(queries))
         with self.get_connection() as conn:
             cursor = conn.cursor()
             try:
                 conn.start_transaction()
                 for i, (query, params) in enumerate(queries):
-                    logger.debug(f"Transaction query {i+1}: {query} with {params}")
+                    logger.debug(
+                        "Transaction query %i: %s with %s", i + 1, query, params
+                    )
                     cursor.execute(query, params)
                 conn.commit()
                 logger.debug("Transaction committed successfully")
@@ -112,7 +117,7 @@ class Database:
                 return True
             except Error as e:
                 conn.rollback()
-                logger.error(f"Transaction failed and rolled back: {e}")
+                logger.error("Transaction failed and rolled back: %s", e)
                 cursor.close()
                 raise
 
@@ -126,7 +131,7 @@ class Database:
                 cursor.close()
                 return True
         except Error as e:
-            logger.error(f"Database connection test failed: {e}")
+            logger.error("Database connection test failed: %s", e)
             return False
 
 

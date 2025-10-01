@@ -2,6 +2,8 @@
 File management endpoints.
 """
 
+import logging
+import mimetypes
 from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify, g
 from app.db import db
@@ -14,8 +16,6 @@ from app.utils import (
     format_error_response,
     format_success_response,
 )
-import logging
-import mimetypes
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ def list_files():
         return format_success_response({"files": files})
 
     except Exception as e:
-        logger.error(f"List files error: {e}")
+        logger.error("List files error: %s", e)
         return format_error_response("Internal server error", 500)
 
 
@@ -145,13 +145,17 @@ def create_file():
         }
 
         logger.info(
-            f"File created: {name} (ID: {file_id}, {file_size} bytes) by user {user_id}"
+            "File created: %s (ID: %d, %d bytes) by user %d",
+            name,
+            file_id,
+            file_size,
+            user_id,
         )
 
         return format_success_response(file_data, "File created successfully", 201)
 
     except Exception as e:
-        logger.error(f"Create file error: {e}")
+        logger.error("Create file error: %s", e)
         return format_error_response("Internal server error", 500)
 
 
@@ -185,7 +189,7 @@ def get_file(file_id):
             content = file_storage.read_file(file_data["file_path"])
         except FileNotFoundError:
             logger.error(
-                f"File content missing for ID {file_id}: {file_data['file_path']}"
+                "File content missing for ID %d: %s", file_id, file_data["file_path"]
             )
             return format_error_response("File content not found", 404)
 
@@ -214,7 +218,7 @@ def get_file(file_id):
         return format_success_response(file_data)
 
     except Exception as e:
-        logger.error(f"Get file error: {e}")
+        logger.error("Get file error: %s", e)
         return format_error_response("Internal server error", 500)
 
 
@@ -308,8 +312,7 @@ def update_file(file_id):
                             (version_path, version_id),
                         )
                 except Exception as e:
-                    logger.warning(f"Failed to create file version: {e}")
-                    # Continue with update even if versioning fails
+                    logger.warning("Failed to create file version: %s", e)
 
         # Handle content update - save to filesystem
         if new_content is not None:
@@ -354,12 +357,11 @@ def update_file(file_id):
         updated_file["created_at"] = updated_file["created_at"].isoformat()
         updated_file["updated_at"] = updated_file["updated_at"].isoformat()
 
-        logger.info(f"File updated: ID {file_id} by user {user_id}")
-
+        logger.info("File updated: ID %d by user %d", file_id, user_id)
         return format_success_response(updated_file, "File updated successfully")
 
     except Exception as e:
-        logger.error(f"Update file error: {e}")
+        logger.error("Update file error: %s", e)
         return format_error_response("Internal server error", 500)
 
 
@@ -392,11 +394,10 @@ def delete_file(file_id):
         )
 
         logger.info(
-            f"File deleted: {file_data['name']} (ID: {file_id}) by user {user_id}"
+            "File deleted: %s (ID: %d) by user %d", file_data["name"], file_id, user_id
         )
-
         return "", 204
 
     except Exception as e:
-        logger.error(f"Delete file error: {e}")
+        logger.error("Delete file error: %s", e)
         return format_error_response("Internal server error", 500)

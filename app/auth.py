@@ -1,10 +1,11 @@
 """
 Authentication endpoints and utilities.
 """
+import logging
+from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
-from datetime import datetime, timedelta, timezone
 from flask import Blueprint, request
 from app.db import db
 from app.config import Config
@@ -15,7 +16,6 @@ from app.utils import (
     format_error_response,
     format_success_response,
 )
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,14 @@ def get_current_user():
             (payload["user_id"],),
         )
         return user
-    except Exception:
+    except jwt.ExpiredSignatureError:
+        logger.warning("Token has expired")
+        return None
+    except jwt.InvalidTokenError:
+        logger.warning("Invalid token")
+        return None
+    except Exception as e:
+        logger.error("Unexpected error in get_current_user: %s", e)
         return None
 
 
@@ -172,15 +179,14 @@ def login():
                 "is_admin": user["is_admin"],
             }
         )
-
     except KeyError as e:
-        logger.error(f"Missing key in request data: {e}")
+        logger.error("Missing key in request data: %s", e)
         return format_error_response("Invalid request data", 400)
     except ValueError as e:
-        logger.error(f"Value error: {e}")
+        logger.error("Value error: %s", e)
         return format_error_response("Invalid input", 400)
     except Exception as e:
-        logger.error(f"Unexpected login error: {e}")
+        logger.error("Unexpected login error: %s", e)
         return format_error_response("Internal server error", 500)
 
 
@@ -204,11 +210,17 @@ def get_me():
         )
 
     except KeyError as e:
-        logger.error(f"Missing key in user data: {e}")
+        logger.error("Missing key in user data: %s", e)
         return format_error_response("Invalid user data", 400)
     except ValueError as e:
-        logger.error(f"Value error in user data: {e}")
+        logger.error("Value error in user data: %s", e)
         return format_error_response("Invalid input", 400)
+    except jwt.ExpiredSignatureError as e:
+        logger.error("Token has expired: %s", e)
+        return format_error_response("Token has expired", 401)
+    except jwt.InvalidTokenError as e:
+        logger.error("Invalid token: %s", e)
+        return format_error_response("Invalid token", 401)
     except Exception as e:
-        logger.error(f"Unexpected error in get_me: {e}")
+        logger.error("Unexpected error in get_me: %s", e)
         return format_error_response("Internal server error", 500)

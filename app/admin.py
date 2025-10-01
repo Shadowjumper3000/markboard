@@ -25,7 +25,7 @@ def list_users():
     """Get list of all users (admin only)."""
     try:
         query = """
-            SELECT 
+            SELECT
                 u.id,
                 u.email,
                 u.is_admin,
@@ -91,7 +91,7 @@ def list_users():
         return format_success_response({"users": formatted_users})
 
     except Exception as e:
-        logger.error(f"List users error: {e}")
+        logger.error("List users error: %s", e)
         return format_error_response("Internal server error", 500)
 
 
@@ -176,7 +176,7 @@ def get_recent_activity():
         return format_success_response({"activities": formatted_activities})
 
     except Exception as e:
-        logger.error(f"Get recent activity error: {e}")
+        logger.error("Get recent activity error: %s", e)
         return format_error_response("Internal server error", 500)
 
 
@@ -218,7 +218,7 @@ def get_system_stats():
         )
 
     except Exception as e:
-        logger.error(f"Get system stats error: {e}")
+        logger.error("Get system stats error: %s", e)
         return format_error_response("Internal server error", 500)
 
 
@@ -276,5 +276,5 @@ def list_all_files():
         return format_success_response({"files": formatted_files})
 
     except Exception as e:
-        logger.error(f"List all files error: {e}")
+        logger.error("List all files error: %s", e)
         return format_error_response("Internal server error", 500)

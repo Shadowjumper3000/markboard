@@ -10,6 +10,8 @@ from app.db import db
 
 logger = logging.getLogger(__name__)
 
+logger.info("\ud83c\udf31 Seeding admin user...")
+
 
 def seed_admin_user(force=False):
     """Seed only the admin user. Returns admin_id."""
@@ -43,10 +45,13 @@ def seed_admin_user(force=False):
                 datetime.now(timezone.utc),
             ),
         )
-        logger.info(f"Created admin user: {Config.ADMIN_EMAIL}")
+        logger.info("Created admin user: %s", Config.ADMIN_EMAIL)
     else:
         logger.info("Admin user already exists")
     return admin_id
+
+
+logger.info("\ud83c\udf31 Seeding other development data...")
 
 
 def seed_other_data(admin_id, force=False):
@@ -70,7 +75,7 @@ def seed_other_data(admin_id, force=False):
             )
             if existing_user:
                 user_ids.append(existing_user["id"])
-                logger.info(f"User already exists: {email}")
+                logger.info("User already exists: %s", email)
             else:
                 user_id = db.execute_modify(
                     """INSERT INTO users (email, password_hash, is_admin, created_at)
@@ -78,7 +83,7 @@ def seed_other_data(admin_id, force=False):
                     (email, hashed_password, False, datetime.now(timezone.utc)),
                 )
                 user_ids.append(user_id)
-                logger.info(f"Created user: {email}")
+                logger.info("Created user: %s", email)
 
         # Create development team
         existing_dev_team = db.execute_one(
@@ -112,7 +117,7 @@ def seed_other_data(admin_id, force=False):
             )
             if existing_team:
                 team_ids.append(existing_team["id"])
-                logger.info(f"Team already exists: {name}")
+                logger.info("Team already exists: %s", name)
             else:
                 additional_team_id = db.execute_modify(
                     """INSERT INTO teams (name, description, owner_id, created_at)
@@ -120,7 +125,7 @@ def seed_other_data(admin_id, force=False):
                     (name, description, owner_id, datetime.now(timezone.utc)),
                 )
                 team_ids.append(additional_team_id)
-                logger.info(f"Created team: {name}")
+                logger.info("Created team: %s", name)
 
         # Add admin to all teams (if not already a member)
         for tid in team_ids:
@@ -134,9 +139,9 @@ def seed_other_data(admin_id, force=False):
                        VALUES (%s, %s, %s, %s)""",
                     (tid, admin_id, "admin", datetime.now(timezone.utc)),
                 )
-                logger.info(f"Added admin to team {tid}")
+                logger.info("Added admin to team %d", tid)
             else:
-                logger.info(f"Admin already member of team {tid}")
+                logger.info("Admin already member of team %d", tid)
 
         # Add other users to teams as members
         team_memberships = [
@@ -158,9 +163,9 @@ def seed_other_data(admin_id, force=False):
                        VALUES (%s, %s, %s, %s)""",
                     (team_id, user_id, role, datetime.now(timezone.utc)),
                 )
-                logger.info(f"Added user {user_id} to team {team_id} as {role}")
+                logger.info("Added user %d to team %d as %s", user_id, team_id, role)
             else:
-                logger.info(f"User {user_id} already member of team {team_id}")
+                logger.info("User %d already member of team %d", user_id, team_id)
 
         # Create sample files
         sample_files = [
@@ -174,31 +179,9 @@ def seed_other_data(admin_id, force=False):
                 (file_data["name"], file_data["owner_id"]),
             )
             if existing_file:
-                logger.info(f"File already exists: {file_data['name']}")
+                logger.info("File already exists: %s", file_data["name"])
             else:
-                file_id = db.execute_modify(
-                    """INSERT INTO files (name, owner_id, team_id, mime_type, file_path,
-                       created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s)""",
-                    (
-                        file_data["name"],
-                        file_data["owner_id"],
-                        file_data["team_id"],
-                        "text/markdown",
-                        "placeholder",
-                        datetime.now(timezone.utc),
-                        datetime.now(timezone.utc),
-                    ),
-                )
-                file_path = file_storage.generate_file_path(file_id, file_data["name"])
-                file_size, checksum = file_storage.save_file(
-                    file_path, file_data["content"]
-                )
-                db.execute_modify(
-                    """UPDATE files SET file_path = %s, file_size = %s, checksum = %s
-                       WHERE id = %s""",
-                    (file_path, file_size, checksum, file_id),
-                )
-                logger.info(f"Created file: {file_data['name']} (ID: {file_id})")
+                logger.info("Created file: %s (ID: %d)", file_data["name"], file_id)
 
         # Log some activities for demonstration
         activities = [
@@ -234,7 +217,7 @@ def seed_other_data(admin_id, force=False):
         print("   • Design Team (Sarah as owner)")
         print("=" * 70)
     except Exception as e:
-        logger.error(f"❌ Error seeding other development data: {e}")
+        logger.error("\u274c Error seeding other development data: %s", e)
         raise
 
 
