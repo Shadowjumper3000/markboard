@@ -112,10 +112,20 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
       return;
     }
 
-    if (user?.role !== 'admin' && teams.length >= 3) {
+    try {
+      const teamCountResponse = await apiService.getUserTeamCount();
+      if (user?.role !== 'admin' && teamCountResponse.count >= 3) {
+        toast({
+          title: "Limit Reached",
+          description: "You can only create up to 3 teams.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (error) {
       toast({
-        title: "Limit Reached",
-        description: "You can only create up to 3 teams.",
+        title: "Error",
+        description: "Failed to validate team count. Please try again later.",
         variant: "destructive",
       });
       return;
