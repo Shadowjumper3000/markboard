@@ -6,12 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,11 +14,7 @@ import {
   Tabs,
   TabsContent,
   TabsList,
-  TabsTrigger,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
+  TabsTrigger
 } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
@@ -307,9 +298,7 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
                               <Crown className="h-4 w-4 text-yellow-500" />
                             )}
                           </CardTitle>
-                          <Badge variant="secondary">
-                            {team.file_count || 0} files
-                          </Badge>
+                          <Badge variant="secondary" label={`${team.file_count || 0} files`} />
                         </div>
                         {team.description && (
                           <CardDescription>{team.description}</CardDescription>
@@ -338,27 +327,27 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
 
           <TabsContent value="create" className="space-y-4">
             <div className="space-y-4">
-              <div className="space-y-2">
+                <div className="space-y-2">
                 <Label htmlFor="team-name">Team Name</Label>
                 <Input
                   id="team-name"
                   value={newTeamName}
-                  onChange={(e) => setNewTeamName(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTeamName(e.target.value)}
                   placeholder="Enter team name"
                   maxLength={100}
                 />
-              </div>
-              <div className="space-y-2">
+                </div>
+                <div className="space-y-2">
                 <Label htmlFor="team-description">Description (Optional)</Label>
                 <Textarea
                   id="team-description"
                   value={newTeamDescription}
-                  onChange={(e) => setNewTeamDescription(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewTeamDescription(e.target.value)}
                   placeholder="Describe your team's purpose"
                   rows={3}
                   maxLength={500}
                 />
-              </div>
+                </div>
               <Button
                 onClick={handleCreateTeam}
                 disabled={isCreating || !newTeamName.trim()}
@@ -383,11 +372,11 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="search"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search for teams to join"
-                    className="pl-10"
+                  id="search"
+                  value={searchQuery}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                  placeholder="Search for teams to join"
+                  className="pl-10"
                   />
                 </div>
               </div>
@@ -402,7 +391,6 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
                   </div>
                 ) : (
                   filteredAvailableTeams.map((team) => (
-                    <Card key={team.id} className={teamCardStyle}>
                     <Card key={team.id} className={teamCardStyle}>
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
