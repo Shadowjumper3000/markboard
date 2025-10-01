@@ -69,6 +69,31 @@ jobs:
             echo "Creating production environment file..."
             echo '${{ secrets.ENV_FILE }}' > .env
 
+      - name: Deploy - Setup data directory permissions
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          port: ${{ secrets.HETZNER_PORT }}
+          script: |
+            set -e
+            APP_DIR="/home/${{secrets.HETZNER_USER}}/markboard"
+            cd $APP_DIR
+            echo "Setting up data directory permissions..."
+            # Create data directory structure if it doesn't exist
+            mkdir -p ./data/files ./data/versions
+            # Get current user's UID and GID to match container user
+            DEPLOY_UID=$(id -u)
+            DEPLOY_GID=$(id -g)
+            echo "UID=$DEPLOY_UID" >> .env
+            echo "GID=$DEPLOY_GID" >> .env
+            # Set proper ownership and permissions
+            chown -R $DEPLOY_UID:$DEPLOY_GID ./data
+            chmod -R 755 ./data
+            echo "Data directory permissions configured successfully"
+            ls -la ./data
+
       - name: Deploy - Stop and clean up Docker resources
         uses: appleboy/ssh-action@v1.0.3
         with:
