@@ -11,7 +11,6 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - db_data:/var/lib/mysql
       - ./init_db/init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
     healthcheck:
@@ -49,14 +48,13 @@ services:
         condition: service_healthy
     restart: unless-stopped
     volumes:
-      - ./data:/app/data # Persist only data directory
-      - backend_pycache:/app/__pycache__ # Exclude pycache
+      - ./data:/app/data # Data is bind-mounted for dev, not persisted as a docker volume
     # Keep container running for dev container access
     command: ["python", "-m", "app.main"]
     networks:
       - internal
 
-  # Frontend application service  
+  # Frontend application service
   frontend:
     build:
       context: ./frontend
@@ -96,9 +94,5 @@ networks:
     driver: bridge
 
 volumes:
-  db_data:
-    driver: local
-  backend_pycache:
-    driver: local
   frontend_node_modules:
     driver: local

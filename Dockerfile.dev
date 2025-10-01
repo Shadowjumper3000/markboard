@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
     vim \
     && rm -rf /var/lib/apt/lists/*
 
+
 # Set work directory
 WORKDIR /app
 
@@ -28,8 +29,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements-dev.txt
 
 # Copy application code (will be overridden by volume in dev)
-COPY app/ ./app/
-COPY tests/ ./tests/
+COPY . .
 COPY .env-example .env
 
 # Expose port
