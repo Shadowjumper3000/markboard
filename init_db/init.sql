@@ -68,19 +68,6 @@ CREATE TABLE files (
     INDEX idx_deleted_at (deleted_at)
 );
 
--- File versions table for tracking changes (metadata only)
-CREATE TABLE file_versions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    file_id INT NOT NULL,
-    version_path VARCHAR(500) NOT NULL, -- Path to versioned file on filesystem
-    file_size BIGINT DEFAULT 0, -- Version file size in bytes
-    checksum VARCHAR(64), -- SHA-256 checksum for this version
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE,
-    INDEX idx_file_id (file_id),
-    INDEX idx_created_at (created_at)
-);
-
 -- Activity logs table
 CREATE TABLE activity_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
