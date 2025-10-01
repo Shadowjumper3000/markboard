@@ -13,7 +13,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Clock, FileText, Folders, Settings, Star, Users } from 'lucide-react';
+import { Clock, FileText, Folders, Star, Users } from 'lucide-react';
 
 interface Team {
   id: number;
@@ -62,44 +62,10 @@ export function AppSidebar({ selectedTeam, onTeamSelect, onFileSelect, teams = [
   return (
     <Sidebar className="border-r bg-sidebar" collapsible="offcanvas">
       <SidebarContent className="p-4">
-        {/* My Teams Section */}
+        {/* Personal Files Section */}
         <SidebarGroup>
-          <div className="flex items-center justify-between mb-2">
-            <SidebarGroupLabel className="flex items-center gap-2 text-sidebar-foreground font-medium">
-              <Users className="h-4 w-4" />
-              My Teams
-            </SidebarGroupLabel>
-            <TeamManagementModal 
-              teams={teams} 
-              onTeamsChange={onTeamsChange || (() => {})}
-            >
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="h-6 w-6 p-0 hover:bg-accent"
-              >
-                <Settings className="h-3 w-3" />
-              </Button>
-            </TeamManagementModal>
-          </div>
           <SidebarGroupContent className="mt-2">
             <SidebarMenu className="space-y-1">
-              {/* All Files Option */}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => onTeamSelect(null)}
-                  isActive={!selectedTeam}
-                >
-                  <Folders className="h-4 w-4" />
-                  <div className="flex items-center justify-between w-full">
-                    <span>All Files</span>
-                    <Badge variant="secondary" className="ml-2 text-xs">
-                      {files.length}
-                    </Badge>
-                  </div>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
               {/* Personal Files Option */}
               <SidebarMenuItem>
                 <SidebarMenuButton
@@ -116,6 +82,42 @@ export function AppSidebar({ selectedTeam, onTeamSelect, onFileSelect, teams = [
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
+              {/* All Files Option */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => onTeamSelect(null)}
+                  isActive={!selectedTeam}
+                >
+                  <Folders className="h-4 w-4" />
+                  <div className="flex items-center justify-between w-full">
+                    <span>All Files</span>
+                    <Badge variant="secondary" className="ml-2 text-xs">
+                      {files.length}
+                    </Badge>
+                  </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* My Teams Section */}
+        <SidebarGroup className="mt-6">
+          <TeamManagementModal 
+            teams={teams} 
+            onTeamsChange={onTeamsChange || (() => {})}
+          >
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="flex items-center gap-2 hover:bg-accent"
+            >
+              <Users className="h-4 w-4" />
+              My Teams
+            </Button>
+          </TeamManagementModal>
+          <SidebarGroupContent className="mt-2">
+            <SidebarMenu className="space-y-1">
               {/* Team Options */}
               {teams.map((team) => (
                 <SidebarMenuItem key={team.id}>
