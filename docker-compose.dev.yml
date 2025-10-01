@@ -49,7 +49,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     volumes:
-      - .:/app # Mount entire project for dev container access
+      - ./data:/app/data # Persist only data directory
       - backend_pycache:/app/__pycache__ # Exclude pycache
     # Keep container running for dev container access
     command: ["python", "-m", "app.main"]

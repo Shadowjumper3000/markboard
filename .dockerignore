@@ -1,0 +1,15 @@
+# Ignore dev and test files for production builds
+Dockerfile.dev
+requirements-dev.txt
+tests/
+.env*
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+*.md
+frontend/
+!.env-example
