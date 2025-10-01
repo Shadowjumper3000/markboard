@@ -6,7 +6,7 @@ import { defineConfig } from "vite";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 5173,
+    port: 80,
   },
   plugins: [react(), mode === "development"].filter(Boolean),
   resolve: {
