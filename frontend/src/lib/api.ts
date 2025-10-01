@@ -127,10 +127,7 @@ class ApiService {
       headers: this.getAuthHeaders(),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Delete failed' }));
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-    }
+    await this.handleResponse(response);
   }
 
   async listFiles(): Promise<{

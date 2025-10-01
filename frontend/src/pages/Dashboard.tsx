@@ -1,4 +1,4 @@
-import { FileGrid, FileItem } from '@/components/files/FileGrid';
+import { FileGrid } from '@/components/files/FileGrid';
 import { FileList } from '@/components/files/FileList';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { Header } from '@/components/layout/Header';
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/lib/api';
+import { FileItem, Team, User } from '@/types';
 import { Filter, Grid, List, Search } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -19,19 +20,7 @@ const formatDisplayName = (fileName: string): string => {
   return fileName;
 };
 
-interface Team {
-  id: number;
-  name: string;
-  description: string;
-  owner_id: number;
-  file_count?: number;
-}
 
-interface User {
-  id: number;
-  email: string;
-  is_admin: boolean;
-}
 
 export default function Dashboard() {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);

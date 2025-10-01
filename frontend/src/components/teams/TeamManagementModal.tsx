@@ -20,20 +20,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/lib/api';
+import { Team } from '@/types';
 import { Crown, Plus, Search, Settings, UserPlus, Users, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 const MAX_TEAM_NAME_LENGTH = 20;
 const MAX_TEAM_DESCRIPTION_LENGTH = 100;
-interface Team {
-  id: number;
-  name: string;
-  description: string;
-  owner_id: number;
-  file_count?: number;
-  member_count?: number;
-  role?: string;
-}
+
 
 interface TeamManagementModalProps {
   children: React.ReactNode;

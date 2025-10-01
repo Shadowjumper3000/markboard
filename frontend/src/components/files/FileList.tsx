@@ -11,88 +11,35 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { apiService } from '@/lib/api';
-import { renderMermaidToPng } from '@/lib/mermaidToPng';
+import { useFileDownload } from '@/hooks/useFileDownload';
+import { FileItem } from '@/types';
 import { Download, Edit, FileImage, FileText as FileTextIcon, MoreHorizontal, Trash2 } from 'lucide-react';
 import React from 'react';
-import { FileItem } from './FileGrid';
 
 interface FileListProps {
   files: FileItem[];
   onFileSelect: (id: string) => void;
   onFileDelete: (id: string) => void;
+  onFileToggleStar: (id: string) => void;
 }
 
-export function FileList({ files, onFileSelect, onFileDelete }: FileListProps) {
+export function FileList({ files, onFileSelect, onFileDelete, onFileToggleStar }: FileListProps) {
   const { toast } = useToast();
+  const { downloadMd, downloadPng } = useFileDownload();
 
-  const handleDownloadMd = async (file: FileItem, e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      const fileData = await apiService.getFile(file.id);
-      const blob = new Blob([fileData.content], { type: 'text/markdown' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileData.name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast({
-        title: "Markdown downloaded",
-        description: `${fileData.name} has been downloaded to your computer.`,
-      });
-    } catch (error) {
-      console.error('Error downloading file:', error);
-      toast({
-        variant: "destructive",
-        title: "Download failed",
-        description: "Unable to download the file. Please try again.",
-      });
-    }
+  const handleDownloadMd = async (file: FileItem, e: MouseEvent) => {
+    await downloadMd(file, e);
   };
 
-  const handleDownloadPng = async (file: FileItem, e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      const fileData = await apiService.getFile(file.id);
-      const pngBlob = await renderMermaidToPng(fileData.content);
-      if (pngBlob) {
-        const url = URL.createObjectURL(pngBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${fileData.name.replace('.md', '.png')}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        toast({
-          title: "PNG downloaded",
-          description: `${fileData.name.replace('.md', '.png')} has been downloaded to your computer.`,
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Download failed",
-          description: "No Mermaid diagrams found to export as PNG.",
-        });
-      }
-    } catch (error) {
-      console.error('Error downloading PNG:', error);
-      toast({
-        variant: "destructive",
-        title: "Download failed",
-        description: "Unable to generate PNG from diagrams.",
-      });
-    }
+  const handleDownloadPng = async (file: FileItem, e: MouseEvent) => {
+    await downloadPng(file, e);
   };
 
-  const handleDownloadBoth = async (file: FileItem, e: React.MouseEvent) => {
+  const handleDownloadBoth = async (file: FileItem, e: MouseEvent) => {
     e.stopPropagation();
-    await handleDownloadMd(file, e);
+    await downloadMd(file, e);
     setTimeout(() => {
-      handleDownloadPng(file, e);
+      downloadPng(file, e);
     }, 500);
   };
 

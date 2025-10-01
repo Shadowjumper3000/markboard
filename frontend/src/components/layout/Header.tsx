@@ -12,6 +12,7 @@ import {
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiService } from '@/lib/api';
+import { Team } from '@/types';
 import { ArrowLeft, FileText, Home, LogOut, Plus, Settings, Shield } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -25,13 +26,7 @@ function useSidebarSafe() {
   }
 }
 
-interface Team {
-  id: number;
-  name: string;
-  description: string;
-  owner_id: number;
-  file_count?: number;
-}
+
 
 export function Header() {
   const { user, logout } = useAuth();

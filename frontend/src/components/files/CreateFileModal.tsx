@@ -20,16 +20,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/lib/api';
+import { Team } from '@/types';
+import { FILE_CONSTRAINTS } from '@/constants';
 import { FileText, Upload, User, Users } from 'lucide-react';
 import React, { useState } from 'react';
-
-interface Team {
-  id: number;
-  name: string;
-  description: string;
-  owner_id: number;
-  file_count?: number;
-}
 
 interface CreateFileModalProps {
   isOpen: boolean;
@@ -38,9 +32,9 @@ interface CreateFileModalProps {
   teams: Team[];
 }
 
-const MAX_FILE_SIZE_MB = 10; // Maximum file size in megabytes
-const MAX_CONTENT_LENGTH = 2000; // Maximum length for initial content
-const MAX_FILE_NAME_LENGTH = 20; // Maximum file name length
+const MAX_FILE_SIZE_MB = FILE_CONSTRAINTS.MAX_SIZE_MB;
+const MAX_CONTENT_LENGTH = FILE_CONSTRAINTS.MAX_CONTENT_LENGTH;
+const MAX_FILE_NAME_LENGTH = FILE_CONSTRAINTS.MAX_NAME_LENGTH;
 
 export function CreateFileModal({ isOpen, onClose, onSuccess, teams }: CreateFileModalProps) {
   const [activeTab, setActiveTab] = useState<'new' | 'upload'>('new');
