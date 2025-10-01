@@ -11,6 +11,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
+      - db_data_dev:/var/lib/mysql
       - ./init_db/init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
     healthcheck:
@@ -22,6 +23,7 @@ services:
 
   # Backend API service
   backend:
+    image: markboard-backend:dev
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -48,6 +50,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     volumes:
+      - backend_data_dev:/app/data
       - ./data:/app/data # Data is bind-mounted for dev, not persisted as a docker volume
     # Keep container running for dev container access
     command: ["python", "-m", "app.main"]
@@ -56,6 +59,7 @@ services:
 
   # Frontend application service
   frontend:
+    image: markboard-frontend:dev
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
@@ -95,4 +99,8 @@ networks:
 
 volumes:
   frontend_node_modules:
+    driver: local
+  db_data_dev:
+    driver: local
+  backend_data_dev:
     driver: local

@@ -24,6 +24,7 @@ services:
       - internal
 
   backend:
+    image: markboard-backend:prod
     build:
       context: .
       dockerfile: Dockerfile
@@ -63,6 +64,7 @@ services:
       - proxy
 
   frontend:
+    image: markboard-frontend:prod
     build:
       context: ./frontend
       dockerfile: Dockerfile
