@@ -271,49 +271,6 @@ def update_file(file_id):
             updates.append("updated_at = %s")
             params.append(now)
 
-        # Create file version before update if content is changing
-        if new_content is not None:
-            # Get current file path
-            current_file_full = db.execute_one(
-                "SELECT file_path, file_size, checksum FROM files WHERE id = %s",
-                (file_id,),
-            )
-
-            if current_file_full and current_file_full["file_path"]:
-                # Create version
-                version_id = db.execute_modify(
-                    """
-                    INSERT INTO file_versions (file_id, version_path, file_size, checksum, created_at)
-                    VALUES (%s, %s, %s, %s, %s)
-                    """,
-                    (
-                        file_id,
-                        "",  # Will be updated after file copy
-                        current_file_full["file_size"],
-                        current_file_full["checksum"],
-                        now,
-                    ),
-                )
-
-                # Copy current file to version location
-                try:
-                    version_path = file_storage.generate_version_path(
-                        file_id, version_id, current_file["name"]
-                    )
-                    # Check if source file exists before copying
-                    if file_storage.file_exists(current_file_full["file_path"]):
-                        file_storage.copy_file(
-                            current_file_full["file_path"], version_path
-                        )
-
-                        # Update version record with actual path
-                        db.execute_modify(
-                            "UPDATE file_versions SET version_path = %s WHERE id = %s",
-                            (version_path, version_id),
-                        )
-                except Exception as e:
-                    logger.warning("Failed to create file version: %s", e)
-
         # Handle content update - save to filesystem
         if new_content is not None:
             if current_file and current_file["file_path"]:

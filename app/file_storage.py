@@ -10,6 +10,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, Tuple
 import logging
+from app.utils import sanitize_filename
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ class FileStorage:
         file_dir.mkdir(exist_ok=True)
 
         # Clean filename and add file ID to avoid conflicts
-        clean_name = self._sanitize_filename(filename)
+        clean_name = sanitize_filename(filename)
         return str(file_dir / f"{file_id}_{clean_name}")
 
     def save_file(self, file_path: str, content: str) -> Tuple[int, str]:
@@ -239,50 +240,40 @@ class FileStorage:
             logger.error("Failed to verify file integrity for %s: %s", file_path, e)
             return False
 
-    def cleanup_orphaned_files(self) -> int:
+    def cleanup_orphaned_files(self, referenced_files: set) -> int:
         """
         Clean up orphaned files that are not referenced in the database.
-        This should be called periodically as a maintenance task.
+
+        Args:
+            referenced_files: A set of file paths that are still referenced.
 
         Returns:
             Number of files cleaned up
         """
-        # This would require database integration to check which files are referenced
-        # For now, just log that it should be implemented
+        cleaned_up_count = 0
+
+        try:
+            # Iterate through all files in the storage directory
+            for root, _, files in os.walk(self.files_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+
+                    # Check if the file is not in the referenced set
+                    if file_path not in referenced_files:
+                        try:
+                            os.remove(file_path)
+                            logger.info("Deleted orphaned file: %s", file_path)
+                            cleaned_up_count += 1
+                        except Exception as e:
+                            logger.error("Failed to delete file %s: %s", file_path, e)
+
+        except Exception as e:
+            logger.error("Error during orphaned file cleanup: %s", e)
+
         logger.info(
-            "Orphaned file cleanup not implemented yet - requires database integration"
+            "Orphaned file cleanup completed. Files removed: %d", cleaned_up_count
         )
-        return 0
-
-    def _sanitize_filename(self, filename: str) -> str:
-        """
-        Sanitize filename to be safe for filesystem.
-
-        Args:
-            filename: Original filename
-
-        Returns:
-            Sanitized filename
-        """
-        # Remove/replace dangerous characters
-        safe_chars = []
-        for char in filename:
-            if char.isalnum() or char in ".-_":
-                safe_chars.append(char)
-            elif char in " ":
-                safe_chars.append("_")
-
-        sanitized = "".join(safe_chars)
-
-        # Ensure it's not empty and not too long
-        if not sanitized:
-            sanitized = "untitled"
-
-        if len(sanitized) > 200:
-            name, ext = os.path.splitext(sanitized)
-            sanitized = name[: 200 - len(ext)] + ext
-
-        return sanitized
+        return cleaned_up_count
 
     def _calculate_checksum(self, file_path: str) -> str:
         """
