@@ -165,6 +165,9 @@ def seed_other_data(admin_id):
             else:
                 logger.info("User %d already member of team %d", user_id, team_id)
 
+        # Create sample files using file storage logic
+        from app.file_storage import file_storage
+
         sample_files = [
             {
                 "name": "mermaid_flow_1.md",
