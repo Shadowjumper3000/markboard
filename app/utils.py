@@ -141,7 +141,7 @@ def check_file_access(user_id: int, file_id: int) -> bool:
     """Check if user has access to a file (owner or team member)."""
 
     query = """
-        SELECT f.id 
+        SELECT f.id
         FROM files f
         LEFT JOIN team_members tm ON f.team_id = tm.team_id AND tm.user_id = %s
         WHERE f.id = %s AND (f.owner_id = %s OR tm.user_id IS NOT NULL)
@@ -159,7 +159,7 @@ def format_error_response(
 
 
 def format_success_response(
-    data: Any = None, message: str = None, status_code: int = 200
+    data: Any = None, message: Optional[str] = None, status_code: int = 200
 ) -> tuple[Dict[str, Any], int]:
     """Format success response consistently."""
     response = {}

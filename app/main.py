@@ -16,7 +16,7 @@ from app.teams import teams_bp
 
 def create_app():
     """Create and configure Flask application."""
-    app = Flask(__name__)
+    flask_app = Flask(__name__)
 
     # Configure logging
     logging.basicConfig(
@@ -40,7 +40,7 @@ def create_app():
     # Configure CORS for development only
     if Config.DEBUG:
         CORS(
-            app,
+            flask_app,
             origins=[
                 "http://localhost:3000",
                 "http://localhost:5173",
@@ -51,19 +51,19 @@ def create_app():
         )
 
     # Register blueprints
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(files_bp)
-    app.register_blueprint(admin_bp)
-    app.register_blueprint(teams_bp)
+    flask_app.register_blueprint(auth_bp)
+    flask_app.register_blueprint(files_bp)
+    flask_app.register_blueprint(admin_bp)
+    flask_app.register_blueprint(teams_bp)
 
-    @app.route("/")
+    @flask_app.route("/")
     def index():
         """Root endpoint."""
         return jsonify(
             {"message": "Markboard API", "version": "1.0.0", "status": "running"}
         )
 
-    @app.route("/health")
+    @flask_app.route("/health")
     def health():
         """Health check endpoint."""
         try:
@@ -83,17 +83,17 @@ def create_app():
         except Exception as e:
             return jsonify({"status": "unhealthy", "error": str(e)}), 503
 
-    @app.errorhandler(404)
-    def not_found(error):
+    @flask_app.errorhandler(404)
+    def not_found(_):
         """Handle 404 errors."""
         return jsonify({"error": "Endpoint not found"}), 404
 
-    @app.errorhandler(500)
-    def internal_error(error):
+    @flask_app.errorhandler(500)
+    def internal_error(_):
         """Handle 500 errors."""
         return jsonify({"error": "Internal server error"}), 500
 
-    return app
+    return flask_app
 
 
 if __name__ == "__main__":

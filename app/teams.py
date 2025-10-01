@@ -4,7 +4,7 @@ Team management endpoints.
 
 from datetime import datetime, timezone
 import logging
-from flask import Blueprint, jsonify, g, request
+from flask import Blueprint, g, request
 from app.db import db
 from app.utils import (
     require_auth,
@@ -27,7 +27,7 @@ def list_teams():
 
         # Get teams where user is a member
         query = """
-            SELECT DISTINCT t.id, t.name, t.description, t.owner_id, 
+            SELECT DISTINCT t.id, t.name, t.description, t.owner_id,
                    t.created_at, COUNT(DISTINCT f.id) as file_count,
                    COUNT(DISTINCT tm2.id) as member_count, tm.role
             FROM teams t

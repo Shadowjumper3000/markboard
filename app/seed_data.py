@@ -2,9 +2,9 @@
 Database seeding script for development environment.
 """
 
-import bcrypt
 import logging
 from datetime import datetime, timezone
+import bcrypt
 from app.config import Config
 from app.db import db
 from app.file_storage import file_storage

@@ -104,7 +104,7 @@ def get_recent_activity():
         limit = min(int(request.args.get("limit", 50)), 100)
 
         query = """
-            SELECT 
+            SELECT
                 al.id,
                 al.action,
                 al.resource_type,
@@ -229,7 +229,7 @@ def list_all_files():
     """Get list of all files in the system (admin only)."""
     try:
         query = """
-            SELECT 
+            SELECT
                 f.id,
                 f.name,
                 f.created_at,

@@ -5,7 +5,7 @@ File management endpoints.
 import logging
 import mimetypes
 from datetime import datetime, timezone
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, g
 from app.db import db
 from app.file_storage import file_storage
 from app.utils import (
@@ -49,9 +49,9 @@ def list_files():
             SELECT DISTINCT f.id, f.name, f.file_size, f.mime_type,
                    f.created_at, f.updated_at, f.owner_id, f.team_id
             FROM files f
-            LEFT JOIN team_members tm ON f.team_id = tm.team_id 
+            LEFT JOIN team_members tm ON f.team_id = tm.team_id
                      AND tm.user_id = %s
-            WHERE (f.owner_id = %s OR tm.user_id IS NOT NULL) 
+            WHERE (f.owner_id = %s OR tm.user_id IS NOT NULL)
                   AND f.deleted_at IS NULL
             ORDER BY f.updated_at DESC
         """
@@ -108,7 +108,7 @@ def create_file():
 
         file_id = db.execute_modify(
             """
-            INSERT INTO files (name, file_path, file_size, mime_type, 
+            INSERT INTO files (name, file_path, file_size, mime_type,
                              owner_id, team_id, created_at, updated_at)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """,
