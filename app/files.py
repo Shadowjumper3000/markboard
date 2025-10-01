@@ -198,7 +198,7 @@ def get_file(file_id):
             if not file_storage.verify_file_integrity(
                 file_data["file_path"], file_data["checksum"]
             ):
-                logger.warning(f"File integrity check failed for ID {file_id}")
+                logger.warning("File integrity check failed for ID %d", file_id)
 
         # Convert datetime objects to ISO format
         file_data["created_at"] = file_data["created_at"].isoformat()

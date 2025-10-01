@@ -2,6 +2,8 @@
 Team management endpoints.
 """
 
+from datetime import datetime, timezone
+import logging
 from flask import Blueprint, jsonify, g, request
 from app.db import db
 from app.utils import (
@@ -10,8 +12,6 @@ from app.utils import (
     format_success_response,
     log_activity,
 )
-from datetime import datetime, timezone
-import logging
 
 logger = logging.getLogger(__name__)
 

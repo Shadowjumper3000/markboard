@@ -7,6 +7,7 @@ import logging
 from datetime import datetime, timezone
 from app.config import Config
 from app.db import db
+from app.file_storage import file_storage
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ def seed_admin_user(force=False):
 logger.info("\ud83c\udf31 Seeding other development data...")
 
 
-def seed_other_data(admin_id, force=False):
+def seed_other_data(admin_id):
     """Seed regular users, teams, files, and activities."""
     logger.info("🌱 Seeding other development data...")
     try:
@@ -167,9 +168,6 @@ def seed_other_data(admin_id, force=False):
             else:
                 logger.info("User %d already member of team %d", user_id, team_id)
 
-        # Create sample files using file storage logic
-        from app.file_storage import file_storage
-
         sample_files = [
             {
                 "name": "mermaid_flow_1.md",
@@ -264,7 +262,7 @@ def seed_other_data(admin_id, force=False):
 def seed_development_data(force=False):
     """Seed admin and other development data."""
     admin_id = seed_admin_user(force=force)
-    seed_other_data(admin_id, force=force)
+    seed_other_data(admin_id)
 
 
 def seed_production_data(force=False):
@@ -273,7 +271,6 @@ def seed_production_data(force=False):
 
 
 if __name__ == "__main__":
-    """Run seeding independently."""
     import argparse
     from app.main import create_app
 

@@ -10,6 +10,8 @@ from functools import wraps
 from flask import request, jsonify, g
 import jwt
 from app.config import Config
+from app.db import db
+
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +60,6 @@ def log_activity(
     details: Optional[str] = None,
 ):
     """Log user activity to the database."""
-    from app.db import db
 
     try:
         query = """
@@ -117,7 +118,6 @@ def require_admin(f):
 
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        from app.db import db
 
         try:
             # Check if current user is admin
@@ -139,7 +139,6 @@ def require_admin(f):
 
 def check_file_access(user_id: int, file_id: int) -> bool:
     """Check if user has access to a file (owner or team member)."""
-    from app.db import db
 
     query = """
         SELECT f.id 
