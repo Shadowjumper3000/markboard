@@ -21,11 +21,9 @@ class FileStorage:
         """Initialize file storage with base path."""
         self.base_path = Path(base_path)
         self.files_dir = self.base_path / "files"
-        self.versions_dir = self.base_path / "versions"
 
         # Create directories if they don't exist
         self.files_dir.mkdir(parents=True, exist_ok=True)
-        self.versions_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info("File storage initialized at %s", self.base_path)
 
@@ -39,18 +37,6 @@ class FileStorage:
         # Clean filename and add file ID to avoid conflicts
         clean_name = self._sanitize_filename(filename)
         return str(file_dir / f"{file_id}_{clean_name}")
-
-    def generate_version_path(
-        self, file_id: int, version_id: int, filename: str
-    ) -> str:
-        """Generate a path for a file version."""
-        subdir = str(file_id // 1000).zfill(3)
-        version_dir = self.versions_dir / subdir / str(file_id)
-        version_dir.mkdir(parents=True, exist_ok=True)
-
-        clean_name = self._sanitize_filename(filename)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        return str(version_dir / f"{version_id}_{timestamp}_{clean_name}")
 
     def save_file(self, file_path: str, content: str) -> Tuple[int, str]:
         """

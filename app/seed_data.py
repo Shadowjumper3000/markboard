@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import bcrypt
 from app.config import Config
 from app.db import db
-from app.utils import file_storage
+from app.file_storage import file_storage
 
 logger = logging.getLogger(__name__)
 
