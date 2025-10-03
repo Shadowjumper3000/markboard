@@ -3,10 +3,10 @@ Pytest configuration file.
 Contains fixtures for testing.
 """
 
+import os
 from unittest.mock import MagicMock, patch
 import sys
 import pytest
-import os
 
 
 mock_db_instance = MagicMock()
@@ -25,13 +25,13 @@ sys.modules["_test_mock_db_instance"] = (
 
 
 @pytest.fixture(autouse=True)
-def reset_mock_db(mock_db):
+def reset_mock_db(mock_db_instance_param):
     """Reset the mock database before each test."""
-    mock_db.reset_mock()
-    mock_db.test_connection.return_value = True
-    mock_db.execute_query.return_value = []
-    mock_db.execute_one.return_value = {"now": "2025-10-03T10:00:00"}
-    mock_db.execute_modify.return_value = 1
+    mock_db_instance_param.reset_mock()
+    mock_db_instance_param.test_connection.return_value = True
+    mock_db_instance_param.execute_query.return_value = []
+    mock_db_instance_param.execute_one.return_value = {"now": "2025-10-03T10:00:00"}
+    mock_db_instance_param.execute_modify.return_value = 1
     mock_db_instance.execute_one.side_effect = None
     mock_db_instance.execute_query.side_effect = None
     mock_db_instance.execute_modify.side_effect = None
@@ -70,9 +70,9 @@ def app():
 
 
 @pytest.fixture
-def client(app):
+def client(test_app):
     """Create a test client for the app."""
-    return app.test_client()
+    return test_app.test_client()
 
 
 @pytest.fixture
