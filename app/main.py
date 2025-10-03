@@ -3,7 +3,9 @@ import sys
 import os
 from flask import Flask, jsonify
 from app.config import Config
-from app.db import db
+from app.db import get_db
+
+# Import blueprints from their respective files
 from app.auth import auth_bp
 from app.files import files_bp
 from app.admin import admin_bp
@@ -37,7 +39,7 @@ def create_app():
         sys.exit(1)
 
     # Test database connection
-    if not db.test_connection():
+    if not get_db().test_connection():
         logging.error("Failed to connect to database")
         sys.exit(1)
 
@@ -72,15 +74,15 @@ def create_app():
         """Health check endpoint."""
         try:
             # Test database connection
-            db_status = db.test_connection()
+            db_status = get_db().test_connection()
 
             return jsonify(
                 {
                     "status": "healthy" if db_status else "unhealthy",
                     "database": "connected" if db_status else "disconnected",
-                    "timestamp": db.execute_one("SELECT NOW() as now")[
-                        "now"
-                    ].isoformat(),
+                    "timestamp": get_db()
+                    .execute_one("SELECT NOW() as now")["now"]
+                    .isoformat(),
                 }
             ), (200 if db_status else 503)
 

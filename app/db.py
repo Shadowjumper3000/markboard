@@ -1,6 +1,7 @@
 """
 Database connection and query utilities.
 """
+
 from contextlib import contextmanager
 from typing import Optional, List, Dict, Any
 import logging
@@ -135,5 +136,12 @@ class Database:
             return False
 
 
-# Global database instance
-db = Database()
+# Lazy-initialized global database instance
+_db_instance = None
+
+
+def get_db():
+    global _db_instance
+    if _db_instance is None:
+        _db_instance = Database()
+    return _db_instance

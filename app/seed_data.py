@@ -6,7 +6,7 @@ import logging
 from datetime import datetime, timezone
 import bcrypt
 from app.config import Config
-from app.db import db
+from app.db import get_db
 from app.file_storage import file_storage
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 def seed_admin_user(force=False):
     """Seed only the admin user. Returns admin_id."""
     logger.info("🌱 Seeding admin user...")
-    existing_admin = db.execute_one(
+    existing_admin = get_db().execute_one(
         "SELECT id FROM users WHERE email = %s", (Config.ADMIN_EMAIL,)
     )
     if existing_admin and not force:
@@ -34,7 +34,7 @@ def seed_admin_user(force=False):
     )
 
     if admin_id is None:
-        admin_id = db.execute_modify(
+        admin_id = get_db().execute_modify(
             """INSERT INTO users (email, password_hash, is_admin, created_at)
                VALUES (%s, %s, %s, %s)""",
             (
@@ -66,14 +66,14 @@ def seed_other_data(admin_id):
         ]
         user_ids = [admin_id]
         for email in users:
-            existing_user = db.execute_one(
+            existing_user = get_db().execute_one(
                 "SELECT id FROM users WHERE email = %s", (email,)
             )
             if existing_user:
                 user_ids.append(existing_user["id"])
                 logger.info("User already exists: %s", email)
             else:
-                user_id = db.execute_modify(
+                user_id = get_db().execute_modify(
                     """INSERT INTO users (email, password_hash, is_admin, created_at)
                        VALUES (%s, %s, %s, %s)""",
                     (email, hashed_password, False, datetime.now(timezone.utc)),
@@ -82,14 +82,14 @@ def seed_other_data(admin_id):
                 logger.info("Created user: %s", email)
 
         # Create development team
-        existing_dev_team = db.execute_one(
+        existing_dev_team = get_db().execute_one(
             "SELECT id FROM teams WHERE name = %s", ("Development Team",)
         )
         if existing_dev_team:
             team_id = existing_dev_team["id"]
             logger.info("Development Team already exists")
         else:
-            team_id = db.execute_modify(
+            team_id = get_db().execute_modify(
                 """INSERT INTO teams (name, description, owner_id, created_at)
                    VALUES (%s, %s, %s, %s)""",
                 (
@@ -108,14 +108,14 @@ def seed_other_data(admin_id):
         ]
         team_ids = [team_id]
         for name, description, owner_id in teams_data:
-            existing_team = db.execute_one(
+            existing_team = get_db().execute_one(
                 "SELECT id FROM teams WHERE name = %s", (name,)
             )
             if existing_team:
                 team_ids.append(existing_team["id"])
                 logger.info("Team already exists: %s", name)
             else:
-                additional_team_id = db.execute_modify(
+                additional_team_id = get_db().execute_modify(
                     """INSERT INTO teams (name, description, owner_id, created_at)
                        VALUES (%s, %s, %s, %s)""",
                     (name, description, owner_id, datetime.now(timezone.utc)),
@@ -125,12 +125,12 @@ def seed_other_data(admin_id):
 
         # Add admin to all teams (if not already a member)
         for tid in team_ids:
-            existing_membership = db.execute_one(
+            existing_membership = get_db().execute_one(
                 "SELECT id FROM team_members WHERE team_id = %s AND user_id = %s",
                 (tid, admin_id),
             )
             if not existing_membership:
-                db.execute_modify(
+                get_db().execute_modify(
                     """INSERT INTO team_members (team_id, user_id, role, joined_at)
                        VALUES (%s, %s, %s, %s)""",
                     (tid, admin_id, "admin", datetime.now(timezone.utc)),
@@ -149,12 +149,12 @@ def seed_other_data(admin_id):
             (team_ids[2], user_ids[3], "member"),  # Mike to Design Team
         ]
         for team_id, user_id, role in team_memberships:
-            existing_membership = db.execute_one(
+            existing_membership = get_db().execute_one(
                 "SELECT id FROM team_members WHERE team_id = %s AND user_id = %s",
                 (team_id, user_id),
             )
             if not existing_membership:
-                db.execute_modify(
+                get_db().execute_modify(
                     """INSERT INTO team_members (team_id, user_id, role, joined_at)
                        VALUES (%s, %s, %s, %s)""",
                     (team_id, user_id, role, datetime.now(timezone.utc)),
@@ -177,7 +177,7 @@ def seed_other_data(admin_id):
         ]
 
         for file_data in sample_files:
-            existing_file = db.execute_one(
+            existing_file = get_db().execute_one(
                 "SELECT id FROM files WHERE name = %s AND owner_id = %s",
                 (file_data["name"], file_data["owner_id"]),
             )
@@ -186,7 +186,7 @@ def seed_other_data(admin_id):
             else:
                 now = datetime.now(timezone.utc)
                 # Insert file metadata (empty path/size)
-                file_id = db.execute_modify(
+                file_id = get_db().execute_modify(
                     """
                     INSERT INTO files (name, file_path, file_size, mime_type, owner_id, team_id, created_at, updated_at)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
@@ -208,7 +208,7 @@ def seed_other_data(admin_id):
                     file_path, file_data["content"]
                 )
                 # Update DB with file_path, file_size, checksum
-                db.execute_modify(
+                get_db().execute_modify(
                     """
                     UPDATE files SET file_path = %s, file_size = %s, checksum = %s WHERE id = %s
                     """,
@@ -221,7 +221,7 @@ def seed_other_data(admin_id):
             # ...existing code...
         ]
         for user_id, action, resource_type, details in activities:
-            db.execute_modify(
+            get_db().execute_modify(
                 """INSERT INTO activity_logs (user_id, action, resource_type, details, created_at)
                    VALUES (%s, %s, %s, %s, %s)""",
                 (user_id, action, resource_type, details, datetime.now(timezone.utc)),
@@ -251,7 +251,6 @@ def seed_other_data(admin_id):
         print("=" * 70)
     except Exception as e:
         logger.error("\u274c Error seeding other development data: %s", e)
-        raise
 
 
 def seed_development_data(force=False):

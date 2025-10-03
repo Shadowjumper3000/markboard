@@ -10,20 +10,20 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, Tuple
 import logging
-from app.utils import sanitize_filename
+from app.security import sanitize_filename
+from app.storage.interface import StorageInterface
 
 logger = logging.getLogger(__name__)
 
 
-class FileStorage:
+class FileStorage(StorageInterface):
     """Handles file storage operations on the filesystem."""
 
     def __init__(self, base_path: str = "/app/data"):
         """Initialize file storage with base path."""
-        self.base_path = Path(base_path)
-        self.files_dir = self.base_path / "files"
-
-        # Create directories if they don't exist
+        self.base_path = os.environ.get("FILE_STORAGE_DIR", "data/files")
+        base_dir = self.base_path
+        self.files_dir = Path(base_dir)
         self.files_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info("File storage initialized at %s", self.base_path)
