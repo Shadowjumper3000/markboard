@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class FileStorage(StorageInterface):
     """Handles file storage operations on the filesystem."""
 
-    def __init__(self, base_path: str = "/app/data"):
+    def __init__(self):
         """Initialize file storage with base path."""
         self.base_path = os.environ.get("FILE_STORAGE_DIR", "data/files")
         base_dir = self.base_path

@@ -6,6 +6,8 @@ Follows Single Responsibility Principle.
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional, Tuple
+from functools import wraps
+from flask import jsonify, g, request
 import bcrypt
 import jwt
 from app.db import get_db
@@ -13,18 +15,16 @@ from app.config import Config
 from app.validation import validate_email, validate_password
 from app.activity import log_activity
 
+
 logger = logging.getLogger(__name__)
 
 
 class AuthService:
+    """Service class for authentication operations."""
+
     @staticmethod
     def require_auth(f):
         """Decorator to require authentication for endpoints."""
-        from functools import wraps
-        from flask import request, jsonify, g
-        import logging
-
-        logger = logging.getLogger(__name__)
 
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -58,12 +58,6 @@ class AuthService:
     @staticmethod
     def require_admin(f):
         """Decorator to require admin privileges for endpoints."""
-        from functools import wraps
-        from flask import jsonify, g
-        from app.db import get_db
-        import logging
-
-        logger = logging.getLogger(__name__)
 
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -117,10 +111,10 @@ class AuthService:
         try:
             payload = jwt.decode(token, Config.JWT_SECRET, algorithms=["HS256"])
             return payload
-        except jwt.ExpiredSignatureError:
-            raise ValueError("Token has expired")
-        except jwt.InvalidTokenError:
-            raise ValueError("Invalid token")
+        except jwt.ExpiredSignatureError as exc:
+            raise ValueError("Token has expired") from exc
+        except jwt.InvalidTokenError as exc:
+            raise ValueError("Invalid token") from exc
 
     @staticmethod
     def register_user(email: str, password: str) -> Tuple[bool, str, Optional[Dict]]:
