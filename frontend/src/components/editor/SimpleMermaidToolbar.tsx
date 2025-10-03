@@ -1,4 +1,41 @@
-import { MERMAID_SNIPPETS, SIMPLE_MERMAID_TEMPLATES } from './SimpleMermaidTemplates';
+import { MERMAID_TEMPLATES } from './MermaidTemplates';
+
+// Create quick access templates from the main template system
+const QUICK_TEMPLATES = {
+  sequence: {
+    basic: MERMAID_TEMPLATES.find(t => t.id === 'seq-basic')?.insertText || '',
+    auth: MERMAID_TEMPLATES.find(t => t.id === 'seq-auth-flow')?.insertText || '',
+    api: MERMAID_TEMPLATES.find(t => t.id === 'seq-api-call')?.insertText || '',
+  },
+  flowchart: {
+    basic: MERMAID_TEMPLATES.find(t => t.id === 'flow-basic')?.insertText || '',
+    process: MERMAID_TEMPLATES.find(t => t.id === 'flow-process')?.insertText || '',
+    algorithm: MERMAID_TEMPLATES.find(t => t.id === 'flow-algorithm')?.insertText || '',
+  },
+  erd: {
+    basic: MERMAID_TEMPLATES.find(t => t.id === 'erd-basic')?.insertText || '',
+    users: MERMAID_TEMPLATES.find(t => t.id === 'erd-user-system')?.insertText || '',
+    blog: MERMAID_TEMPLATES.find(t => t.id === 'erd-blog')?.insertText || '',
+  }
+};
+
+// Simplified snippets for quick insertion
+const MERMAID_SNIPPETS = {
+  'seq-participants': `participant A as Alice\nparticipant B as Bob`,
+  'seq-message': `A->>B: Message text`,
+  'seq-response': `B-->>A: Response text`,
+  'seq-note': `note over A,B: Note text`,
+  'seq-loop': `loop Condition\n    A->>B: Message\nend`,
+  'flow-rect': `A[Process Step]`,
+  'flow-diamond': `B{Decision?}`,
+  'flow-rounded': `C(Start/End)`,
+  'flow-database': `D[(Database)]`,
+  'flow-arrow': `A --> B`,
+  'flow-label': `A -->|Label| B`,
+  'erd-entity': `ENTITY {\n    int id PK\n    string name\n    timestamp created_at\n}`,
+  'erd-relationship': `ENTITY1 ||--o{ ENTITY2 : relationship_name`,
+  'erd-types': `int id PK\nstring name\ntext description\nboolean active\ntimestamp created_at\ndecimal price\nuuid external_id FK`
+};
 
 interface SimpleMermaidToolbarProps {
   onTemplateInsert: (template: string) => void;
@@ -31,7 +68,7 @@ export function SimpleMermaidToolbar({ onTemplateInsert }: SimpleMermaidToolbarP
       {/* Quick Templates */}
       <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
         <button
-          onClick={() => insertTemplate(SIMPLE_MERMAID_TEMPLATES.sequence.basic)}
+          onClick={() => insertTemplate(QUICK_TEMPLATES.sequence.basic)}
           style={{
             padding: '4px 8px',
             backgroundColor: '#dbeafe',
@@ -47,7 +84,7 @@ export function SimpleMermaidToolbar({ onTemplateInsert }: SimpleMermaidToolbarP
         </button>
         
         <button
-          onClick={() => insertTemplate(SIMPLE_MERMAID_TEMPLATES.flowchart.basic)}
+          onClick={() => insertTemplate(QUICK_TEMPLATES.flowchart.basic)}
           style={{
             padding: '4px 8px',
             backgroundColor: '#dcfce7',
@@ -63,7 +100,7 @@ export function SimpleMermaidToolbar({ onTemplateInsert }: SimpleMermaidToolbarP
         </button>
         
         <button
-          onClick={() => insertTemplate(SIMPLE_MERMAID_TEMPLATES.erd.basic)}
+          onClick={() => insertTemplate(QUICK_TEMPLATES.erd.basic)}
           style={{
             padding: '4px 8px',
             backgroundColor: '#f3e8ff',
@@ -109,18 +146,18 @@ export function SimpleMermaidToolbar({ onTemplateInsert }: SimpleMermaidToolbarP
           <option value="" disabled>More Templates...</option>
           
           <optgroup label="Sequence Diagrams">
-            <option value={SIMPLE_MERMAID_TEMPLATES.sequence.auth}>Authentication Flow</option>
-            <option value={SIMPLE_MERMAID_TEMPLATES.sequence.api}>API Call Sequence</option>
+            <option value={QUICK_TEMPLATES.sequence.auth}>Authentication Flow</option>
+            <option value={QUICK_TEMPLATES.sequence.api}>API Call Sequence</option>
           </optgroup>
           
           <optgroup label="Flowcharts">
-            <option value={SIMPLE_MERMAID_TEMPLATES.flowchart.process}>Process Flow</option>
-            <option value={SIMPLE_MERMAID_TEMPLATES.flowchart.algorithm}>Algorithm Flow</option>
+            <option value={QUICK_TEMPLATES.flowchart.process}>Process Flow</option>
+            <option value={QUICK_TEMPLATES.flowchart.algorithm}>Algorithm Flow</option>
           </optgroup>
           
           <optgroup label="Entity Relationship">
-            <option value={SIMPLE_MERMAID_TEMPLATES.erd.users}>User Management ERD</option>
-            <option value={SIMPLE_MERMAID_TEMPLATES.erd.blog}>Blog System ERD</option>
+            <option value={QUICK_TEMPLATES.erd.users}>User Management ERD</option>
+            <option value={QUICK_TEMPLATES.erd.blog}>Blog System ERD</option>
           </optgroup>
         </select>
       </div>

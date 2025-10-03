@@ -1,5 +1,16 @@
-// Backend API base URL
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+/**
+ * Legacy API service - DEPRECATED
+ * Use the specific services from lib/services/ instead:
+ * - fileService for file operations
+ * - teamService for team operations  
+ * - adminService for admin operations
+ * 
+ * This class is kept for backwards compatibility.
+ */
+
+import { BaseApiService } from './services/baseApiService';
+
+
 
 interface ApiResponse<T = any> {
   success: boolean;
@@ -8,9 +19,9 @@ interface ApiResponse<T = any> {
   error?: string;
 }
 
-class ApiService {
+class ApiService extends BaseApiService {
   async kickUserFromTeam(teamId: number, userId: number): Promise<{ message: string }> {
-    const response = await fetch(`${API_BASE}/teams/${teamId}/kick`, {
+    const response = await fetch(`${this.apiBase}/teams/${teamId}/kick`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify({ user_id: userId }),
@@ -28,13 +39,13 @@ class ApiService {
       role?: string;
     }>;
   }> {
-    const response = await fetch(`${API_BASE}/teams/${teamId}/users`, {
+    const response = await fetch(`${this.apiBase}/teams/${teamId}/users`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });
     return this.handleResponse(response);
   }
-  private getAuthHeaders(): HeadersInit {
+  protected getAuthHeaders(): HeadersInit {
     const token = localStorage.getItem('token');
     return {
       'Content-Type': 'application/json',
@@ -42,7 +53,7 @@ class ApiService {
     };
   }
 
-  private async handleResponse<T>(response: Response): Promise<T> {
+  protected async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'Request failed' }));
       throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
@@ -69,7 +80,7 @@ class ApiService {
     created_at: string;
     updated_at: string;
   }> {
-    const response = await fetch(`${API_BASE}/files/${fileId}`, {
+    const response = await fetch(`${this.apiBase}/files/${fileId}`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });
@@ -88,7 +99,7 @@ class ApiService {
     created_at: string;
     updated_at: string;
   }> {
-    const response = await fetch(`${API_BASE}/files/${fileId}`, {
+    const response = await fetch(`${this.apiBase}/files/${fileId}`, {
       method: 'PATCH',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(updates),
@@ -112,7 +123,7 @@ class ApiService {
     created_at: string;
     updated_at: string;
   }> {
-    const response = await fetch(`${API_BASE}/files`, {
+    const response = await fetch(`${this.apiBase}/files`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data),
@@ -122,7 +133,7 @@ class ApiService {
   }
 
   async deleteFile(fileId: string): Promise<void> {
-    const response = await fetch(`${API_BASE}/files/${fileId}`, {
+    const response = await fetch(`${this.apiBase}/files/${fileId}`, {
       method: 'DELETE',
       headers: this.getAuthHeaders(),
     });
@@ -143,7 +154,7 @@ class ApiService {
       updated_at: string;
     }>;
   }> {
-    const response = await fetch(`${API_BASE}/files`, {
+    const response = await fetch(`${this.apiBase}/files`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });
@@ -164,7 +175,7 @@ class ApiService {
       created_at: string;
     }>;
   }> {
-    const response = await fetch(`${API_BASE}/teams`, {
+    const response = await fetch(`${this.apiBase}/teams`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });
@@ -182,7 +193,7 @@ class ApiService {
     owner_id: number;
     created_at: string;
   }> {
-    const response = await fetch(`${API_BASE}/teams`, {
+    const response = await fetch(`${this.apiBase}/teams`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data),
@@ -194,7 +205,7 @@ class ApiService {
   async joinTeam(teamId: number): Promise<{
     message: string;
   }> {
-    const response = await fetch(`${API_BASE}/teams/${teamId}/join`, {
+    const response = await fetch(`${this.apiBase}/teams/${teamId}/join`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
     });
@@ -213,7 +224,7 @@ class ApiService {
       created_at: string;
     }>;
   }> {
-    const response = await fetch(`${API_BASE}/teams/available`, {
+    const response = await fetch(`${this.apiBase}/teams/available`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });
@@ -224,7 +235,7 @@ class ApiService {
   async leaveTeam(teamId: number): Promise<{
     message: string;
   }> {
-    const response = await fetch(`${API_BASE}/teams/${teamId}/leave`, {
+    const response = await fetch(`${this.apiBase}/teams/${teamId}/leave`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
     });
@@ -235,7 +246,7 @@ class ApiService {
   async disbandTeam(teamId: number): Promise<{
     message: string;
   }> {
-    const response = await fetch(`${API_BASE}/teams/${teamId}`, {
+    const response = await fetch(`${this.apiBase}/teams/${teamId}`, {
       method: 'DELETE',
       headers: this.getAuthHeaders(),
     });
@@ -253,7 +264,7 @@ class ApiService {
       last_login: string | null;
     }>;
   }> {
-    const response = await fetch(`${API_BASE}/admin/users`, {
+    const response = await fetch(`${this.apiBase}/admin/users`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });
@@ -267,7 +278,7 @@ class ApiService {
     totalFiles: number;
     recentActivity: number;
   }> {
-    const response = await fetch(`${API_BASE}/admin/stats`, {
+    const response = await fetch(`${this.apiBase}/admin/stats`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });
@@ -287,7 +298,7 @@ class ApiService {
       user_email?: string;
     }>;
   }> {
-    const url = new URL(`${API_BASE}/admin/activity`);
+    const url = new URL(`${this.apiBase}/admin/activity`);
     if (limit) {
       url.searchParams.set('limit', limit.toString());
     }
@@ -303,7 +314,7 @@ class ApiService {
   async getUserTeamCount(): Promise<{
     count: number;
   }> {
-    const response = await fetch(`${API_BASE}/teams/count`, {
+    const response = await fetch(`${this.apiBase}/teams/count`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });

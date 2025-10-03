@@ -8,17 +8,10 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/lib/api';
 import { FileItem, Team, User } from '@/types';
+import { formatDisplayName } from '@/utils/fileFormatting';
 import { Filter, Grid, List, Search } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-// Utility function to format file name for display (hide .md extension)
-const formatDisplayName = (fileName: string): string => {
-  if (fileName.toLowerCase().endsWith('.md')) {
-    return fileName.slice(0, -3);
-  }
-  return fileName;
-};
 
 
 

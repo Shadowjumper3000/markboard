@@ -13,3 +13,10 @@ export const API_CONFIG = {
   BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
   TIMEOUT: 10000,
 } as const;
+
+export const TIME_CONSTANTS = {
+  MINUTE_MS: 60000,
+  HOUR_MS: 3600000,
+  DAY_MS: 86400000,
+  WEEK_MS: 604800000,
+} as const;
