@@ -4,7 +4,7 @@ Follows the Dependency Inversion Principle by defining contracts.
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Protocol, List, Dict, Any
 
 
 class StorageInterface(ABC):
@@ -52,3 +52,26 @@ class StorageInterface(ABC):
     @abstractmethod
     def cleanup_orphaned_files(self, referenced_files: set) -> int:
         """Clean up orphaned files that are not referenced."""
+
+
+class DatabaseInterface(Protocol):
+    """Abstract interface for database operations."""
+
+    def execute_query(
+        self, query: str, params: Optional[tuple] = None
+    ) -> List[Dict[str, Any]]:
+        """Execute a query and return the result set."""
+
+    def execute_one(
+        self, query: str, params: Optional[tuple] = None
+    ) -> Optional[Dict[str, Any]]:
+        """Execute a query and return a single result row."""
+
+    def execute_modify(self, query: str, params: Optional[tuple] = None) -> int:
+        """Execute a modification query (INSERT, UPDATE, DELETE) and return the number of affected rows."""
+
+    def execute_transaction(self, queries: List[tuple]) -> bool:
+        """Execute a series of queries as a single transaction."""
+
+    def test_connection(self) -> bool:
+        """Test the database connection."""
