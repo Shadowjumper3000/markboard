@@ -92,13 +92,10 @@ class Database:
             cursor = conn.cursor()
             cursor.execute(query, params)
             conn.commit()
-            affected_rows = cursor.rowcount
-            last_id = cursor.lastrowid
-            cursor.close()
-            is_insert = query.strip().upper().startswith("INSERT")
-            result = last_id if is_insert else affected_rows
-            logger.debug("Query affected %s rows, returned %s", affected_rows, result)
-            return result
+            logger.debug(
+                "Query affected %s rows, returned %s", cursor.rowcount, cursor.lastrowid
+            )
+            return cursor  # Return the cursor so you can use cursor.lastrowid
 
     def execute_transaction(self, queries: List[tuple]) -> bool:
         """Execute multiple queries in a transaction."""

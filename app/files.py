@@ -56,6 +56,9 @@ def create_file():
         )
 
         if not success:
+            # Use 409 Conflict if file already exists, else 400
+            if message and "already exists" in message.lower():
+                return format_error_response(message, 409)
             return format_error_response(message, 400)
 
         return format_success_response(file_record, message, 201)

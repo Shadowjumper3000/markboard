@@ -94,12 +94,8 @@ class FileService:
 
         try:
             # Insert file record
-            file_result = get_db().execute_one(
-                """
-                INSERT INTO files (name, owner_id, team_id, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, %s)
-                RETURNING id
-                """,
+            cursor = get_db().execute_modify(
+                "INSERT INTO files (name, owner_id, team_id, file_path, created_at, updated_at) VALUES (%s, %s, %s, '', %s, %s)",
                 (
                     clean_name,
                     owner_id,
@@ -108,8 +104,7 @@ class FileService:
                     datetime.now(timezone.utc),
                 ),
             )
-
-            file_id = file_result["id"]
+            file_id = cursor.lastrowid  # Get the last inserted ID in MySQL
 
             # Generate file path and save content
             file_path = file_storage.generate_file_path(file_id, clean_name)

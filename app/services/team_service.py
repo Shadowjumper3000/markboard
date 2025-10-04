@@ -87,17 +87,15 @@ class TeamService:
             return False, "Team name already exists", None
 
         try:
-            # Insert team
-            team_result = get_db().execute_one(
+            # Insert team (MySQL: no RETURNING id)
+            cursor = get_db().execute_modify(
                 """
                 INSERT INTO teams (name, description, owner_id, created_at)
                 VALUES (%s, %s, %s, %s)
-                RETURNING id
                 """,
                 (name, description, owner_id, datetime.now(timezone.utc)),
             )
-
-            team_id = team_result["id"]
+            team_id = cursor.lastrowid
 
             # Add owner as admin member
             get_db().execute_modify(
