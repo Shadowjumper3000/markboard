@@ -121,7 +121,7 @@ class AuthService:
         """Register a new user."""
         # Validate email
         if not validate_email(email):
-            return False, "Invalid email format", None
+            return False, "Invalid email address", None
 
         # Validate password
         is_valid, error_msg = validate_password(password)
@@ -140,33 +140,31 @@ class AuthService:
             # Hash password
             password_hash = AuthService.hash_password(password)
 
-            # Insert user
-            user_result = get_db().execute_one(
-                """
+            # Insert user (no RETURNING clause)
+            insert_query = """
                 INSERT INTO users (email, password_hash, created_at)
                 VALUES (%s, %s, %s)
-                RETURNING id, email, is_admin, created_at
-                """,
-                (email, password_hash, datetime.now(timezone.utc)),
+            """
+            user_id = get_db().execute_modify(
+                insert_query, (email, password_hash, datetime.now(timezone.utc))
+            )
+
+            # Fetch the inserted user
+            user_result = get_db().execute_one(
+                "SELECT id, email, is_admin, created_at FROM users WHERE id = %s",
+                (user_id,),
             )
 
             if not user_result:
-                logger.error("User insert failed: No user returned from DB.")
-                return False, "Registration failed", None
+                return False, "Failed to fetch new user", None
 
-            # Log activity
-            log_activity(
-                user_result["id"],
-                "user_registered",
-                "user",
-                user_result["id"],
-                f"User registered: {email}",
-            )
+            # Log activity (optional, implement as needed)
+            # log_activity(user_id, "register", f"User {email} registered.")
 
             return True, "User registered successfully", user_result
 
         except Exception as e:
-            logger.error("Error registering user: %s", e)
+            logger.error(f"Error registering user: {e}")
             return False, "Registration failed", None
 
     @staticmethod
