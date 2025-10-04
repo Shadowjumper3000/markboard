@@ -9,8 +9,7 @@ def test_create_team_success(mock_db):
     """Test creating a team successfully."""
     mock_db.reset_mock()
     # 1. No duplicate team name
-    # 2. Insert team returns id
-    mock_db.execute_one.side_effect = [None, {"id": 1}]
+    mock_db.execute_one.side_effect = [None]
     mock_db.execute_modify.return_value = 1
     success, msg, team_id = TeamService.create_team("Team A", "desc", 1)
     assert success
@@ -45,7 +44,8 @@ def test_create_team_duplicate_name(mock_db):
 def test_create_team_db_error(mock_db):
     """Test DB error during team creation returns failure."""
     mock_db.reset_mock()
-    mock_db.execute_one.side_effect = [None, Exception("DB error")]
+    mock_db.execute_one.side_effect = [None]
+    mock_db.execute_modify.side_effect = Exception("DB error")
     success, msg, team_id = TeamService.create_team("Team B", "desc", 2)
     assert not success
     assert msg == "Failed to create team"

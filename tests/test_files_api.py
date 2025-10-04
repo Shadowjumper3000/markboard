@@ -116,7 +116,6 @@ def test_create_file_success(client, mock_db, auth_headers):
     # 3. Get file record (returns file dict)
     mock_db.execute_one.side_effect = [
         None,  # duplicate file check
-        {"id": 1},  # insert file
         {
             "id": 1,
             "name": "new_file.md",
@@ -167,14 +166,12 @@ def test_create_file_success(client, mock_db, auth_headers):
             assert data["id"] == 1
 
             # Verify database was called correctly
-            assert mock_db.execute_one.call_count == 3
+            assert mock_db.execute_one.call_count == 2
             calls = mock_db.execute_one.call_args_list
             # 1st call: duplicate check
             assert "SELECT id FROM files WHERE name =" in calls[0][0][0]
-            # 2nd call: insert
-            assert "INSERT INTO files" in calls[1][0][0]
-            # 3rd call: fetch file record
-            assert "SELECT id, name, file_size" in calls[2][0][0]
+            # 2nd call: fetch file record
+            assert "SELECT id, name, file_size" in calls[1][0][0]
             mock_save_file.assert_called_once()
             mock_log_activity.assert_called()
 
@@ -442,7 +439,6 @@ def test_create_file(client, mock_db):
     # 3. Get file record (returns file dict)
     mock_db.execute_one.side_effect = [
         None,  # duplicate file check
-        {"id": 1},  # insert file
         {
             "id": 1,
             "name": "test.md",

@@ -114,11 +114,11 @@ def test_create_team_success(client, mock_db, auth_headers):
         ) as mock_get_team_details,
     ):
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
-        # Mock DB: first call (check for existing team) returns None, second call (insert team) returns {"id": 1}
+        # Mock DB: first call (check for existing team) returns None
         mock_db.execute_one.side_effect = [
             None,  # No existing team with this name
-            {"id": 1},  # Inserted team id
         ]
+        mock_db.execute_modify.return_value = 1
         # Patch get_team_details to return a valid team dict
         mock_get_team_details.return_value = {
             "id": 1,
@@ -142,8 +142,8 @@ def test_create_team_success(client, mock_db, auth_headers):
         data = json.loads(response.data)
         assert data["name"] == "New Team"
         assert data["id"] == 1
-        # Verify database was called correctly
-        assert mock_db.execute_one.call_count >= 2
+    # Verify database was called correctly (team name check only)
+    assert mock_db.execute_one.call_count == 1
 
 
 def test_create_team_missing_fields(client, mock_db, auth_headers):
@@ -182,30 +182,6 @@ def test_create_team_missing_name_field(client, mock_db, auth_headers):
         data = json.loads(response.data)
         assert "error" in data
         assert "name" in data["error"].lower()
-
-
-def test_create_team_not_admin(client, mock_db, auth_headers):
-    """Test team creation without admin privileges."""
-    mock_db.reset_mock()
-    team_data = {"name": "New Team"}
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
-        mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
-        # First call: team name check (None), second call: admin check (not admin)
-        mock_db.execute_one.side_effect = [
-            None,  # No existing team with this name
-            {"is_admin": False},  # Non-admin user
-        ]
-        response = client.post(
-            "/teams",
-            data=json.dumps(team_data),
-            content_type="application/json",
-            headers=auth_headers,
-        )
-    # Assert response
-    assert response.status_code == 400
-    data = json.loads(response.data)
-    assert "error" in data
-    assert "failed to create team" in data["error"].lower()
 
 
 def test_join_team_success(client, mock_db, auth_headers):

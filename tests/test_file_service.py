@@ -16,7 +16,6 @@ def test_create_file_success(mock_db):
     # 3. Get complete file record (returns file dict)
     mock_db.execute_one.side_effect = [
         None,  # No duplicate file
-        {"id": 42},  # Inserted file id
         {
             "id": 42,
             "name": "test.md",
@@ -28,7 +27,7 @@ def test_create_file_success(mock_db):
             "updated_at": "2025-10-03T10:00:00",
         },
     ]
-    mock_db.execute_modify.return_value = 1
+    mock_db.execute_modify.return_value = 42
     with patch(
         "app.services.file_service.file_storage.generate_file_path"
     ) as mock_gen_path, patch(
