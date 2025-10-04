@@ -86,7 +86,7 @@ class Database:
             return result
 
     def execute_modify(self, query: str, params: Optional[tuple] = None) -> int:
-        """Execute INSERT, UPDATE, or DELETE query and return affected rows."""
+        """Execute INSERT, UPDATE, or DELETE query and return affected rows or lastrowid for INSERT."""
         logger.debug("Executing modify query: %s with params: %s", query, params)
         with self.get_connection() as conn:
             cursor = conn.cursor()
@@ -95,7 +95,13 @@ class Database:
             logger.debug(
                 "Query affected %s rows, returned %s", cursor.rowcount, cursor.lastrowid
             )
-            return cursor  # Return the cursor so you can use cursor.lastrowid
+            # Return lastrowid for INSERT, else rowcount
+            if query.strip().lower().startswith("insert"):
+                result = cursor.lastrowid
+            else:
+                result = cursor.rowcount
+            cursor.close()
+            return result
 
     def execute_transaction(self, queries: List[tuple]) -> bool:
         """Execute multiple queries in a transaction."""

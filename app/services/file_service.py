@@ -93,8 +93,8 @@ class FileService:
             return False, "File with this name already exists", None
 
         try:
-            # Insert file record
-            cursor = get_db().execute_modify(
+            # Insert file record and get new file_id
+            file_id = get_db().execute_modify(
                 "INSERT INTO files (name, owner_id, team_id, file_path, created_at, updated_at) VALUES (%s, %s, %s, '', %s, %s)",
                 (
                     clean_name,
@@ -104,7 +104,6 @@ class FileService:
                     datetime.now(timezone.utc),
                 ),
             )
-            file_id = cursor.lastrowid  # Get the last inserted ID in MySQL
 
             # Generate file path and save content
             file_path = file_storage.generate_file_path(file_id, clean_name)
