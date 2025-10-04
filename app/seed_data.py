@@ -20,7 +20,7 @@ def seed_admin_user(force=False):
     )
     if existing_admin and not force:
         print("✅ Admin user already exists")
-        print(f"🔐 Admin: {Config.ADMIN_EMAIL} | {Config.ADMIN_PASSWORD}")
+        print(f"🔐 Admin: {Config.ADMIN_EMAIL}")
         return existing_admin["id"]
     elif existing_admin and force:
         print("🔄 Force mode: Checking and creating admin user...")
