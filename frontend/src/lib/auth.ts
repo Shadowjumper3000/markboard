@@ -67,7 +67,7 @@ export const authService = {
   },
 
   async signup(email: string, password: string, name: string): Promise<User> {
-    const response = await fetch(`${API_BASE}/auth/signup`, {
+    const response = await fetch(`${API_BASE}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
