@@ -16,18 +16,22 @@ export const MERMAID_TEMPLATES: MermaidTemplate[] = [
     name: 'Basic Sequence Diagram',
     description: 'Simple sequence diagram with two participants',
     category: 'sequence',
-    template: `sequenceDiagram
+    template: `\`\`\`mermaid
+sequenceDiagram
     participant A as Alice
     participant B as Bob
-    
+
     A->>B: Hello Bob, how are you?
-    B-->>A: Great!`,
-    insertText: `sequenceDiagram
+    B-->>A: Great!
+\`\`\``,
+    insertText: `\`\`\`mermaid
+sequenceDiagram
     participant A as Alice
     participant B as Bob
-    
+
     A->>B: Hello Bob, how are you?
-    B-->>A: Great!`,
+    B-->>A: Great!
+\`\`\``,
     cursorPosition: { line: 3, column: 30 }
   },
   {
@@ -35,30 +39,34 @@ export const MERMAID_TEMPLATES: MermaidTemplate[] = [
     name: 'Authentication Flow',
     description: 'User authentication sequence diagram',
     category: 'sequence',
-    template: `sequenceDiagram
+    template: `\`\`\`mermaid
+sequenceDiagram
     participant U as User
     participant C as Client
     participant S as Server
     participant DB as Database
-    
+
     U->>C: Enter credentials
     C->>S: POST /login
     S->>DB: Verify user
     DB-->>S: User data
     S-->>C: JWT token
-    C-->>U: Login success`,
-    insertText: `sequenceDiagram
+    C-->>U: Login success
+\`\`\``,
+    insertText: `\`\`\`mermaid
+sequenceDiagram
     participant U as User
     participant C as Client
     participant S as Server
     participant DB as Database
-    
+
     U->>C: Enter credentials
     C->>S: POST /login
     S->>DB: Verify user
     DB-->>S: User data
     S-->>C: JWT token
-    C-->>U: Login success`,
+    C-->>U: Login success
+\`\`\``,
     cursorPosition: { line: 2, column: 20 }
   },
   {
@@ -66,30 +74,34 @@ export const MERMAID_TEMPLATES: MermaidTemplate[] = [
     name: 'API Call Sequence',
     description: 'RESTful API interaction sequence',
     category: 'sequence',
-    template: `sequenceDiagram
+    template: `\`\`\`mermaid
+sequenceDiagram
     participant Client
     participant API as REST API
     participant Service
     participant DB as Database
-    
+
     Client->>+API: GET /users
     API->>+Service: getUserList()
     Service->>+DB: SELECT * FROM users
     DB-->>-Service: User records
     Service-->>-API: User list
-    API-->>-Client: JSON response`,
-    insertText: `sequenceDiagram
+    API-->>-Client: JSON response
+\`\`\``,
+    insertText: `\`\`\`mermaid
+sequenceDiagram
     participant Client
     participant API as REST API
     participant Service
     participant DB as Database
-    
+
     Client->>+API: GET /users
     API->>+Service: getUserList()
     Service->>+DB: SELECT * FROM users
     DB-->>-Service: User records
     Service-->>-API: User list
-    API-->>-Client: JSON response`,
+    API-->>-Client: JSON response
+\`\`\``,
     cursorPosition: { line: 6, column: 25 }
   },
 
@@ -99,12 +111,14 @@ export const MERMAID_TEMPLATES: MermaidTemplate[] = [
     name: 'Basic Flowchart',
     description: 'Simple decision-making flowchart',
     category: 'flowchart',
-    template: `flowchart TD
+    template: `\`\`\`mermaid
+flowchart TD
     A[Start] --> B{Decision?}
     B -->|Yes| C[Action 1]
     B -->|No| D[Action 2]
     C --> E[End]
-    D --> E`,
+    D --> E
+\`\`\``,
     insertText: `\`\`\`mermaid
 flowchart TD
     A[Start] --> B{Decision?}
@@ -120,7 +134,8 @@ flowchart TD
     name: 'Process Flow',
     description: 'Business process flowchart with multiple steps',
     category: 'flowchart',
-    template: `flowchart LR
+    template: `\`\`\`mermaid
+flowchart LR
     Start([Start Process]) --> Input[/Input Data/]
     Input --> Validate{Valid?}
     Validate -->|No| Error[Show Error]
@@ -128,7 +143,8 @@ flowchart TD
     Validate -->|Yes| Process[Process Data]
     Process --> Save[(Save to DB)]
     Save --> Success[/Success Message/]
-    Success --> End([End])`,
+    Success --> End([End])
+\`\`\``,
     insertText: `\`\`\`mermaid
 flowchart LR
     Start([Start Process]) --> Input[/Input Data/]
@@ -147,7 +163,8 @@ flowchart LR
     name: 'Algorithm Flow',
     description: 'Algorithm or function flow diagram',
     category: 'flowchart',
-    template: `flowchart TD
+    template: `\`\`\`mermaid
+flowchart TD
     A[Initialize Variables] --> B[Read Input]
     B --> C{Input Valid?}
     C -->|No| D[Display Error]
@@ -157,7 +174,8 @@ flowchart LR
     F -->|Yes| B
     F -->|No| G[Calculate Result]
     G --> H[Display Output]
-    H --> I[End]`,
+    H --> I[End]
+\`\`\``,
     insertText: `\`\`\`mermaid
 flowchart TD
     A[Initialize Variables] --> B[Read Input]
@@ -180,38 +198,40 @@ flowchart TD
     name: 'Basic ERD',
     description: 'Simple entity relationship diagram',
     category: 'erd',
-    template: `erDiagram
+    template: `\`\`\`mermaid
+erDiagram
     CUSTOMER {
         int customer_id PK
         string name
         string email
         date created_at
     }
-    
+
     ORDER {
         int order_id PK
         int customer_id FK
         decimal total
         date order_date
     }
-    
+
     PRODUCT {
         int product_id PK
         string name
         decimal price
         string description
     }
-    
+
     ORDER_ITEM {
         int order_id FK
         int product_id FK
         int quantity
         decimal unit_price
     }
-    
+
     CUSTOMER ||--o{ ORDER : places
     ORDER ||--o{ ORDER_ITEM : contains
-    PRODUCT ||--o{ ORDER_ITEM : "ordered in"`,
+    PRODUCT ||--o{ ORDER_ITEM : "ordered in"
+\`\`\``,
     insertText: `\`\`\`mermaid
 erDiagram
     CUSTOMER {
@@ -220,28 +240,28 @@ erDiagram
         string email
         date created_at
     }
-    
+
     ORDER {
         int order_id PK
         int customer_id FK
         decimal total
         date order_date
     }
-    
+
     PRODUCT {
         int product_id PK
         string name
         decimal price
         string description
     }
-    
+
     ORDER_ITEM {
         int order_id FK
         int product_id FK
         int quantity
         decimal unit_price
     }
-    
+
     CUSTOMER ||--o{ ORDER : places
     ORDER ||--o{ ORDER_ITEM : contains
     PRODUCT ||--o{ ORDER_ITEM : "ordered in"
@@ -253,7 +273,8 @@ erDiagram
     name: 'User Management ERD',
     description: 'Entity relationship diagram for user management system',
     category: 'erd',
-    template: `erDiagram
+    template: `\`\`\`mermaid
+erDiagram
     USER {
         uuid id PK
         string username UK
@@ -263,14 +284,14 @@ erDiagram
         timestamp updated_at
         boolean is_active
     }
-    
+
     ROLE {
         int id PK
         string name UK
         string description
         timestamp created_at
     }
-    
+
     PERMISSION {
         int id PK
         string name UK
@@ -278,23 +299,24 @@ erDiagram
         string action
         string description
     }
-    
+
     USER_ROLE {
         uuid user_id FK
         int role_id FK
         timestamp assigned_at
     }
-    
+
     ROLE_PERMISSION {
         int role_id FK
         int permission_id FK
         timestamp granted_at
     }
-    
+
     USER ||--o{ USER_ROLE : has
     ROLE ||--o{ USER_ROLE : assigned_to
     ROLE ||--o{ ROLE_PERMISSION : has
-    PERMISSION ||--o{ ROLE_PERMISSION : granted_to`,
+    PERMISSION ||--o{ ROLE_PERMISSION : granted_to
+\`\`\``,
     insertText: `\`\`\`mermaid
 erDiagram
     USER {
@@ -306,14 +328,14 @@ erDiagram
         timestamp updated_at
         boolean is_active
     }
-    
+
     ROLE {
         int id PK
         string name UK
         string description
         timestamp created_at
     }
-    
+
     PERMISSION {
         int id PK
         string name UK
@@ -321,19 +343,19 @@ erDiagram
         string action
         string description
     }
-    
+
     USER_ROLE {
         uuid user_id FK
         int role_id FK
         timestamp assigned_at
     }
-    
+
     ROLE_PERMISSION {
         int role_id FK
         int permission_id FK
         timestamp granted_at
     }
-    
+
     USER ||--o{ USER_ROLE : has
     ROLE ||--o{ USER_ROLE : assigned_to
     ROLE ||--o{ ROLE_PERMISSION : has
@@ -346,7 +368,8 @@ erDiagram
     name: 'Blog System ERD',
     description: 'Blog/CMS entity relationship diagram',
     category: 'erd',
-    template: `erDiagram
+    template: `\`\`\`mermaid
+erDiagram
     AUTHOR {
         int id PK
         string name
@@ -354,14 +377,14 @@ erDiagram
         string bio
         timestamp created_at
     }
-    
+
     CATEGORY {
         int id PK
         string name UK
         string slug UK
         string description
     }
-    
+
     POST {
         int id PK
         int author_id FK
@@ -374,18 +397,18 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-    
+
     TAG {
         int id PK
         string name UK
         string slug UK
     }
-    
+
     POST_TAG {
         int post_id FK
         int tag_id FK
     }
-    
+
     COMMENT {
         int id PK
         int post_id FK
@@ -395,12 +418,13 @@ erDiagram
         string status
         timestamp created_at
     }
-    
+
     AUTHOR ||--o{ POST : writes
     CATEGORY ||--o{ POST : contains
     POST ||--o{ POST_TAG : has
     TAG ||--o{ POST_TAG : tagged_in
-    POST ||--o{ COMMENT : receives`,
+    POST ||--o{ COMMENT : receives
+\`\`\``,
     insertText: `\`\`\`mermaid
 erDiagram
     AUTHOR {
@@ -410,14 +434,14 @@ erDiagram
         string bio
         timestamp created_at
     }
-    
+
     CATEGORY {
         int id PK
         string name UK
         string slug UK
         string description
     }
-    
+
     POST {
         int id PK
         int author_id FK
@@ -430,18 +454,18 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-    
+
     TAG {
         int id PK
         string name UK
         string slug UK
     }
-    
+
     POST_TAG {
         int post_id FK
         int tag_id FK
     }
-    
+
     COMMENT {
         int id PK
         int post_id FK
@@ -451,7 +475,7 @@ erDiagram
         string status
         timestamp created_at
     }
-    
+
     AUTHOR ||--o{ POST : writes
     CATEGORY ||--o{ POST : contains
     POST ||--o{ POST_TAG : has
