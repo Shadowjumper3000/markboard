@@ -261,3 +261,181 @@ def test_get_file_name_not_found(mock_db):
         assert not success
         assert msg == "File not found"
         assert name is None
+
+
+def test_create_file_exception(mock_db):
+    """Test create_file returns error on exception."""
+    mock_db.reset_mock()
+    with patch(
+        "app.services.file_service.sanitize_filename", return_value="test.md"
+    ), patch("app.services.file_service.get_db") as mock_get_db:
+        mock_db.execute_one.side_effect = [None, Exception("fail")]
+        mock_get_db.return_value = mock_db
+        success, msg, file_record = FileService.create_file("test.md", "content", 1)
+        assert not success
+        assert msg == "Failed to create file"
+        assert file_record is None
+
+
+def test_get_file_details_filenotfounderror(mock_db):
+    """Test get_file_details returns error on FileNotFoundError."""
+    mock_db.reset_mock()
+    file_record_db = {
+        "id": 1,
+        "name": "test.md",
+        "file_path": "/tmp/test.md",
+        "file_size": 123,
+        "mime_type": "text/markdown",
+        "owner_id": 1,
+        "team_id": None,
+        "created_at": "2025-10-03T10:00:00",
+        "updated_at": "2025-10-03T10:00:00",
+    }
+    mock_db.execute_one.return_value = file_record_db
+    with patch("app.services.file_service.check_file_access", return_value=True), patch(
+        "app.services.file_service.file_storage.read_file",
+        side_effect=FileNotFoundError,
+    ):
+        success, msg, file_record = FileService.get_file_details(1, 1)
+        assert not success
+        assert msg == "File content not found"
+        assert file_record is None
+
+
+def test_get_file_details_exception(mock_db):
+    """Test get_file_details returns error on generic exception."""
+    mock_db.reset_mock()
+    file_record_db = {
+        "id": 1,
+        "name": "test.md",
+        "file_path": "/tmp/test.md",
+        "file_size": 123,
+        "mime_type": "text/markdown",
+        "owner_id": 1,
+        "team_id": None,
+        "created_at": "2025-10-03T10:00:00",
+        "updated_at": "2025-10-03T10:00:00",
+    }
+    mock_db.execute_one.return_value = file_record_db
+    with patch("app.services.file_service.check_file_access", return_value=True), patch(
+        "app.services.file_service.file_storage.read_file",
+        side_effect=Exception("fail"),
+    ):
+        success, msg, file_record = FileService.get_file_details(1, 1)
+        assert not success
+        assert msg == "Failed to read file"
+        assert file_record is None
+
+
+def test_update_file_no_updates(mock_db):
+    """Test update_file returns error if no updates provided."""
+    mock_db.reset_mock()
+    file_record = {
+        "id": 1,
+        "name": "old.md",
+        "file_path": "/tmp/old.md",
+        "owner_id": 1,
+        "team_id": None,
+    }
+    mock_db.execute_one.return_value = file_record
+    with patch("app.services.file_service.check_file_access", return_value=True):
+        success, msg, file = FileService.update_file(1, 1)
+        assert not success
+        assert msg == "No updates provided"
+        assert file is None
+
+
+def test_update_file_invalid_name(mock_db):
+    """Test update_file returns error if new name is invalid."""
+    mock_db.reset_mock()
+    file_record = {
+        "id": 1,
+        "name": "old.md",
+        "file_path": "/tmp/old.md",
+        "owner_id": 1,
+        "team_id": None,
+    }
+    mock_db.execute_one.return_value = file_record
+    with patch("app.services.file_service.check_file_access", return_value=True), patch(
+        "app.services.file_service.sanitize_filename", return_value=None
+    ):
+        success, msg, file = FileService.update_file(1, 1, name="   ")
+        assert not success
+        assert msg == "Invalid file name"
+        assert file is None
+
+
+def test_update_file_exception(mock_db):
+    """Test update_file returns error on exception."""
+    mock_db.reset_mock()
+    file_record = {
+        "id": 1,
+        "name": "old.md",
+        "file_path": "/tmp/old.md",
+        "owner_id": 1,
+        "team_id": None,
+    }
+    mock_db.execute_one.return_value = file_record
+    with patch("app.services.file_service.check_file_access", return_value=True), patch(
+        "app.services.file_service.file_storage.save_file",
+        side_effect=Exception("fail"),
+    ):
+        success, msg, file = FileService.update_file(1, 1, content="new content")
+        assert not success
+        assert msg == "Failed to update file"
+        assert file is None
+
+
+def test_delete_file_exception(mock_db):
+    """Test delete_file returns error on exception."""
+    mock_db.reset_mock()
+    file_record = {"name": "test.md", "file_path": "/tmp/test.md"}
+    mock_db.execute_one.return_value = file_record
+    mock_db.execute_modify.return_value = 1
+    with patch("app.services.file_service.check_file_access", return_value=True), patch(
+        "app.services.file_service.file_storage.delete_file",
+        side_effect=Exception("fail"),
+    ):
+        success, msg = FileService.delete_file(1, 1)
+        assert not success
+        assert msg == "Failed to delete file"
+
+
+def test_get_file_content_filenotfounderror(mock_db):
+    """Test get_file_content returns error on FileNotFoundError."""
+    mock_db.reset_mock()
+    file_record = {"name": "test.md", "file_path": "/tmp/test.md"}
+    mock_db.execute_one.return_value = file_record
+    with patch("app.services.file_service.check_file_access", return_value=True), patch(
+        "app.services.file_service.file_storage.read_file",
+        side_effect=FileNotFoundError,
+    ):
+        success, msg, content = FileService.get_file_content(1, 1)
+        assert not success
+        assert msg == "File content not found"
+        assert content is None
+
+
+def test_get_file_content_exception(mock_db):
+    """Test get_file_content returns error on generic exception."""
+    mock_db.reset_mock()
+    file_record = {"name": "test.md", "file_path": "/tmp/test.md"}
+    mock_db.execute_one.return_value = file_record
+    with patch("app.services.file_service.check_file_access", return_value=True), patch(
+        "app.services.file_service.file_storage.read_file",
+        side_effect=Exception("fail"),
+    ):
+        success, msg, content = FileService.get_file_content(1, 1)
+        assert not success
+        assert msg == "Failed to read file content"
+        assert content is None
+
+
+def test_get_file_name_access_denied(mock_db):
+    """Test get_file_name returns error if access denied."""
+    mock_db.reset_mock()
+    with patch("app.services.file_service.check_file_access", return_value=False):
+        success, msg, name = FileService.get_file_name(1, 1)
+        assert not success
+        assert msg == "Access denied"
+        assert name is None
