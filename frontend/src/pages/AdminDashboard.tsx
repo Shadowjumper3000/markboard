@@ -54,10 +54,11 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => {
+    const nameMatch = typeof user.name === 'string' && user.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const emailMatch = typeof user.email === 'string' && user.email.toLowerCase().includes(searchQuery.toLowerCase());
+    return nameMatch || emailMatch;
+  });
 
   const fetchAdminData = async () => {
     try {
