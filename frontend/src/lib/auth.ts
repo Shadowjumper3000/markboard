@@ -56,13 +56,13 @@ export const authService = {
       };
     }
     
-    // Fallback: create user object from login response
+    // Fallback: create user object from login response (fix: use data.user)
     return {
-      id: data.user_id.toString(), // Fixed: data.user_id instead of data.data.user_id
-      email: data.email, // Fixed: data.email instead of data.data.email
-      name: data.email.split('@')[0],
-      role: data.is_admin ? 'admin' : 'user', // Fixed: data.is_admin instead of data.data.is_admin
-      createdAt: new Date().toISOString(),
+      id: data.user?.id?.toString() || '',
+      email: data.user?.email || '',
+      name: data.user?.name || data.user?.email?.split('@')[0] || '',
+      role: data.user?.is_admin ? 'admin' : 'user',
+      createdAt: data.user?.created_at || new Date().toISOString(),
     };
   },
 

@@ -13,6 +13,7 @@ CREATE TABLE users (
     is_admin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_login DATETIME NULL,
     INDEX idx_email (email),
     INDEX idx_created_at (created_at)
 );
