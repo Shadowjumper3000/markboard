@@ -2,13 +2,14 @@
 Tests for app.seed_data seeding functions.
 """
 
+from unittest.mock import patch
 import pytest
-from unittest.mock import patch, MagicMock
 import app.seed_data as seed_data
 
 
 @pytest.fixture(autouse=True)
 def patch_file_storage():
+    """Patch file storage to avoid actual file operations."""
     with patch("app.seed_data.file_storage") as mock_fs:
         mock_fs.generate_file_path.return_value = "/tmp/fakepath.md"
         mock_fs.save_file.return_value = (123, "checksum123")
@@ -16,7 +17,8 @@ def patch_file_storage():
 
 
 @pytest.mark.usefixtures("mock_db")
-def test_seed_admin_user_creates_new(monkeypatch, mock_db):
+def test_seed_admin_user_creates_new(mock_db):
+    """Test creating a new admin user when none exists."""
     # Simulate no existing admin
     mock_db.execute_one.return_value = None
     mock_db.execute_modify.return_value = 42
@@ -27,7 +29,8 @@ def test_seed_admin_user_creates_new(monkeypatch, mock_db):
 
 
 @pytest.mark.usefixtures("mock_db")
-def test_seed_admin_user_exists(monkeypatch, mock_db):
+def test_seed_admin_user_exists(mock_db):
+    """Test not creating a new admin if one exists."""
     # Simulate existing admin
     mock_db.execute_one.return_value = {"id": 99}
     admin_id = seed_data.seed_admin_user(force=False)
@@ -37,7 +40,8 @@ def test_seed_admin_user_exists(monkeypatch, mock_db):
 
 
 @pytest.mark.usefixtures("mock_db")
-def test_seed_admin_user_force(monkeypatch, mock_db):
+def test_seed_admin_user_force(mock_db):
+    """Test force creating a new admin user."""
     # Simulate existing admin, force=True
     mock_db.execute_one.return_value = {"id": 77}
     admin_id = seed_data.seed_admin_user(force=True)
@@ -48,7 +52,8 @@ def test_seed_admin_user_force(monkeypatch, mock_db):
 
 
 @pytest.mark.usefixtures("mock_db")
-def test_seed_other_data_runs(monkeypatch, mock_db):
+def test_seed_other_data_runs(mock_db):
+    """Test seeding other data creates entries as needed."""
     # Simulate all queries return None (so all inserts happen)
     mock_db.execute_one.return_value = None
     mock_db.execute_modify.return_value = 1
@@ -59,9 +64,11 @@ def test_seed_other_data_runs(monkeypatch, mock_db):
 
 
 @pytest.mark.usefixtures("mock_db")
-def test_seed_other_data_existing(monkeypatch, mock_db):
+def test_seed_other_data_existing(mock_db):
+    """Test seeding other data when entries already exist."""
+
     # Simulate all queries return existing objects (so no inserts)
-    def execute_one_side_effect(*args, **kwargs):
+    def execute_one_side_effect(*args):
         if "users" in args[0]:
             return {"id": 2}
         if "teams" in args[0]:
@@ -78,13 +85,15 @@ def test_seed_other_data_existing(monkeypatch, mock_db):
 
 
 @pytest.mark.usefixtures("mock_db")
-def test_seed_development_data(monkeypatch, mock_db):
+def test_seed_development_data(monkeypatch):
+    """Test seeding development data calls appropriate functions."""
     monkeypatch.setattr(seed_data, "seed_admin_user", lambda force=False: 123)
     monkeypatch.setattr(seed_data, "seed_other_data", lambda admin_id: None)
     seed_data.seed_development_data(force=True)
 
 
 @pytest.mark.usefixtures("mock_db")
-def test_seed_production_data(monkeypatch, mock_db):
+def test_seed_production_data(monkeypatch):
+    """Test seeding production data calls appropriate functions."""
     monkeypatch.setattr(seed_data, "seed_admin_user", lambda force=False: 456)
     seed_data.seed_production_data(force=True)

@@ -11,17 +11,20 @@ from app.file_storage import FileStorage
 
 @pytest.fixture
 def temp_storage_dir(monkeypatch, tmp_path):
+    """Set FILE_STORAGE_DIR to a temporary directory."""
     monkeypatch.setenv("FILE_STORAGE_DIR", str(tmp_path))
     return str(tmp_path)
 
 
 @pytest.fixture
 def storage(temp_storage_dir):
+    """Create a FileStorage instance with the temp directory."""
     # Re-instantiate FileStorage to pick up new env var
     return FileStorage()
 
 
 def test_generate_file_path_creates_subdir(storage):
+    """Test that generate_file_path creates subdirectories."""
     file_id = 1234
     filename = "test.txt"
     path = storage.generate_file_path(file_id, filename)
@@ -33,6 +36,7 @@ def test_generate_file_path_creates_subdir(storage):
 
 
 def test_save_and_read_file(storage):
+    """Test saving and reading a file."""
     file_path = storage.generate_file_path(1, "foo.txt")
     content = "hello world"
     size, checksum = storage.save_file(file_path, content)
@@ -43,11 +47,13 @@ def test_save_and_read_file(storage):
 
 
 def test_read_file_not_found(storage):
+    """Test reading a nonexistent file raises FileNotFoundError."""
     with pytest.raises(FileNotFoundError):
         storage.read_file("/nonexistent/file.txt")
 
 
 def test_delete_file(storage):
+    """Test deleting a file."""
     file_path = storage.generate_file_path(2, "bar.txt")
     storage.save_file(file_path, "data")
     assert storage.delete_file(file_path) is True
@@ -57,6 +63,7 @@ def test_delete_file(storage):
 
 
 def test_move_file(storage):
+    """Test moving a file."""
     src = storage.generate_file_path(3, "move.txt")
     dst = storage.generate_file_path(4, "moved.txt")
     storage.save_file(src, "move me")
@@ -66,6 +73,7 @@ def test_move_file(storage):
 
 
 def test_copy_file(storage):
+    """Test copying a file."""
     src = storage.generate_file_path(5, "copy.txt")
     dst = storage.generate_file_path(6, "copied.txt")
     storage.save_file(src, "copy me")
@@ -75,6 +83,7 @@ def test_copy_file(storage):
 
 
 def test_get_file_info(storage):
+    """Test retrieving file metadata."""
     file_path = storage.generate_file_path(7, "info.txt")
     storage.save_file(file_path, "info")
     info = storage.get_file_info(file_path)
@@ -87,6 +96,7 @@ def test_get_file_info(storage):
 
 
 def test_file_exists(storage):
+    """Test checking if a file exists."""
     file_path = storage.generate_file_path(8, "exists.txt")
     assert not storage.file_exists(file_path)
     storage.save_file(file_path, "exists")
@@ -94,6 +104,7 @@ def test_file_exists(storage):
 
 
 def test_verify_file_integrity(storage):
+    """Test verifying file integrity via checksum."""
     file_path = storage.generate_file_path(9, "integrity.txt")
     _, checksum = storage.save_file(file_path, "integrity")
     assert storage.verify_file_integrity(file_path, checksum) is True
@@ -102,6 +113,7 @@ def test_verify_file_integrity(storage):
 
 
 def test_cleanup_orphaned_files(storage):
+    """Test cleaning up orphaned files."""
     # Create two files, only one is referenced
     file1 = storage.generate_file_path(10, "orphan1.txt")
     file2 = storage.generate_file_path(11, "orphan2.txt")

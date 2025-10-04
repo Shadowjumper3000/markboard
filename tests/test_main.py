@@ -2,14 +2,15 @@
 Unit tests for app.main Flask app factory and endpoints, using mocking for config and db.
 """
 
-import pytest
 from unittest.mock import patch, MagicMock
 from datetime import datetime
+import pytest
 from app.main import create_app
 
 
 @pytest.fixture
 def client():
+    """Flask test client with mocked config and db."""
     with patch("app.main.Config") as mock_config, patch(
         "app.main.get_db"
     ) as mock_get_db:
@@ -29,6 +30,7 @@ def client():
 
 
 def test_index(client):
+    """Test the index endpoint."""
     resp = client.get("/")
     assert resp.status_code == 200
     data = resp.get_json()
@@ -37,6 +39,7 @@ def test_index(client):
 
 
 def test_health_healthy(client):
+    """Test the health endpoint when healthy."""
     resp = client.get("/health")
     assert resp.status_code == 200
     data = resp.get_json()
@@ -46,6 +49,7 @@ def test_health_healthy(client):
 
 
 def test_health_unhealthy():
+    """Test the health endpoint when unhealthy."""
     with patch("app.main.Config") as mock_config, patch(
         "app.main.get_db"
     ) as mock_get_db, patch("sys.exit") as _:
@@ -66,6 +70,7 @@ def test_health_unhealthy():
 
 
 def test_404(client):
+    """Test 404 handler."""
     resp = client.get("/no-such-endpoint")
     assert resp.status_code == 404
     data = resp.get_json()
@@ -73,6 +78,8 @@ def test_404(client):
 
 
 def test_500_handler(client):
+    """Test 500 error handler."""
+
     # Register a route that raises an error
     @client.application.route("/error")
     def error():
