@@ -23,7 +23,6 @@ services:
 
   # Backend API service
   backend:
-    image: markboard-backend:dev
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -59,7 +58,6 @@ services:
 
   # Frontend application service
   frontend:
-    image: markboard-frontend:dev
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
