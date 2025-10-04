@@ -1,74 +1,43 @@
 # Markboard
-Markboard is a browser-based UML diagram maker. Users can create and edit `.md` files that define UML diagrams. The files are rendered live in the browser into sequence diagrams, flowcharts, ERDs, or cloud architecture diagrams using **Mermaid.js** for visualization. 
-
-The project avoids heavy frameworks in critical areas to demonstrate manual implementation: 
-
-- **Authentication and CRUD** (manual implementation with MySQL, no ORM) 
-- **Database design and queries** written by hand 
-- **AI-assisted frontend scaffolding**, but backend and data logic are hand-written
----
+Markboard is a web-based uml diagram editor. It uses Mermaid.js for rendering diagrams and provides a user-friendly interface for creating and managing your diagrams.
 
 ## Features
-- **Authentication**: sign up, login, JWT-based sessions, password hashing (manual implementation in Python) 
-- **File Management**: CRUD for `.md` UML files (metadata in DB, content on filesystem with version control) 
-- **Live Preview**: Monaco editor + Mermaid.js renderer 
-- **Upload**: Import existing `.md`  UML files 
-- **Admin Dashboard** (post-MVP): manage users, track file counts, view activity logs
----
+- Create and edit UML diagrams using Mermaid.js syntax.
+- User authentication and role management (admin and user roles).
+- Save and manage diagrams in a database.
 
-## Frontend
-- **Generated via AI design scaffolding** (React + Tailwind + Monaco) 
-- Handles UI, login forms, file browsing, editor, preview panel 
-- Renders diagrams via **Mermaid.js**
----
+## Technologies Used
+- Frontend: react, typescript, tailwindcss
+- Backend: flask
+- Database: MySQL
+- Authentication: JWT
 
-## Backend
-- Implemented in **Python** with the **simplest possible setup**: 
-    - `http.server`  (for raw HTTP handling) or `Flask`  if minimal routing is needed 
-    - `mysql.connector`  for direct SQL queries (no ORM) 
-    - `bcrypt`  (via `passlib` ) for password hashing 
-    - `PyJWT`  for JWT handling
+## Installation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/shadowjumper3000/markboard.git
+   ```
+2. Navigate to the project directory:
+   ```bash
+   cd markboard
+   ```
+3. Set up environment variables:
+    ```bash
+    cp .env-example .env
+    # Edit .env file to set your environment variables
+    ```
+4. Use Docker to set up the environment for local development:
+   ```bash
+   docker compose -f 'docker-compose.dev.yml' up -d --build
+   ```
+5. Access the application at
+   [http://localhost:80](http://localhost:80) or [http://localhost](http://localhost)
 
-- Responsibilities: 
-    - Authentication (signup, login, JWT validation) 
-    - File CRUD with `.md` metadata in DB and content on filesystem with checksums 
-    - Admin endpoints (basic stats, activity logs)
+## Contributing
+Contributions are welcome! Please fork the repository and create a pull request with your changes.
+Please ensure that your code adheres to the existing style and includes appropriate tests.
 
----
-
-## Database
-- **MySQL** (Dockerized, volume-mounted for persistence) 
-- Tables: 
-    - `Users`  
-    - `Teams`  
-    - `Files`  
-    - `FileVersions`  
-    - `ActivityLogs` 
-
----
-
-## Infrastructure
-- Host: Hetzner server 
-- Deployment: Docker containers (frontend, backend, MySQL, file storage) 
-- CI/CD: GitHub Actions (build, test, deploy) 
-- Volumes for DB and file storage portability
----
-
-## Roadmap Beyond MVP
-- Async job queue for heavy rendering (optional) 
-- Extended diagram syntax features 
-- Team collaboration features (real-time editing) 
-- Admin dashboard with full monitoring
+## License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details
 
 
-
-<!-- eraser-additional-content -->
-## Diagrams
-<!-- eraser-additional-files -->
-<a href="/README-Database-1.eraserdiagram" data-element-id="QPf3Mtb0fC7U6seMayn-c"><img src="undefined" alt="" data-element-id="QPf3Mtb0fC7U6seMayn-c" /></a>
-<a href="/README-CRUD-2.eraserdiagram" data-element-id="xMeEzWbIFAQq4dsKm8Lok"><img src="/.eraser/kfgCuF5uvfbXwHaIkYch___5kSoH9X6LrZJ6O4fyzbtABpyuCi2___---diagram----c2542370ecfdbdc8c73677f7d79d9d89-CRUD.png" alt="" data-element-id="xMeEzWbIFAQq4dsKm8Lok" /></a>
-<a href="/README-Security-3.eraserdiagram" data-element-id="oXTHx5Uzyu7ElmYtgwYA2"><img src="undefined" alt="" data-element-id="oXTHx5Uzyu7ElmYtgwYA2" /></a>
-<a href="/README-cloud-architecture-4.eraserdiagram" data-element-id="9g-6u7YBR_MSd3OKU0iRR"><img src="/.eraser/kfgCuF5uvfbXwHaIkYch___5kSoH9X6LrZJ6O4fyzbtABpyuCi2___---diagram----9435ccd805614e63cabfa4b1fe81095b.png" alt="" data-element-id="9g-6u7YBR_MSd3OKU0iRR" /></a>
-<!-- end-eraser-additional-files -->
-<!-- end-eraser-additional-content -->
-<!--- Eraser file: https://app.eraser.io/workspace/kfgCuF5uvfbXwHaIkYch --->
