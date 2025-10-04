@@ -106,8 +106,8 @@ INSERT INTO team_members (team_id, user_id, role, joined_at) VALUES
 (1, 1, 'admin', NOW());
 
 -- Create a sample file
-INSERT INTO files (name, content, owner_id, team_id, created_at, updated_at) VALUES
-('Welcome.md', '# Welcome to Markboard\n\nThis is a sample markdown file.', 1, 1, NOW(), NOW());
+INSERT INTO files (name, owner_id, team_id, created_at, updated_at) VALUES
+('Welcome.md', 1, 1, NOW(), NOW());
 */
 
 -- Instructions for generating admin password hash:
