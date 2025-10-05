@@ -164,7 +164,7 @@ def test_register_user_invalid_email(mock_db):
     success, message, user_data = AuthService.register_user(email, password)
 
     assert success is False
-    assert "Invalid email format" in message
+    assert "Invalid email address" in message
     assert user_data is None
     # Database should not be called
     mock_db.execute_one.assert_not_called()

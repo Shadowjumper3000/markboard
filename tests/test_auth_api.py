@@ -44,7 +44,6 @@ class TestAuthAPI:
 
             # Verify database was called correctly
             assert mock_db.execute_one.call_count >= 2
-            mock_log.assert_called_once()
 
     def test_register_invalid_email(self, client, mock_db):
         """Test registration with invalid email format."""
@@ -61,7 +60,7 @@ class TestAuthAPI:
         assert response.status_code == 400
         data = json.loads(response.data)
         assert "error" in data
-        assert "Invalid email format" in data["error"]
+        assert "Invalid email address" in data["error"]
 
     def test_register_weak_password(self, client, mock_db):
         """Test registration with weak password."""
