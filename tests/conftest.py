@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 import sys
 import pytest
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 mock_db_instance = MagicMock()
 mock_db_instance.test_connection.return_value = True

@@ -48,6 +48,20 @@ Markboard is a web-based uml diagram editor. It uses Mermaid.js for rendering di
 6. Access the application at
    [http://localhost:80](http://localhost:80) or [http://localhost](http://localhost)
 
+## Testing
+To run tests, install the required dependencies and run the test suite:
+```bash
+# Create and activate a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run tests
+pytest
+```
+
 ## Contributing
 Contributions are welcome! Please fork the repository and create a pull request with your changes.
 Please ensure that your code adheres to the existing style and includes appropriate tests.
