@@ -43,15 +43,14 @@ services:
       ADMIN_EMAIL: dev@example.com
       ADMIN_PASSWORD: devpassword
     ports:
-      - "8000:8000"  # Backend API
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
     volumes:
       - backend_data_dev:/app/data
-      - ./data:/app/data # Data is bind-mounted for dev, not persisted as a docker volume
-    # Keep container running for dev container access
+      - ./data:/app/data
     command: ["python", "-m", "app.main"]
     networks:
       - internal
@@ -63,10 +62,10 @@ services:
       dockerfile: Dockerfile.dev
     container_name: markboard-frontend-dev
     ports:
-      - "80:80"  # Frontend application
+      - "80:80"
     volumes:
-      - ./frontend:/app  # Live reload for frontend
-      - frontend_node_modules:/app/node_modules  # Exclude node_modules from host
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
     environment:
       - VITE_API_URL=http://localhost:8000
     depends_on:
@@ -84,7 +83,7 @@ services:
       PMA_USER: markboard_user
       PMA_PASSWORD: markboard_password
     ports:
-      - "8080:80"  # Database admin interface
+      - "8080:80"
     depends_on:
       - db
     restart: unless-stopped

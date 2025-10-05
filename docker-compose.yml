@@ -45,7 +45,6 @@ services:
       DOMAIN: ${DOMAIN}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-    # No ports exposed - internal access only
     depends_on:
       db:
         condition: service_healthy
