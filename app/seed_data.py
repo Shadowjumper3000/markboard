@@ -164,16 +164,6 @@ def seed_other_data(admin_id):
                 logger.info("User %d already member of team %d", user_id, team_id)
 
         sample_files = [
-            {
-                "name": "mermaid_flow_1.md",
-                "owner_id": admin_id,
-                "content": """```mermaid\ngraph TD;\n    A-->B;\n    B-->C;\n```""",
-            },
-            {
-                "name": "mermaid_flow_2.md",
-                "owner_id": admin_id,
-                "content": """```mermaid\nflowchart LR\n    X-->Y\n    Y-->Z\n```""",
-            },
         ]
 
         for file_data in sample_files:
