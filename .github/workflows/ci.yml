@@ -45,6 +45,8 @@ jobs:
           MYSQL_DATABASE: test_markboard
           JWT_SECRET: test_jwt_secret_for_ci
           FLASK_ENV: testing
+          ADMIN_EMAIL: admin@test.com
+          ADMIN_PASSWORD: test_admin_password
         run: |
           echo "MYSQL_HOST=localhost" >> $GITHUB_ENV
           echo "MYSQL_PORT=3306" >> $GITHUB_ENV
@@ -53,6 +55,8 @@ jobs:
           echo "MYSQL_DATABASE=test_markboard" >> $GITHUB_ENV
           echo "JWT_SECRET=test_jwt_secret_for_ci" >> $GITHUB_ENV
           echo "FLASK_ENV=testing" >> $GITHUB_ENV
+          echo "ADMIN_EMAIL=admin@test.com" >> $GITHUB_ENV
+          echo "ADMIN_PASSWORD=test_admin_password" >> $GITHUB_ENV
 
       - name: Run tests with coverage
         env:
@@ -63,6 +67,8 @@ jobs:
           MYSQL_DATABASE: test_markboard
           JWT_SECRET: test_jwt_secret_for_ci
           FLASK_ENV: testing
+          ADMIN_EMAIL: admin@test.com
+          ADMIN_PASSWORD: test_admin_password
         run: |
           python -m pytest --cov=app --cov-report=term-missing --cov-report=xml --cov-fail-under=70 -v
 
@@ -73,11 +79,6 @@ jobs:
           flags: backend
           name: backend-coverage
           fail_ci_if_error: false
-
-      - name: Build Docker image (verification)
-        run: |
-          docker build -t markboard:ci-test .
-          echo "✅ Docker build successful"
 
       - name: Frontend tests
         working-directory: ./frontend

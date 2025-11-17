@@ -54,6 +54,9 @@ def app():
     os.environ["MYSQL_USER"] = "dummy"
     os.environ["MYSQL_PASSWORD"] = "dummy"
     os.environ["MYSQL_DATABASE"] = "dummy"
+    # Set admin credentials for seed_data tests
+    os.environ["ADMIN_EMAIL"] = "admin@test.com"
+    os.environ["ADMIN_PASSWORD"] = "test_admin_password"
     from app.main import create_app  # Import after patching get_db
 
     test_app = create_app()
