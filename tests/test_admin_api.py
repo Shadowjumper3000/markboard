@@ -15,6 +15,7 @@ def test_get_stats_success(client, mock_db, auth_headers):
         {"count": 10},  # Total users
         {"count": 5},  # Active users
         {"count": 50},  # Total files
+        {"count": 3},  # Total teams
         {"count": 7},  # Recent activity
     ]
 
@@ -28,10 +29,11 @@ def test_get_stats_success(client, mock_db, auth_headers):
         response = client.get("/admin/stats", headers=auth_headers)
         assert response.status_code == 200
         data = json.loads(response.data)
-        # The backend returns keys: totalUsers, activeUsers, totalFiles, recentActivity
+        # The backend returns keys: totalUsers, activeUsers, totalFiles, totalTeams, recentActivity
         assert data["totalUsers"] == 10
         assert data["activeUsers"] == 5
         assert data["totalFiles"] == 50
+        assert data["totalTeams"] == 3
         assert data["recentActivity"] == 7
 
 

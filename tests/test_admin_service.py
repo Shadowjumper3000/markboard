@@ -21,7 +21,9 @@ def test_get_system_stats(mock_db):
         {"count": 10},  # total users
         {"count": 5},  # active users
         {"count": 50},  # total files
+        {"count": 3},  # total teams
         {"count": 7},  # recent activity
     ]
     stats = AdminService.get_system_stats()
     assert "totalUsers" in stats
+    assert "totalTeams" in stats
