@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI/CD - Production Deploy
 
 on:
   push:
@@ -77,7 +77,7 @@ jobs:
         with:
           file: ./coverage.xml
           flags: backend
-          name: backend-coverage
+          name: backend-coverage-prod
           fail_ci_if_error: false
 
       - name: Frontend tests
