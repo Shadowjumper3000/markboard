@@ -260,6 +260,10 @@ class ApiService extends BaseApiService {
       id: number;
       email: string;
       is_admin: boolean;
+      file_count: number;
+      team_count: number;
+      status: string;
+      last_active: string;
       created_at: string;
       last_login: string | null;
     }>;
@@ -276,9 +280,30 @@ class ApiService extends BaseApiService {
     totalUsers: number;
     activeUsers: number;
     totalFiles: number;
+    totalTeams: number;
     recentActivity: number;
   }> {
     const response = await fetch(`${this.apiBase}/admin/stats`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+
+    return this.handleResponse(response);
+  }
+
+  async getAdminTeams(): Promise<{
+    teams: Array<{
+      id: number;
+      name: string;
+      description: string;
+      owner_id: number;
+      owner_email: string;
+      file_count: number;
+      member_count: number;
+      created_at: string;
+    }>;
+  }> {
+    const response = await fetch(`${this.apiBase}/admin/teams`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });

@@ -59,3 +59,16 @@ def get_activity():
     except Exception as e:
         logger.error("Get activity error: %s", e)
         return format_error_response("Internal server error", 500)
+
+
+@admin_bp.route("/teams", methods=["GET"])
+@AuthService.require_auth
+@AuthService.require_admin
+def get_teams():
+    """Get list of all teams (admin only)."""
+    try:
+        teams = AdminService.get_all_teams()
+        return format_success_response({"teams": teams})
+    except Exception as e:
+        logger.error("List teams error: %s", e)
+        return format_error_response("Internal server error", 500)

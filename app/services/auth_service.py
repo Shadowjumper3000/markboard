@@ -158,8 +158,10 @@ class AuthService:
             if not user_result:
                 return False, "Failed to fetch new user", None
 
-            # Log activity (optional, implement as needed)
-            # log_activity(user_id, "register", f"User {email} registered.")
+            # Log activity
+            log_activity(
+                user_id, "user_created", "user", user_id, f"User {email} registered"
+            )
 
             return True, "User registered successfully", user_result
 
