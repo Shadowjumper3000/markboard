@@ -80,12 +80,14 @@ pytest --cov=app --cov-report=html --cov-fail-under=70
 - **Current Test Files**: 16 test modules with 140+ test functions
 - **Coverage Report**: Generated in `htmlcov/index.html` after running tests
 - **CI Integration**: Automated testing on all pull requests and deployments
+- **Note**: Seed data tests are excluded from CI due to mocking complexity (non-critical functionality)
 
 ### Test Categories
 - **Unit Tests**: Service layer testing (`test_*_service.py`)
 - **API Tests**: Endpoint testing (`test_*_api.py`) 
 - **Integration Tests**: Full application flow (`test_main.py`, `test_db.py`)
 - **Validation Tests**: Input validation (`test_validation.py`)
+- **Seed Data Tests**: Database seeding (excluded from CI, run manually if needed)
 
 ## CI/CD Pipeline
 

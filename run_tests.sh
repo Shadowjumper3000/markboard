@@ -45,5 +45,7 @@ if [ $? -eq 0 ]; then
     echo "🎉 All tests passed and coverage threshold met!"
 else
     echo "❌ Tests failed or coverage below threshold (70%)"
+    echo "💡 Note: Seed data tests are excluded by default due to mocking issues"
+    echo "💡 To run all tests including seed data: pytest tests/ --no-cov"
     exit 1
 fi
