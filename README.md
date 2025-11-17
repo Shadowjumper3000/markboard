@@ -49,7 +49,15 @@ Markboard is a web-based uml diagram editor. It uses Mermaid.js for rendering di
    [http://localhost:80](http://localhost:80) or [http://localhost](http://localhost)
 
 ## Testing
-To run tests, install the required dependencies and run the test suite:
+
+### Quick Test Run
+```bash
+# Use the provided test script (recommended)
+./run_tests.sh
+```
+
+### Manual Testing
+To run tests manually with coverage:
 ```bash
 # Create and activate a virtual environment
 python3 -m venv .venv
@@ -57,10 +65,56 @@ source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
-# Run tests
-pytest
+# Set test environment variables
+export FLASK_ENV=testing
+export JWT_SECRET=test_jwt_secret
+
+# Run tests with coverage
+pytest --cov=app --cov-report=html --cov-fail-under=70
 ```
+
+### Test Coverage
+- **Target Coverage**: 70% minimum
+- **Current Test Files**: 16 test modules with 140+ test functions
+- **Coverage Report**: Generated in `htmlcov/index.html` after running tests
+- **CI Integration**: Automated testing on all pull requests and deployments
+
+### Test Categories
+- **Unit Tests**: Service layer testing (`test_*_service.py`)
+- **API Tests**: Endpoint testing (`test_*_api.py`) 
+- **Integration Tests**: Full application flow (`test_main.py`, `test_db.py`)
+- **Validation Tests**: Input validation (`test_validation.py`)
+
+## CI/CD Pipeline
+
+### Continuous Integration
+The project includes automated CI/CD pipeline with the following stages:
+
+1. **Testing Stage** (runs on all pushes and PRs):
+   - Python dependency installation
+   - Database setup (MySQL 8.0)
+   - Test execution with coverage reporting
+   - Coverage threshold enforcement (70% minimum)
+   - Docker build verification
+   - Frontend build verification
+
+2. **Deployment Stage** (runs on `prod` branch only):
+   - Automated deployment to Hetzner Cloud
+   - Docker container orchestration
+   - Health check verification
+   - Rollback capability
+
+### Pipeline Configuration
+- **Test Database**: Ephemeral MySQL 8.0 instance
+- **Coverage Reports**: Uploaded to Codecov
+- **Build Verification**: Docker image build without container execution
+- **Quality Gates**: Tests must pass and coverage ≥70% before deployment
+
+### Branch Strategy
+- **Main/Development**: All development work, triggers CI testing
+- **Prod**: Production releases, triggers full CI/CD pipeline
 
 ## Contributing
 Contributions are welcome! Please fork the repository and create a pull request with your changes.
