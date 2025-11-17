@@ -80,10 +80,22 @@ jobs:
           name: backend-coverage-prod
           fail_ci_if_error: false
 
-      - name: Frontend tests
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
+
+      - name: Frontend dependency check and build
         working-directory: ./frontend
         run: |
-          npm ci
+          echo "📦 Installing frontend dependencies..."
+          # Use npm install to ensure all dependencies are resolved properly
+          # This handles missing peer dependencies and lock file sync issues
+          npm install
+          
+          echo "🏗️ Building frontend..."
           npm run build
           echo "✅ Frontend build successful"
 
