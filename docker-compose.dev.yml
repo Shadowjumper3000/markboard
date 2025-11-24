@@ -1,103 +1,49 @@
 services:
-  # Database service
-  db:
-    image: mysql:8.0
-    container_name: markboard-db-dev
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: markboard
-      MYSQL_USER: markboard_user
-      MYSQL_PASSWORD: markboard_password
-    ports:
-      - "3306:3306"
-    volumes:
-      - db_data_dev:/var/lib/mysql
-      - ./init_db/init.sql:/docker-entrypoint-initdb.d/init.sql
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-      timeout: 20s
-      retries: 10
-    networks:
-      - internal
-
-  # Backend API service
   backend:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: markboard-backend-dev
+    image: markboard-backend-dev:latest
+    ports:
+      - "8000:8000"
     environment:
       MYSQL_HOST: db
       MYSQL_PORT: 3306
-      MYSQL_USER: markboard_user
-      MYSQL_PASSWORD: markboard_password
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: adminpassword
       MYSQL_DATABASE: markboard
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production
-      JWT_EXPIRY_HOURS: 24
       FLASK_ENV: development
-      FLASK_DEBUG: 1
       DEBUG: "true"
-      BCRYPT_ROUNDS: 12
-      DOMAIN: localhost
-      ADMIN_EMAIL: dev@example.com
-      ADMIN_PASSWORD: devpassword
-    ports:
-      - "8000:8000"
+      JWT_SECRET: dev_secret
+      ADMIN_EMAIL: admin@markboard.dev
+      ADMIN_PASSWORD: admin123dev
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
-    volumes:
-      - backend_data_dev:/app/data
-      - ./data:/app/data
-    command: ["python", "-m", "app.main"]
-    networks:
-      - internal
 
-  # Frontend application service
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
-    container_name: markboard-frontend-dev
+    image: markboard-frontend-dev:latest
     ports:
-      - "80:80"
-    volumes:
-      - ./frontend:/app
-      - frontend_node_modules:/app/node_modules
+      - "3000:3000"
     environment:
-      - VITE_API_URL=http://localhost:8000
-    depends_on:
-      - backend
-    networks:
-      - internal
-
-  # Database administration interface (phpMyAdmin)
-  phpmyadmin:
-    image: phpmyadmin:latest
-    container_name: markboard-phpmyadmin-dev
-    environment:
-      PMA_HOST: db
-      PMA_PORT: 3306
-      PMA_USER: markboard_user
-      PMA_PASSWORD: markboard_password
-    ports:
-      - "8080:80"
-    depends_on:
-      - db
+      VITE_API_URL: http://localhost:8000/api
     restart: unless-stopped
-    networks:
-      - internal
 
-networks:
-  internal:
-    driver: bridge
-
-volumes:
-  frontend_node_modules:
-    driver: local
-  db_data_dev:
-    driver: local
-  backend_data_dev:
-    driver: local
+  db:
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    image: markboard-db-dev:latest
+    container_name: markboard-db-dev
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: markboard
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: adminpassword
+    restart: unless-stopped

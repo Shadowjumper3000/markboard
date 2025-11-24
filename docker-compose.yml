@@ -1,90 +1,33 @@
 # Docker Production Compose
 # Use this for production deployments
 services:
-  db:
-    image: mysql:8.0
-    container_name: markboard-db
-    labels:
-      - "com.docker.compose.project=markboard"
-      - "app=markboard"
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    volumes:
-      - db_data:/var/lib/mysql
-      - ./init_db/init.sql:/docker-entrypoint-initdb.d/init.sql
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-      timeout: 20s
-      retries: 10
-    networks:
-      - internal
-
   backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: markboard-backend
-    labels:
-      - "com.docker.compose.project=markboard"
-      - "app=markboard"
-    environment:
-      MYSQL_HOST: db
-      MYSQL_PORT: 3306
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRY_HOURS: ${JWT_EXPIRY_HOURS:-24}
-      FLASK_ENV: production
-      DEBUG: "false"
-      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
-      DOMAIN: ${DOMAIN}
-      ADMIN_EMAIL: ${ADMIN_EMAIL}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    image: markboard-backend:v1.0.0
+    ports:
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
-    volumes:
-      - app_data:/app/data
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    networks:
-      - internal
-      - proxy
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        VITE_API_URL: ${VITE_API_URL}
-    container_name: markboard-frontend
-    labels:
-      - "com.docker.compose.project=markboard"
-      - "app=markboard"
-    depends_on:
-      - backend
+    image: markboard-frontend:v1.0.0
+    ports:
+      - "3000:3000"
     restart: unless-stopped
-    networks:
-      - proxy
 
-networks:
-  internal:
-    driver: bridge
-  proxy:
-    external: true
-
-volumes:
-  db_data:
-    driver: local
-  app_data:
-    driver: local
+  db:
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    image: markboard-db:v1.0.0
+    container_name: markboard-db
+    ports:
+      - "3306:3306"
+    restart: unless-stopped

@@ -1,4 +1,4 @@
-# Development Dockerfile with all dev dependencies
+# Update image name to markboard-backend-dev
 FROM python:3.11-slim
 
 # Set environment variables
@@ -28,13 +28,17 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir -r requirements-dev.txt
 
-# Copy application code (will be overridden by volume in dev)
+# Ensure correct filepaths for backend dev container
+WORKDIR /app
 COPY . .
 COPY .env-example .env
 
 # Expose port
 EXPOSE 8000
-EXPOSE 8080
+
+# Add healthcheck for backend dev
+HEALTHCHECK --interval=30s --timeout=30s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
 
 # Default command (can be overridden in docker-compose)
 CMD ["python", "-m", "app.main"]

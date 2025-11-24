@@ -10,7 +10,7 @@ from app.services.admin_service import AdminService
 
 logger = logging.getLogger(__name__)
 
-admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+admin_bp = Blueprint("admin", __name__)
 
 
 @admin_bp.route("/users", methods=["GET"])

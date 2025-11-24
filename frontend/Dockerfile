@@ -1,10 +1,11 @@
+# Update image name to markboard-frontend
 # Multi-stage build for production frontend
-FROM node:18-alpine as builder
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
 # Copy package files first for better caching
-COPY package*.json ./
+COPY package*.json ./ 
 COPY bun.lockb ./
 
 # Install dependencies
@@ -14,7 +15,7 @@ RUN npm install
 COPY . .
 
 # Build-time argument for API URL
-ARG VITE_API_URL
+ARG VITE_API_URL=http://backend:8000/api
 ENV VITE_API_URL=$VITE_API_URL
 
 # Build the application for production
@@ -33,11 +34,11 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 RUN addgroup -g 1001 -S nginx-user && \
     adduser -S nginx-user -u 1001 -G nginx-user
 
-EXPOSE 80
+EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
 # Run nginx
 CMD ["nginx", "-g", "daemon off;"]

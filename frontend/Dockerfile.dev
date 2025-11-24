@@ -1,10 +1,11 @@
-# Development Dockerfile for frontend
+# Update image name to markboard-frontend-dev
 FROM node:18-alpine
 
 WORKDIR /app
 
-# Install bun globally
-RUN npm install -g bun
+# Install bun globally and wget for health checks
+RUN npm install -g bun && \
+    apk add --no-cache wget
 
 # Copy package files
 COPY package*.json ./
@@ -13,11 +14,16 @@ COPY bun.lockb ./
 # Install dependencies
 RUN bun install
 
-# Copy source code (will be overridden by volume in dev)
+# Ensure correct filepaths for frontend dev container
+WORKDIR /app
 COPY . .
 
 # Expose port for Vite dev server
-EXPOSE 80
+EXPOSE 3000
 
 # Start development server with host binding for Docker
-CMD ["bun", "run", "dev", "--host", "0.0.0.0"]
+CMD ["bun", "run", "dev"]
+
+# Add healthcheck for Vite dev server
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider --timeout=5 http://localhost:3000 || exit 1

@@ -5,6 +5,7 @@ Database connection and query utilities.
 from contextlib import contextmanager
 from typing import Optional, List, Dict, Any
 import logging
+import time
 from mysql.connector.pooling import MySQLConnectionPool
 from mysql.connector import Error
 from app.config import Config
@@ -19,29 +20,43 @@ class Database:
         self.pool = None
         self.init_pool()
 
-    def init_pool(self):
-        """Initialize connection pool."""
-        try:
-            config = {
-                "host": Config.MYSQL_HOST,
-                "port": Config.MYSQL_PORT,
-                "user": Config.MYSQL_USER,
-                "password": Config.MYSQL_PASSWORD,
-                "database": Config.MYSQL_DATABASE,
-                "pool_name": "markboard_pool",
-                "pool_size": 10,
-                "pool_reset_session": True,
-                "autocommit": True,
-                "charset": "utf8mb4",
-                "collation": "utf8mb4_unicode_ci",
-            }
+    def init_pool(self, max_retries=5, retry_delay=2):
+        """Initialize connection pool with retry logic."""
+        for attempt in range(1, max_retries + 1):
+            try:
+                config = {
+                    "host": Config.MYSQL_HOST,
+                    "port": Config.MYSQL_PORT,
+                    "user": Config.MYSQL_USER,
+                    "password": Config.MYSQL_PASSWORD,
+                    "database": Config.MYSQL_DATABASE,
+                    "pool_name": "markboard_pool",
+                    "pool_size": 10,
+                    "pool_reset_session": True,
+                    "autocommit": True,
+                    "charset": "utf8mb4",
+                    "collation": "utf8mb4_unicode_ci",
+                    "auth_plugin": "mysql_native_password",
+                    "sql_mode": "TRADITIONAL",
+                    "use_unicode": True,
+                    "get_warnings": True,
+                }
 
-            self.pool = MySQLConnectionPool(**config)
-            logger.info("Database connection pool initialized successfully")
+                self.pool = MySQLConnectionPool(**config)
+                logger.info("Database connection pool initialized successfully")
+                return
 
-        except Error as e:
-            logger.error("Failed to create connection pool: %s", e)
-            raise
+            except Error as e:
+                logger.warning(
+                    f"Failed to create connection pool (attempt {attempt}/{max_retries}): {e}"
+                )
+                if attempt < max_retries:
+                    logger.info(f"Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    continue
+                else:
+                    logger.error("Failed to initialize database pool after all retries")
+                    raise
 
     @contextmanager
     def get_connection(self):

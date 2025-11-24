@@ -56,11 +56,11 @@ def create_app():
             methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         )
 
-    # Register blueprints
-    flask_app.register_blueprint(auth_bp)
-    flask_app.register_blueprint(files_bp)
-    flask_app.register_blueprint(admin_bp)
-    flask_app.register_blueprint(teams_bp)
+    # Register blueprints with API prefix
+    flask_app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    flask_app.register_blueprint(files_bp, url_prefix="/api/files")
+    flask_app.register_blueprint(admin_bp, url_prefix="/api/admin")
+    flask_app.register_blueprint(teams_bp, url_prefix="/api/teams")
 
     @flask_app.route("/")
     def index():
@@ -88,6 +88,27 @@ def create_app():
 
         except Exception as e:
             return jsonify({"status": "unhealthy", "error": str(e)}), 503
+
+    @flask_app.route("/api/endpoints")
+    def list_endpoints():
+        """List all available API endpoints."""
+        endpoints = []
+        for rule in flask_app.url_map.iter_rules():
+            if rule.endpoint != 'static':
+                endpoints.append({
+                    "endpoint": rule.rule,
+                    "methods": list(rule.methods - {'HEAD', 'OPTIONS'}),
+                    "function": rule.endpoint
+                })
+        return jsonify({
+            "endpoints": sorted(endpoints, key=lambda x: x['endpoint']),
+            "total": len(endpoints)
+        })
+
+    @flask_app.route("/api/health")
+    def api_health():
+        """API health check endpoint."""
+        return health()
 
     @flask_app.errorhandler(404)
     def not_found(_):

@@ -1,9 +1,9 @@
-# Production Dockerfile for Backend
+# Update image name to markboard-backend
 FROM python:3.11-slim AS builder
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -26,8 +26,20 @@ RUN pip install --no-cache-dir --upgrade pip && \
 FROM python:3.11-slim
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    MYSQL_HOST=db \
+    MYSQL_PORT=3306 \
+    MYSQL_USER=admin \
+    MYSQL_PASSWORD=MarkboardAdmin@2024! \
+    MYSQL_DATABASE=markboard \
+    FLASK_ENV=production \
+    DEBUG=false \
+    JWT_SECRET=MarkboardJWTSecure2024VeryLongAndRandom \
+    JWT_EXPIRY_HOURS=24 \
+    BCRYPT_ROUNDS=12 \
+    ADMIN_EMAIL=admin@markboard.com \
+    ADMIN_PASSWORD=MarkboardAdmin@2024!
 
 # Install runtime dependencies only
 RUN apt-get update && apt-get install -y \
@@ -45,13 +57,14 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 # Copy application code
 COPY app/ ./app/
 
+# Create necessary directories
 RUN mkdir -p /app/data/files /app/data/versions
 
 # Expose port
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+# Add healthcheck for backend
+HEALTHCHECK --interval=30s --timeout=30s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # Run the application

@@ -10,7 +10,7 @@ from app.services.file_service import FileService
 
 logger = logging.getLogger(__name__)
 
-files_bp = Blueprint("files", __name__, url_prefix="/files")
+files_bp = Blueprint("files", __name__)
 
 
 @files_bp.route("", methods=["GET"])

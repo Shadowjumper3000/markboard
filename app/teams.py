@@ -10,7 +10,7 @@ from app.services.team_service import TeamService
 
 logger = logging.getLogger(__name__)
 
-teams_bp = Blueprint("teams", __name__, url_prefix="/teams")
+teams_bp = Blueprint("teams", __name__)
 
 
 @teams_bp.route("/count", methods=["GET"])
