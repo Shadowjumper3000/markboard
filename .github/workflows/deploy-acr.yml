@@ -151,130 +151,37 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+          enable-AzPSSession: false
 
       - name: Deploy database container app
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            if az containerapp show --name ${{ env.DB_CONTAINER_APP }} --resource-group ${{ env.RESOURCE_GROUP }} --query name --output tsv 2>/dev/null; then
-              echo "Updating existing database container app..."
-              az containerapp update \
-                --name ${{ env.DB_CONTAINER_APP }} \
-                --resource-group ${{ env.RESOURCE_GROUP }} \
-                --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.DB_IMAGE_NAME }}:${{ github.sha }} \
-                --registry-server ${{ env.ACR_LOGIN_SERVER }} \
-                --registry-username ${{ secrets.ACR_USERNAME }} \
-                --registry-password ${{ secrets.ACR_PASSWORD }}
-            else
-              echo "Creating new database container app..."
-              az containerapp create \
-                --name ${{ env.DB_CONTAINER_APP }} \
-                --resource-group ${{ env.RESOURCE_GROUP }} \
-                --environment ${{ env.CONTAINER_APP_ENVIRONMENT }} \
-                --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.DB_IMAGE_NAME }}:${{ github.sha }} \
-                --registry-server ${{ env.ACR_LOGIN_SERVER }} \
-                --registry-username ${{ secrets.ACR_USERNAME }} \
-                --registry-password ${{ secrets.ACR_PASSWORD }} \
-                --environment-variables \
-                  MYSQL_DATABASE=markboard \
-                  MYSQL_USER=admin \
-                --secrets \
-                  mysql-root-password=${{ secrets.MYSQL_ROOT_PASSWORD }} \
-                  mysql-password=${{ secrets.MYSQL_PASSWORD }} \
-                --set-env-vars \
-                  MYSQL_ROOT_PASSWORD=secretref:mysql-root-password \
-                  MYSQL_PASSWORD=secretref:mysql-password \
-                --cpu 1.0 \
-                --memory 2.0Gi \
-                --min-replicas 1 \
-                --max-replicas 1 \
-                --target-port 3306 \
-                --ingress internal
-            fi
+            echo "Updating database container app..."
+            az containerapp update \
+              --name ${{ env.DB_CONTAINER_APP }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.DB_IMAGE_NAME }}:${{ github.sha }}
 
       - name: Deploy backend container app
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            DB_FQDN=$(az containerapp show \
-              --name ${{ env.DB_CONTAINER_APP }} \
+            echo "Updating backend container app..."
+            az containerapp update \
+              --name ${{ env.BACKEND_CONTAINER_APP }} \
               --resource-group ${{ env.RESOURCE_GROUP }} \
-              --query properties.configuration.ingress.fqdn \
-              --output tsv)
-            
-            if az containerapp show --name ${{ env.BACKEND_CONTAINER_APP }} --resource-group ${{ env.RESOURCE_GROUP }} --query name --output tsv 2>/dev/null; then
-              echo "Updating existing backend container app..."
-              az containerapp update \
-                --name ${{ env.BACKEND_CONTAINER_APP }} \
-                --resource-group ${{ env.RESOURCE_GROUP }} \
-                --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }} \
-                --registry-server ${{ env.ACR_LOGIN_SERVER }} \
-                --registry-username ${{ secrets.ACR_USERNAME }} \
-                --registry-password ${{ secrets.ACR_PASSWORD }}
-            else
-              echo "Creating new backend container app..."
-              az containerapp create \
-                --name ${{ env.BACKEND_CONTAINER_APP }} \
-                --resource-group ${{ env.RESOURCE_GROUP }} \
-                --environment ${{ env.CONTAINER_APP_ENVIRONMENT }} \
-                --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }} \
-                --registry-server ${{ env.ACR_LOGIN_SERVER }} \
-                --registry-username ${{ secrets.ACR_USERNAME }} \
-                --registry-password ${{ secrets.ACR_PASSWORD }} \
-                --environment-variables \
-                  MYSQL_HOST=$DB_FQDN \
-                  MYSQL_PORT=3306 \
-                  MYSQL_USER=admin \
-                  MYSQL_DATABASE=markboard \
-                  FLASK_ENV=production \
-                  DEBUG=false \
-                --secrets \
-                  mysql-password=${{ secrets.MYSQL_PASSWORD }} \
-                  jwt-secret=${{ secrets.JWT_SECRET }} \
-                  admin-password=${{ secrets.ADMIN_PASSWORD }} \
-                --set-env-vars \
-                  MYSQL_PASSWORD=secretref:mysql-password \
-                  JWT_SECRET=secretref:jwt-secret \
-                  ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }} \
-                  ADMIN_PASSWORD=secretref:admin-password \
-                --cpu 1.0 \
-                --memory 2.0Gi \
-                --min-replicas 1 \
-                --max-replicas 3 \
-                --target-port 8000 \
-                --ingress external
-            fi
+              --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
 
       - name: Deploy frontend container app
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            if az containerapp show --name ${{ env.FRONTEND_CONTAINER_APP }} --resource-group ${{ env.RESOURCE_GROUP }} --query name --output tsv 2>/dev/null; then
-              echo "Updating existing frontend container app..."
-              az containerapp update \
-                --name ${{ env.FRONTEND_CONTAINER_APP }} \
-                --resource-group ${{ env.RESOURCE_GROUP }} \
-                --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} \
-                --registry-server ${{ env.ACR_LOGIN_SERVER }} \
-                --registry-username ${{ secrets.ACR_USERNAME }} \
-                --registry-password ${{ secrets.ACR_PASSWORD }}
-            else
-              echo "Creating new frontend container app..."
-              az containerapp create \
-                --name ${{ env.FRONTEND_CONTAINER_APP }} \
-                --resource-group ${{ env.RESOURCE_GROUP }} \
-                --environment ${{ env.CONTAINER_APP_ENVIRONMENT }} \
-                --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} \
-                --registry-server ${{ env.ACR_LOGIN_SERVER }} \
-                --registry-username ${{ secrets.ACR_USERNAME }} \
-                --registry-password ${{ secrets.ACR_PASSWORD }} \
-                --cpu 0.5 \
-                --memory 1.0Gi \
-                --min-replicas 1 \
-                --max-replicas 3 \
-                --target-port 3000 \
-                --ingress external
-            fi
+            echo "Updating frontend container app..."
+            az containerapp update \
+              --name ${{ env.FRONTEND_CONTAINER_APP }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
 
       - name: Output application URLs
         uses: azure/CLI@v1
