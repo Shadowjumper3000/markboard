@@ -5,7 +5,7 @@ name: Build and Push to ACR
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "azure-prod" ]
   workflow_dispatch:
 
 env:
