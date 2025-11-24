@@ -354,7 +354,7 @@ def test_join_nonexistent_team(client, mock_db, auth_headers):
         # Team does not exist
         mock_db.execute_one.side_effect = [None]
         response = client.post("/teams/999/join", headers=auth_headers)
-        assert response.status_code == 400
+        assert response.status_code == 404
         data = json.loads(response.data)
         assert "error" in data
         assert "not found" in data["error"].lower() or "exist" in data["error"].lower()

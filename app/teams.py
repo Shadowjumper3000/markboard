@@ -106,7 +106,8 @@ def join_team(team_id):
         success, message = TeamService.join_team(team_id, user_id)
 
         if not success:
-            return format_error_response(message, 400)
+            status_code = 404 if "not found" in message.lower() else 400
+            return format_error_response(message, status_code)
 
         return format_success_response({"message": message})
     except Exception as e:
