@@ -25,7 +25,7 @@ def test_list_files_success(client, mock_db, auth_headers):
     ]
     with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
-        response = client.get("/files", headers=auth_headers)
+        response = client.get("/api/files", headers=auth_headers)
         assert response.status_code == 200
         data = json.loads(response.data)
         assert "files" in data
@@ -39,7 +39,7 @@ def test_list_files_success(client, mock_db, auth_headers):
 
 def test_list_files_unauthorized(client):
     """Test file listing without authentication."""
-    response = client.get("/files")
+    response = client.get("/api/files")
 
     assert response.status_code == 401
     data = json.loads(response.data)
@@ -74,7 +74,7 @@ def test_get_file_success(client, mock_db, auth_headers):
     ):
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         mock_read_file.return_value = "# Test Content"
-        response = client.get("/files/1", headers=auth_headers)
+        response = client.get("/api/files/1", headers=auth_headers)
         assert response.status_code == 200
         data = json.loads(response.data)
         assert data["name"] == "test.md"
@@ -100,7 +100,7 @@ def test_get_nonexistent_file(client, mock_db, auth_headers):
     ]
     with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
-        response = client.get("/files/999", headers=auth_headers)
+        response = client.get("/api/files/999", headers=auth_headers)
         assert response.status_code == 404
         data = json.loads(response.data)
         assert "error" in data
@@ -153,7 +153,7 @@ def test_create_file_success(client, mock_db, auth_headers):
             file_data = {"name": "new_file.md", "content": "# Test Markdown"}
 
             response = client.post(
-                "/files",
+                "/api/files",
                 data=json.dumps(file_data),
                 content_type="application/json",
                 headers=auth_headers,
@@ -185,7 +185,7 @@ def test_create_file_missing_fields(client, auth_headers):
 
         # Missing name field
         response = client.post(
-            "/files",
+            "/api/files",
             data=json.dumps({"content": "# Test"}),
             content_type="application/json",
             headers=auth_headers,
@@ -247,7 +247,7 @@ def test_update_file_success(client, mock_db, auth_headers):
 
         update_data = {"name": "updated.md", "content": "# Updated Content"}
         response = client.patch(
-            "/files/1",
+            "/api/files/1",
             data=json.dumps(update_data),
             content_type="application/json",
             headers=auth_headers,
@@ -298,7 +298,7 @@ def test_update_nonexistent_file(client, mock_db, auth_headers):
         update_data = {"name": "updated.md", "content": "# Updated Content"}
 
         response = client.patch(
-            "/files/999",
+            "/api/files/999",
             data=json.dumps(update_data),
             content_type="application/json",
             headers=auth_headers,
@@ -338,7 +338,7 @@ def test_delete_file_success(client, mock_db, auth_headers):
         with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
             mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
 
-            response = client.delete("/files/1", headers=auth_headers)
+            response = client.delete("/api/files/1", headers=auth_headers)
 
             # Assert response
             assert response.status_code == 200
@@ -386,7 +386,7 @@ def test_get_file_content_success(client, mock_db, auth_headers):
         with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
             mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
 
-            response = client.get("/files/1/content", headers=auth_headers)
+            response = client.get("/api/files/1/content", headers=auth_headers)
 
             # Assert response
             assert response.status_code == 200
@@ -420,7 +420,9 @@ def test_list_files(client, mock_db):
         "app.services.auth_service.AuthService.verify_jwt",
         return_value={"user_id": 1, "email": "test@example.com"},
     ):
-        response = client.get("/files", headers={"Authorization": "Bearer valid_token"})
+        response = client.get(
+            "/api/files", headers={"Authorization": "Bearer valid_token"}
+        )
         assert response.status_code == 200
         data = json.loads(response.data)
         assert "files" in data
@@ -469,7 +471,7 @@ def test_create_file(client, mock_db):
 
         payload = {"name": "test.md", "content": "# Test"}
         response = client.post(
-            "/files",
+            "/api/files",
             data=json.dumps(payload),
             content_type="application/json",
             headers={"Authorization": "Bearer valid_token"},

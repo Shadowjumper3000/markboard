@@ -26,7 +26,7 @@ def test_get_stats_success(client, mock_db, auth_headers):
             "is_admin": True,
         }
 
-        response = client.get("/admin/stats", headers=auth_headers)
+        response = client.get("/api/admin/stats", headers=auth_headers)
         assert response.status_code == 200
         data = json.loads(response.data)
         # The backend returns keys: totalUsers, activeUsers, totalFiles, totalTeams, recentActivity
@@ -39,7 +39,7 @@ def test_get_stats_success(client, mock_db, auth_headers):
 
 def test_get_stats_unauthorized(client):
     """Test getting system statistics without authentication."""
-    response = client.get("/admin/stats")
+    response = client.get("/api/admin/stats")
     assert response.status_code == 401
     data = json.loads(response.data)
     assert "error" in data
@@ -72,7 +72,7 @@ def test_list_activity_success(client, mock_db, auth_headers):
             "is_admin": True,
         }
 
-        response = client.get("/admin/activity", headers=auth_headers)
+        response = client.get("/api/admin/activity", headers=auth_headers)
         assert response.status_code == 200
         data = json.loads(response.data)
         assert "activities" in data
@@ -82,7 +82,7 @@ def test_list_activity_success(client, mock_db, auth_headers):
 
 def test_list_activity_unauthorized(client):
     """Test listing activity logs without authentication."""
-    response = client.get("/admin/activity")
+    response = client.get("/api/admin/activity")
     assert response.status_code == 401
     data = json.loads(response.data)
     assert "error" in data
@@ -124,7 +124,7 @@ def test_list_users_success(client, mock_db, auth_headers):
             "is_admin": True,
         }
 
-        response = client.get("/admin/users", headers=auth_headers)
+        response = client.get("/api/admin/users", headers=auth_headers)
 
         # Assert response
         assert response.status_code == 200
@@ -141,7 +141,7 @@ def test_list_users_success(client, mock_db, auth_headers):
 
 def test_list_users_unauthorized(client):
     """Test user listing without authentication."""
-    response = client.get("/admin/users")
+    response = client.get("/api/admin/users")
 
     assert response.status_code == 401
     data = json.loads(response.data)

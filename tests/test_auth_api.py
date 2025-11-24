@@ -52,7 +52,7 @@ class TestAuthAPI:
         mock_db.execute_one.return_value = None
 
         response = client.post(
-            "/auth/register",
+            "/api/auth/register",
             data=json.dumps({"email": "invalid_email", "password": "SecurePass123!"}),
             content_type="application/json",
         )
@@ -69,7 +69,7 @@ class TestAuthAPI:
         mock_db.execute_one.return_value = None
 
         response = client.post(
-            "/auth/register",
+            "/api/auth/register",
             data=json.dumps(
                 {"email": "test@example.com", "password": "weak"}  # Too short password
             ),
@@ -93,7 +93,7 @@ class TestAuthAPI:
         }
 
         response = client.post(
-            "/auth/register",
+            "/api/auth/register",
             data=json.dumps(
                 {"email": "test@example.com", "password": "SecurePass123!"}
             ),
@@ -112,7 +112,7 @@ class TestAuthAPI:
         mock_db.execute_one.return_value = None
 
         response = client.post(
-            "/auth/register", data=json.dumps({}), content_type="application/json"
+            "/api/auth/register", data=json.dumps({}), content_type="application/json"
         )
 
         assert response.status_code == 400
@@ -169,7 +169,7 @@ class TestAuthAPI:
 
         with patch.object(AuthService, "verify_password", return_value=False):
             response = client.post(
-                "/auth/login",
+                "/api/auth/login",
                 data=json.dumps(
                     {"email": "test@example.com", "password": "WrongPassword123!"}
                 ),
@@ -188,7 +188,7 @@ class TestAuthAPI:
         mock_db.execute_one.return_value = None
 
         response = client.post(
-            "/auth/login",
+            "/api/auth/login",
             data=json.dumps(
                 {"email": "nonexistent@example.com", "password": "SecurePass123!"}
             ),
@@ -207,7 +207,7 @@ class TestAuthAPI:
         mock_db.execute_one.return_value = None
 
         response = client.post(
-            "/auth/login", data=json.dumps({}), content_type="application/json"
+            "/api/auth/login", data=json.dumps({}), content_type="application/json"
         )
 
         assert response.status_code == 400
@@ -222,7 +222,7 @@ class TestAuthAPI:
         mock_db.execute_one.return_value = None
 
         response = client.post(
-            "/auth/login",
+            "/api/auth/login",
             data=json.dumps(
                 {"email": "test@example.com", "password": "SecurePass123!"}
             ),

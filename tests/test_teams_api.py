@@ -48,7 +48,7 @@ def test_list_teams_success(client, mock_db, auth_headers):
             "role": "admin",
         }
         response = client.post(
-            "/teams",
+            "/api/teams",
             data=json.dumps(team_data),
             content_type="application/json",
             headers=auth_headers,
@@ -73,7 +73,7 @@ def test_list_teams_success(client, mock_db, auth_headers):
             "member_count": 1,
             "role": "admin",
         }
-        response = client.get("/teams/1", headers=auth_headers)
+        response = client.get("/api/teams/1", headers=auth_headers)
         # Assert response
         assert response.status_code == 200
         data = json.loads(response.data)
@@ -94,7 +94,7 @@ def test_get_nonexistent_team(client, mock_db, auth_headers):
     # Mock JWT verification
     with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
-        response = client.get("/teams/999", headers=auth_headers)
+        response = client.get("/api/teams/999", headers=auth_headers)
         # Assert response
         assert response.status_code == 404
         data = json.loads(response.data)
@@ -132,7 +132,7 @@ def test_create_team_success(client, mock_db, auth_headers):
             "role": "admin",
         }
         response = client.post(
-            "/teams",
+            "/api/teams",
             data=json.dumps(team_data),
             content_type="application/json",
             headers=auth_headers,
@@ -153,7 +153,7 @@ def test_create_team_missing_fields(client, mock_db, auth_headers):
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         # Empty body
         response = client.post(
-            "/teams",
+            "/api/teams",
             data=json.dumps({}),
             content_type="application/json",
             headers=auth_headers,
@@ -172,7 +172,7 @@ def test_create_team_missing_name_field(client, mock_db, auth_headers):
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         # Body with description but no name
         response = client.post(
-            "/teams",
+            "/api/teams",
             data=json.dumps({"description": "foo"}),
             content_type="application/json",
             headers=auth_headers,
@@ -203,7 +203,7 @@ def test_join_team_success(client, mock_db, auth_headers):
             None,  # Not already a member
         ]
 
-        response = client.post("/teams/1/join", headers=auth_headers)
+        response = client.post("/api/teams/1/join", headers=auth_headers)
 
         # Assert response
         assert response.status_code == 200
@@ -230,7 +230,7 @@ def test_delete_team_success(client, mock_db, auth_headers):
             {"count": 0},  # No files for team
         ]
 
-        response = client.delete("/teams/1", headers=auth_headers)
+        response = client.delete("/api/teams/1", headers=auth_headers)
 
         # Assert response
         assert response.status_code == 200
@@ -265,7 +265,7 @@ def test_kick_user_from_team_success(client, mock_db, auth_headers):
         kick_data = {"user_id": 2}
 
         response = client.post(
-            "/teams/1/kick",
+            "/api/teams/1/kick",
             data=json.dumps(kick_data),
             content_type="application/json",
             headers=auth_headers,
@@ -297,7 +297,7 @@ def test_leave_team_success(client, mock_db, auth_headers):
             {"name": "Test Team", "owner_id": 99},
         ]
 
-        response = client.post("/teams/1/leave", headers=auth_headers)
+        response = client.post("/api/teams/1/leave", headers=auth_headers)
 
         # Assert response
         assert response.status_code == 200
@@ -331,7 +331,7 @@ def test_list_team_members_success(client, mock_db, auth_headers):
             },
         ]
 
-        response = client.get("/teams/1/users", headers=auth_headers)
+        response = client.get("/api/teams/1/users", headers=auth_headers)
 
         # Assert response
         assert response.status_code == 200
@@ -353,7 +353,7 @@ def test_join_nonexistent_team(client, mock_db, auth_headers):
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         # Team does not exist
         mock_db.execute_one.side_effect = [None]
-        response = client.post("/teams/999/join", headers=auth_headers)
+        response = client.post("/api/teams/999/join", headers=auth_headers)
         assert response.status_code == 404
         data = json.loads(response.data)
         assert "error" in data
@@ -370,7 +370,7 @@ def test_join_team_already_member(client, mock_db, auth_headers):
             {"id": 1, "name": "Test Team"},
             {"user_id": 1},
         ]
-        response = client.post("/teams/1/join", headers=auth_headers)
+        response = client.post("/api/teams/1/join", headers=auth_headers)
         assert response.status_code == 400
         data = json.loads(response.data)
         assert "error" in data
@@ -384,7 +384,7 @@ def test_leave_team_not_member(client, mock_db, auth_headers):
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         # User is not a member
         mock_db.execute_one.side_effect = [None]
-        response = client.post("/teams/1/leave", headers=auth_headers)
+        response = client.post("/api/teams/1/leave", headers=auth_headers)
         assert response.status_code == 400
         data = json.loads(response.data)
         assert "error" in data
@@ -406,7 +406,7 @@ def test_kick_user_not_member(client, mock_db, auth_headers):
         ]
         kick_data = {"user_id": 2}
         response = client.post(
-            "/teams/1/kick",
+            "/api/teams/1/kick",
             data=json.dumps(kick_data),
             content_type="application/json",
             headers=auth_headers,
@@ -431,7 +431,7 @@ def test_kick_user_not_admin(client, mock_db, auth_headers):
         ]
         kick_data = {"user_id": 2}
         response = client.post(
-            "/teams/1/kick",
+            "/api/teams/1/kick",
             data=json.dumps(kick_data),
             content_type="application/json",
             headers=auth_headers,
@@ -451,7 +451,7 @@ def test_disband_team_not_owner(client, mock_db, auth_headers):
         mock_db.execute_one.side_effect = [
             {"name": "Test Team", "owner_id": 1},
         ]
-        response = client.delete("/teams/1", headers=auth_headers)
+        response = client.delete("/api/teams/1", headers=auth_headers)
         assert response.status_code == 400 or response.status_code == 403
         data = json.loads(response.data)
         assert "error" in data
@@ -466,7 +466,7 @@ def test_create_team_name_too_long(client, mock_db, auth_headers):
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         team_data = {"name": long_name, "description": "desc"}
         response = client.post(
-            "/teams",
+            "/api/teams",
             data=json.dumps(team_data),
             content_type="application/json",
             headers=auth_headers,
@@ -485,7 +485,7 @@ def test_create_team_description_too_long(client, mock_db, auth_headers):
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         team_data = {"name": "Valid Name", "description": long_desc}
         response = client.post(
-            "/teams",
+            "/api/teams",
             data=json.dumps(team_data),
             content_type="application/json",
             headers=auth_headers,
@@ -502,7 +502,7 @@ def test_list_teams_empty(client, mock_db, auth_headers):
     with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         mock_db.execute_query.return_value = []
-        response = client.get("/teams", headers=auth_headers)
+        response = client.get("/api/teams", headers=auth_headers)
         assert response.status_code == 200
         data = json.loads(response.data)
         assert "teams" in data
@@ -516,7 +516,7 @@ def test_get_available_teams_empty(client, mock_db, auth_headers):
     with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         mock_db.execute_query.return_value = []
-        response = client.get("/teams/available", headers=auth_headers)
+        response = client.get("/api/teams/available", headers=auth_headers)
         assert response.status_code == 200
         data = json.loads(response.data)
         assert "teams" in data
@@ -531,7 +531,7 @@ def test_kick_user_missing_user_id(client, mock_db, auth_headers):
     with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         response = client.post(
-            "/teams/1/kick",
+            "/api/teams/1/kick",
             data=json.dumps({}),
             content_type="application/json",
             headers=auth_headers,
@@ -548,7 +548,7 @@ def test_kick_user_non_integer_user_id(client, mock_db, auth_headers):
     with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         response = client.post(
-            "/teams/1/kick",
+            "/api/teams/1/kick",
             data=json.dumps({"user_id": "abc"}),
             content_type="application/json",
             headers=auth_headers,
@@ -570,7 +570,7 @@ def test_get_team_count_success(client, mock_db, auth_headers):
             "app.services.team_service.TeamService.get_user_team_count"
         ) as mock_count:
             mock_count.return_value = 3
-            response = client.get("/teams/count", headers=auth_headers)
+            response = client.get("/api/teams/count", headers=auth_headers)
             assert response.status_code == 200
             data = json.loads(response.data)
             assert "count" in data
@@ -586,7 +586,7 @@ def test_get_team_count_internal_error(client, mock_db, auth_headers):
             "app.services.team_service.TeamService.get_user_team_count",
             side_effect=Exception("fail"),
         ):
-            response = client.get("/teams/count", headers=auth_headers)
+            response = client.get("/api/teams/count", headers=auth_headers)
             assert response.status_code == 500
             data = json.loads(response.data)
             assert "error" in data
@@ -600,7 +600,7 @@ def test_list_team_users_not_authorized(client, mock_db, auth_headers):
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         with patch("app.services.team_service.TeamService.get_team_users") as mock_get:
             mock_get.return_value = (False, "forbidden", [])
-            response = client.get("/teams/1/users", headers=auth_headers)
+            response = client.get("/api/teams/1/users", headers=auth_headers)
             assert response.status_code == 403
             data = json.loads(response.data)
             assert "error" in data
@@ -616,7 +616,7 @@ def test_disband_team_not_found(client, mock_db, auth_headers):
             "app.services.team_service.TeamService.disband_team"
         ) as mock_disband:
             mock_disband.return_value = (False, "Team not found")
-            response = client.delete("/teams/999", headers=auth_headers)
+            response = client.delete("/api/teams/999", headers=auth_headers)
             assert response.status_code == 404
             data = json.loads(response.data)
             assert "error" in data
@@ -648,7 +648,7 @@ def test_create_team_missing_description(client, mock_db, auth_headers):
         }
         team_data = {"name": "No Desc Team"}
         response = client.post(
-            "/teams",
+            "/api/teams",
             data=json.dumps(team_data),
             content_type="application/json",
             headers=auth_headers,
