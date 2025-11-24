@@ -2,10 +2,8 @@
 FROM mysql:8.0
 
 # Set environment variables
-ENV MYSQL_ROOT_PASSWORD=MarkboardRoot@2024! \
-    MYSQL_DATABASE=markboard \
-    MYSQL_USER=admin \
-    MYSQL_PASSWORD=MarkboardAdmin@2024!
+ENV MYSQL_DATABASE=markboard \
+    MYSQL_USER=admin
 
 # Copy the initialization SQL script
 COPY ./init.sql /docker-entrypoint-initdb.d/

@@ -91,32 +91,68 @@ pytest --cov=app --cov-report=html --cov-fail-under=70
 
 ## CI/CD Pipeline
 
-### Continuous Integration
-The project includes automated CI/CD pipeline with the following stages:
+### GitHub Actions Workflow
+The project uses a 3-stage GitHub Actions workflow for automated testing, building, and deployment to Azure:
 
-1. **Testing Stage** (runs on all pushes and PRs):
-   - Python dependency installation
-   - Database setup (MySQL 8.0)
-   - Test execution with coverage reporting
-   - Coverage threshold enforcement (70% minimum)
-   - Docker build verification
-   - Frontend build verification
+#### **Stage 1: Test**
+- Python backend tests with pytest (70% minimum coverage)
+- Frontend build verification
+- MySQL 8.0 integration testing
 
-2. **Deployment Stage** (runs on `prod` branch only):
-   - Automated deployment to Hetzner Cloud
-   - Docker container orchestration
-   - Health check verification
-   - Rollback capability
+#### **Stage 2: Build and Push**
+- Builds Docker images for backend, frontend, and database
+- Pushes images to Azure Container Registry (markboard.azurecr.io)
+- Tags images with commit SHA and 'latest'
+- Uses GitHub Actions cache for faster builds
 
-### Pipeline Configuration
-- **Test Database**: Ephemeral MySQL 8.0 instance
-- **Coverage Reports**: Uploaded to Codecov
-- **Build Verification**: Docker image build without container execution
-- **Quality Gates**: Tests must pass and coverage ≥70% before deployment
+#### **Stage 3: Deploy**
+- Deploys to Azure Container Apps in West Europe
+- Creates or updates container apps automatically
+- Configures secrets and environment variables
+- Outputs application URLs
 
-### Branch Strategy
-- **Main/Development**: All development work, triggers CI testing
-- **Prod**: Production releases, triggers full CI/CD pipeline
+### Required GitHub Secrets
+Add these secrets in your repository settings (Settings > Secrets and variables > Actions):
+
+```
+ACR_USERNAME              # Azure Container Registry username (usually 'markboard')
+ACR_PASSWORD              # Azure Container Registry password
+AZURE_CREDENTIALS         # Azure service principal JSON for authentication
+MYSQL_ROOT_PASSWORD       # MySQL root password for production database
+MYSQL_PASSWORD            # MySQL user password for application
+JWT_SECRET                # JWT signing secret key
+ADMIN_EMAIL               # Admin user email address
+ADMIN_PASSWORD            # Admin user password
+```
+
+### Azure Prerequisites
+Before running the pipeline, create the Container Apps environment:
+```bash
+az containerapp env create \
+  --name markboard \
+  --resource-group BCSAI2025-DEVOPS-STUDENTS-A \
+  --location westeurope
+```
+
+### Get Azure Credentials
+```bash
+# Get ACR password
+az acr credential show --name markboard --query passwords[0].value --output tsv
+
+# Create service principal for GitHub Actions
+az ad sp create-for-rbac \
+  --name "markboard-github-actions" \
+  --role contributor \
+  --scopes /subscriptions/$(az account show --query id --output tsv)/resourceGroups/BCSAI2025-DEVOPS-STUDENTS-A \
+  --json-auth
+```
+
+### Deployment Targets
+- **Registry**: markboard.azurecr.io
+- **Resource Group**: BCSAI2025-DEVOPS-STUDENTS-A
+- **Container Apps Environment**: markboard
+- **Location**: West Europe
+- **Container Apps**: markboard-backend, markboard-frontend, markboard-db
 
 ## Contributing
 Contributions are welcome! Please fork the repository and create a pull request with your changes.

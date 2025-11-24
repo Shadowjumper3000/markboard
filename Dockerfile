@@ -31,15 +31,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     MYSQL_HOST=db \
     MYSQL_PORT=3306 \
     MYSQL_USER=admin \
-    MYSQL_PASSWORD=MarkboardAdmin@2024! \
     MYSQL_DATABASE=markboard \
     FLASK_ENV=production \
     DEBUG=false \
-    JWT_SECRET=MarkboardJWTSecure2024VeryLongAndRandom \
     JWT_EXPIRY_HOURS=24 \
-    BCRYPT_ROUNDS=12 \
-    ADMIN_EMAIL=admin@markboard.com \
-    ADMIN_PASSWORD=MarkboardAdmin@2024!
+    BCRYPT_ROUNDS=12
 
 # Install runtime dependencies only
 RUN apt-get update && apt-get install -y \

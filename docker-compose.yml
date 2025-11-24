@@ -1,5 +1,7 @@
 # Docker Production Compose
 # Use this for production deployments
+# Secrets should be provided via environment variables or .env file
+
 services:
   backend:
     build:
@@ -8,6 +10,17 @@ services:
     image: markboard-backend:v1.0.0
     ports:
       - "8000:8000"
+    environment:
+      - MYSQL_HOST=${MYSQL_HOST:-db}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER:-admin}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-markboard}
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - DEBUG=${DEBUG:-false}
+      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
@@ -30,4 +43,9 @@ services:
     container_name: markboard-db
     ports:
       - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-markboard}
+      - MYSQL_USER=${MYSQL_USER:-admin}
     restart: unless-stopped
