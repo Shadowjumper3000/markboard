@@ -153,7 +153,7 @@ jobs:
           acrName: markboard
           acrUsername: ${{ secrets.ACR_USERNAME }}
           acrPassword: ${{ secrets.ACR_PASSWORD }}
-          imageToDeploy: ${{ env.ACR_LOGIN_SERVER }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
+          imageToDeploy: ${{ env.ACR_LOGIN_SERVER }}/${{ env.BACKEND_IMAGE_NAME }}:latest
 
       - name: Deploy frontend container
         uses: azure/container-apps-deploy-action@v1
@@ -163,7 +163,7 @@ jobs:
           acrName: markboard
           acrUsername: ${{ secrets.ACR_USERNAME }}
           acrPassword: ${{ secrets.ACR_PASSWORD }}
-          imageToDeploy: ${{ env.ACR_LOGIN_SERVER }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+          imageToDeploy: ${{ env.ACR_LOGIN_SERVER }}/${{ env.FRONTEND_IMAGE_NAME }}:latest
 
       - name: Deploy database container
         uses: azure/container-apps-deploy-action@v1
@@ -173,4 +173,4 @@ jobs:
           acrName: markboard
           acrUsername: ${{ secrets.ACR_USERNAME }}
           acrPassword: ${{ secrets.ACR_PASSWORD }}
-          imageToDeploy: ${{ env.ACR_LOGIN_SERVER }}/${{ env.DB_IMAGE_NAME }}:${{ github.sha }}
+          imageToDeploy: ${{ env.ACR_LOGIN_SERVER }}/${{ env.DB_IMAGE_NAME }}:latest
