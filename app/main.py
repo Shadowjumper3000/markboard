@@ -135,14 +135,8 @@ def create_app():
         """Handle 500 errors."""
         return jsonify({"error": "Internal server error"}), 500
 
-    return flask_app
-
-
-if __name__ == "__main__":
-    app = create_app()
-
-    # Seed data on startup
-    with app.app_context():
+    # Seed data on application startup (for both development and production)
+    with flask_app.app_context():
         try:
             from app.seed_data import seed_development_data, seed_production_data
 
@@ -153,4 +147,13 @@ if __name__ == "__main__":
         except ImportError:
             logging.warning("seed_data functions are not available.")
 
+    return flask_app
+
+
+# Create application instance for Gunicorn
+app = create_app()
+
+
+if __name__ == "__main__":
+    # Only used when running directly with python (development)
     app.run(host="0.0.0.0", port=8000, debug=Config.DEBUG)

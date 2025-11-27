@@ -4,6 +4,9 @@ Flask==3.0.3
 # CORS Support
 flask-cors==4.0.0
 
+# Production WSGI Server
+gunicorn==21.2.0
+
 # Database
 mysql-connector-python==8.2.0
 
