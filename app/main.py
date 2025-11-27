@@ -11,13 +11,11 @@ from app.files import files_bp
 from app.admin import admin_bp
 from app.teams import teams_bp
 
-# Only import flask_cors in development
-CORS = None
-if os.getenv("FLASK_ENV", "production") != "production":
-    try:
-        from flask_cors import CORS
-    except ImportError:
-        CORS = None
+# Import flask_cors for CORS support
+try:
+    from flask_cors import CORS
+except ImportError:
+    CORS = None
 
 
 def create_app():
@@ -43,18 +41,31 @@ def create_app():
         logging.error("Failed to connect to database")
         sys.exit(1)
 
-    # Configure CORS for development only
-    if Config.DEBUG and CORS:
+    # Configure CORS
+    if CORS:
+        allowed_origins = [
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://127.0.0.1:3000",
+        ]
+
+        # Add production origins
+        if not Config.DEBUG:
+            allowed_origins.extend(
+                [
+                    "https://markboard-frontend.azurecontainerapps.io",
+                    "https://*.azurecontainerapps.io",
+                ]
+            )
+
         CORS(
             flask_app,
-            origins=[
-                "http://localhost:3000",
-                "http://localhost:5173",
-                "http://127.0.0.1:3000",
-            ],
+            origins=allowed_origins,
             allow_headers=["Content-Type", "Authorization"],
             methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            supports_credentials=True,
         )
+        logging.info("CORS enabled for origins: %s", allowed_origins)
 
     # Register blueprints with API prefix
     flask_app.register_blueprint(auth_bp, url_prefix="/api/auth")
@@ -94,16 +105,20 @@ def create_app():
         """List all available API endpoints."""
         endpoints = []
         for rule in flask_app.url_map.iter_rules():
-            if rule.endpoint != 'static':
-                endpoints.append({
-                    "endpoint": rule.rule,
-                    "methods": list(rule.methods - {'HEAD', 'OPTIONS'}),
-                    "function": rule.endpoint
-                })
-        return jsonify({
-            "endpoints": sorted(endpoints, key=lambda x: x['endpoint']),
-            "total": len(endpoints)
-        })
+            if rule.endpoint != "static":
+                endpoints.append(
+                    {
+                        "endpoint": rule.rule,
+                        "methods": list(rule.methods - {"HEAD", "OPTIONS"}),
+                        "function": rule.endpoint,
+                    }
+                )
+        return jsonify(
+            {
+                "endpoints": sorted(endpoints, key=lambda x: x["endpoint"]),
+                "total": len(endpoints),
+            }
+        )
 
     @flask_app.route("/api/health")
     def api_health():
