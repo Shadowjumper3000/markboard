@@ -2,7 +2,7 @@
 Tests for admin_service.py
 """
 
-from app.services.admin_service import AdminService
+from app.core.services.admin_service import AdminService
 
 
 def test_get_all_users(mock_db):

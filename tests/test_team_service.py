@@ -2,7 +2,7 @@
 Tests for team_service.py
 """
 
-from app.services.team_service import TeamService
+from app.core.services.team_service import TeamService
 
 
 def test_create_team_success(mock_db):

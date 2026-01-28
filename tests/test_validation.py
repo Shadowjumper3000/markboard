@@ -21,7 +21,7 @@ import pytest
 )
 def test_validate_email(email, expected):
     """Test email validation."""
-    from app.validation import validate_email
+    from app.utils.validators import validate_email
 
     assert validate_email(email) == expected
 
@@ -48,7 +48,7 @@ def test_validate_email(email, expected):
 )
 def test_validate_password(password, valid, error):
     """Test password validation."""
-    from app.validation import validate_password
+    from app.utils.validators import validate_password
 
     is_valid, error_message = validate_password(password)
     assert is_valid == valid

@@ -14,7 +14,7 @@ class TestAuthAPI:
         mock_db.reset_mock()
         mock_db.execute_one.side_effect = None
         mock_db.execute_one.return_value = None
-        from app.services.auth_service import AuthService  # Import here, after patching
+        from app.core.services.auth_service import AuthService  # Import here, after patching
 
         # Mock database response for successful registration
         mock_db.execute_one.side_effect = [
@@ -132,7 +132,7 @@ class TestAuthAPI:
             "is_admin": False,
         }
         mock_db.execute_modify.return_value = 1  # Simulate successful last login update
-        from app.services.auth_service import AuthService  # Import here, after patching
+        from app.core.services.auth_service import AuthService  # Import here, after patching
 
         # Mock password verification and token generation
         with patch.object(AuthService, "verify_password", return_value=True):
@@ -165,7 +165,7 @@ class TestAuthAPI:
             "password_hash": "hashed_password",
             "is_admin": False,
         }
-        from app.services.auth_service import AuthService  # Import here, after patching
+        from app.core.services.auth_service import AuthService  # Import here, after patching
 
         with patch.object(AuthService, "verify_password", return_value=False):
             response = client.post(

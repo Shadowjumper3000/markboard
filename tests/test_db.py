@@ -3,7 +3,7 @@ Unit tests for the real Database class in app.db, using mock MySQL connections/c
 """
 
 from unittest.mock import patch, MagicMock
-from app.db import Database
+from app.infrastructure.database.connection import Database
 
 
 @patch("app.db.MySQLConnectionPool")

@@ -2,14 +2,14 @@ import logging
 import sys
 import os
 from flask import Flask, jsonify
-from app.config import Config
-from app.db import get_db
+from config import Config
+from app.infrastructure.database.connection import get_db
 
 # Import blueprints from their respective files
-from app.auth import auth_bp
-from app.files import files_bp
-from app.admin import admin_bp
-from app.teams import teams_bp
+from app.api.routes.auth import auth_bp
+from app.api.routes.files import files_bp
+from app.api.routes.admin import admin_bp
+from app.api.routes.teams import teams_bp
 
 # Only import flask_cors in development
 CORS = None
@@ -94,16 +94,20 @@ def create_app():
         """List all available API endpoints."""
         endpoints = []
         for rule in flask_app.url_map.iter_rules():
-            if rule.endpoint != 'static':
-                endpoints.append({
-                    "endpoint": rule.rule,
-                    "methods": list(rule.methods - {'HEAD', 'OPTIONS'}),
-                    "function": rule.endpoint
-                })
-        return jsonify({
-            "endpoints": sorted(endpoints, key=lambda x: x['endpoint']),
-            "total": len(endpoints)
-        })
+            if rule.endpoint != "static":
+                endpoints.append(
+                    {
+                        "endpoint": rule.rule,
+                        "methods": list(rule.methods - {"HEAD", "OPTIONS"}),
+                        "function": rule.endpoint,
+                    }
+                )
+        return jsonify(
+            {
+                "endpoints": sorted(endpoints, key=lambda x: x["endpoint"]),
+                "total": len(endpoints),
+            }
+        )
 
     @flask_app.route("/api/health")
     def api_health():
@@ -129,7 +133,10 @@ if __name__ == "__main__":
     # Seed data on startup
     with app.app_context():
         try:
-            from app.seed_data import seed_development_data, seed_production_data
+            from app.infrastructure.database.seed_data import (
+                seed_development_data,
+                seed_production_data,
+            )
 
             if Config.DEBUG:
                 seed_development_data()

@@ -23,11 +23,11 @@ def test_list_teams_success(client, mock_db, auth_headers):
         }
     ]
     # Mock JWT verification
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
     team_data = {"name": "New Team", "description": ""}
     with (
-        patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify,
+        patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify,
         patch("app.services.team_service.TeamService.create_team") as mock_create_team,
         patch(
             "app.services.team_service.TeamService.get_team_details"
@@ -59,7 +59,7 @@ def test_list_teams_success(client, mock_db, auth_headers):
         assert data["name"] == "New Team"
         assert data["id"] == 1
     # Mock JWT verification
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         # Patch the DB response for team details to include 'role'
         mock_db.execute_one.return_value = {
@@ -92,7 +92,7 @@ def test_get_nonexistent_team(client, mock_db, auth_headers):
     # Mock database response for no team found
     mock_db.execute_one.return_value = None
     # Mock JWT verification
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         response = client.get("/api/teams/999", headers=auth_headers)
         # Assert response
@@ -108,7 +108,7 @@ def test_create_team_success(client, mock_db, auth_headers):
     # Mock database response for team creation
     team_data = {"name": "New Team", "description": "A new team for testing."}
     with (
-        patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify,
+        patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify,
         patch(
             "app.services.team_service.TeamService.get_team_details"
         ) as mock_get_team_details,
@@ -149,7 +149,7 @@ def test_create_team_success(client, mock_db, auth_headers):
 def test_create_team_missing_fields(client, mock_db, auth_headers):
     """Test team creation with missing required fields."""
     mock_db.reset_mock()
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         # Empty body
         response = client.post(
@@ -168,7 +168,7 @@ def test_create_team_missing_fields(client, mock_db, auth_headers):
 def test_create_team_missing_name_field(client, mock_db, auth_headers):
     """Test team creation with missing 'name' field in non-empty body."""
     mock_db.reset_mock()
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         # Body with description but no name
         response = client.post(
@@ -189,7 +189,7 @@ def test_join_team_success(client, mock_db, auth_headers):
     mock_db.reset_mock()
     # Mock JWT verification
 
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
 
         # First call: team exists, second call: user not a member
@@ -220,7 +220,7 @@ def test_delete_team_success(client, mock_db, auth_headers):
     mock_db.reset_mock()
     # Mock JWT verification and admin check
 
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         # Mock database responses in correct order:
         # 1. Team lookup (must include owner_id)
@@ -247,7 +247,7 @@ def test_kick_user_from_team_success(client, mock_db, auth_headers):
     mock_db.reset_mock()
     # Mock JWT verification
 
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
 
         # Mock DB calls in correct order:
@@ -286,7 +286,7 @@ def test_leave_team_success(client, mock_db, auth_headers):
     mock_db.reset_mock()
     # Mock JWT verification
 
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
 
         # Mock DB calls in correct order:
@@ -314,7 +314,7 @@ def test_list_team_members_success(client, mock_db, auth_headers):
     mock_db.reset_mock()
     # Mock JWT verification
 
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
 
         # Mock database response for team members
@@ -349,7 +349,7 @@ def test_list_team_members_success(client, mock_db, auth_headers):
 def test_join_nonexistent_team(client, mock_db, auth_headers):
     """Test joining a team that does not exist."""
     mock_db.reset_mock()
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         # Team does not exist
         mock_db.execute_one.side_effect = [None]
@@ -363,7 +363,7 @@ def test_join_nonexistent_team(client, mock_db, auth_headers):
 def test_join_team_already_member(client, mock_db, auth_headers):
     """Test joining a team the user is already a member of."""
     mock_db.reset_mock()
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         # Team exists, user is already a member
         mock_db.execute_one.side_effect = [
@@ -380,7 +380,7 @@ def test_join_team_already_member(client, mock_db, auth_headers):
 def test_leave_team_not_member(client, mock_db, auth_headers):
     """Test leaving a team the user is not a member of."""
     mock_db.reset_mock()
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         # User is not a member
         mock_db.execute_one.side_effect = [None]
@@ -397,7 +397,7 @@ def test_leave_team_not_member(client, mock_db, auth_headers):
 def test_kick_user_not_member(client, mock_db, auth_headers):
     """Test kicking a user who is not a member of the team."""
     mock_db.reset_mock()
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         # Kicker is admin, target is not a member
         mock_db.execute_one.side_effect = [
@@ -423,7 +423,7 @@ def test_kick_user_not_member(client, mock_db, auth_headers):
 def test_kick_user_not_admin(client, mock_db, auth_headers):
     """Test kicking a user as a non-admin."""
     mock_db.reset_mock()
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         # Kicker is not admin
         mock_db.execute_one.side_effect = [
@@ -445,7 +445,7 @@ def test_kick_user_not_admin(client, mock_db, auth_headers):
 def test_disband_team_not_owner(client, mock_db, auth_headers):
     """Test disbanding a team as a non-owner."""
     mock_db.reset_mock()
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 2, "email": "test@example.com"}
         # Team exists, but user is not owner
         mock_db.execute_one.side_effect = [
@@ -462,7 +462,7 @@ def test_create_team_name_too_long(client, mock_db, auth_headers):
     """Test creating a team with a name that exceeds the allowed length."""
     mock_db.reset_mock()
     long_name = "A" * 101
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         team_data = {"name": long_name, "description": "desc"}
         response = client.post(
@@ -481,7 +481,7 @@ def test_create_team_description_too_long(client, mock_db, auth_headers):
     """Test creating a team with a description that exceeds the allowed length."""
     mock_db.reset_mock()
     long_desc = "D" * 501
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         team_data = {"name": "Valid Name", "description": long_desc}
         response = client.post(
@@ -499,7 +499,7 @@ def test_create_team_description_too_long(client, mock_db, auth_headers):
 def test_list_teams_empty(client, mock_db, auth_headers):
     """Test getting list of teams when user is not a member of any team."""
     mock_db.reset_mock()
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         mock_db.execute_query.return_value = []
         response = client.get("/api/teams", headers=auth_headers)
@@ -513,7 +513,7 @@ def test_list_teams_empty(client, mock_db, auth_headers):
 def test_get_available_teams_empty(client, mock_db, auth_headers):
     """Test getting available teams when there are none."""
     mock_db.reset_mock()
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         mock_db.execute_query.return_value = []
         response = client.get("/api/teams/available", headers=auth_headers)
@@ -528,7 +528,7 @@ def test_get_available_teams_empty(client, mock_db, auth_headers):
 def test_kick_user_missing_user_id(client, mock_db, auth_headers):
     """Test kicking a user with missing user_id in request body."""
     mock_db.reset_mock()
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         response = client.post(
             "/api/teams/1/kick",
@@ -545,7 +545,7 @@ def test_kick_user_missing_user_id(client, mock_db, auth_headers):
 def test_kick_user_non_integer_user_id(client, mock_db, auth_headers):
     """Test kicking a user with non-integer user_id."""
     mock_db.reset_mock()
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         response = client.post(
             "/api/teams/1/kick",
@@ -562,7 +562,7 @@ def test_kick_user_non_integer_user_id(client, mock_db, auth_headers):
 def test_get_team_count_success(client, mock_db, auth_headers):
     """Test getting the number of teams for a user."""
     mock_db.reset_mock()
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         mock_db.execute_one.return_value = {"count": 3}
         # Patch TeamService.get_user_team_count to return 3
@@ -580,7 +580,7 @@ def test_get_team_count_success(client, mock_db, auth_headers):
 def test_get_team_count_internal_error(client, mock_db, auth_headers):
     """Test get_team_count with simulated internal error."""
     mock_db.reset_mock()
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         with patch(
             "app.services.team_service.TeamService.get_user_team_count",
@@ -596,7 +596,7 @@ def test_get_team_count_internal_error(client, mock_db, auth_headers):
 def test_list_team_users_not_authorized(client, mock_db, auth_headers):
     """Test list_team_users when service returns not authorized (success=False)."""
     mock_db.reset_mock()
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         with patch("app.services.team_service.TeamService.get_team_users") as mock_get:
             mock_get.return_value = (False, "forbidden", [])
@@ -610,7 +610,7 @@ def test_list_team_users_not_authorized(client, mock_db, auth_headers):
 def test_disband_team_not_found(client, mock_db, auth_headers):
     """Test disband_team for a team that does not exist (simulate 'not found' in message)."""
     mock_db.reset_mock()
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         with patch(
             "app.services.team_service.TeamService.disband_team"
@@ -627,7 +627,7 @@ def test_create_team_missing_description(client, mock_db, auth_headers):
     """Test creating a team with description field missing (should default to empty string)."""
     mock_db.reset_mock()
     with (
-        patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify,
+        patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify,
         patch("app.services.team_service.TeamService.create_team") as mock_create_team,
         patch(
             "app.services.team_service.TeamService.get_team_details"
