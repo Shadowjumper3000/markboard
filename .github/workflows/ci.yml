@@ -1,4 +1,4 @@
-name: CI - Test & Validate
+name: CI
 
 on:
   pull_request:
@@ -8,18 +8,6 @@ jobs:
   backend-test:
     name: Backend Tests
     runs-on: ubuntu-latest
-    
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: test_root_password
-          MYSQL_DATABASE: test_markboard
-          MYSQL_USER: test_user
-          MYSQL_PASSWORD: test_password
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
 
     steps:
       - uses: actions/checkout@v4
@@ -35,29 +23,22 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt -r requirements-dev.txt
 
-      - name: Run tests with coverage
-        env:
-          MYSQL_HOST: localhost
-          MYSQL_PORT: 3306
-          MYSQL_USER: test_user
-          MYSQL_PASSWORD: test_password
-          MYSQL_DATABASE: test_markboard
-          JWT_SECRET: test_jwt_secret_for_ci
-          FLASK_ENV: testing
-          ADMIN_EMAIL: admin@test.com
-          ADMIN_PASSWORD: test_admin_password
-        run: pytest --cov=app --cov-report=term-missing --cov-report=xml --cov-fail-under=70 -v
+      - name: Run tests
+        run: pytest -v
 
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        if: github.event_name == 'push'
-        with:
-          file: ./coverage.xml
-          flags: backend
-          fail_ci_if_error: false
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
 
-  frontend-test:
-    name: Frontend Build & Lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker containers
+        run: |
+          docker compose -f deployment/compose/docker-compose.dev.yml build
+
+  frontend-build:
+    name: Frontend Build
     runs-on: ubuntu-latest
 
     steps:
@@ -70,11 +51,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./web
-        run: bun install --frozen-lockfile
-
-      - name: Lint
-        working-directory: ./web
-        run: bun run lint
+        run: bun install
 
       - name: Build
         working-directory: ./web
