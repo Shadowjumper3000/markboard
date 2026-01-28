@@ -323,12 +323,12 @@ class ApiService extends BaseApiService {
       user_email?: string;
     }>;
   }> {
-    const url = new URL(`${this.apiBase}/admin/activity`);
+    let url = `${this.apiBase}/admin/activity`;
     if (limit) {
-      url.searchParams.set('limit', limit.toString());
+      url += `?limit=${limit}`;
     }
 
-    const response = await fetch(url.toString(), {
+    const response = await fetch(url, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });
