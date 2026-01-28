@@ -213,6 +213,18 @@ class ApiService extends BaseApiService {
     return this.handleResponse(response);
   }
 
+  async joinTeamByCode(inviteCode: string): Promise<{
+    message: string;
+  }> {
+    const response = await fetch(`${this.apiBase}/teams/join`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ invite_code: inviteCode }),
+    });
+
+    return this.handleResponse(response);
+  }
+
   async getAvailableTeams(): Promise<{
     teams: Array<{
       id: number;
@@ -323,12 +335,12 @@ class ApiService extends BaseApiService {
       user_email?: string;
     }>;
   }> {
-    const url = new URL(`${this.apiBase}/admin/activity`);
+    let url = `${this.apiBase}/admin/activity`;
     if (limit) {
-      url.searchParams.set('limit', limit.toString());
+      url += `?limit=${limit}`;
     }
 
-    const response = await fetch(url.toString(), {
+    const response = await fetch(url, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });

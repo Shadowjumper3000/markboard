@@ -23,12 +23,14 @@ CREATE TABLE teams (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
+    invite_code VARCHAR(12) NOT NULL UNIQUE,
     owner_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_owner_id (owner_id),
-    INDEX idx_name (name)
+    INDEX idx_name (name),
+    INDEX idx_invite_code (invite_code)
 );
 
 -- Team members table
