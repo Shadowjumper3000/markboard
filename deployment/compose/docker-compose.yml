@@ -1,6 +1,6 @@
 # Production Docker Compose Configuration
 services:
-  backend:
+  app:
     build:
       context: ../..
       dockerfile: deployment/docker/app/Dockerfile

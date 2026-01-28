@@ -40,7 +40,15 @@ jobs:
             fi
             
             # Create .env file in compose directory
-            echo '${{ secrets.ENV_FILE }}' > deployment/compose/.env
+            mkdir -p deployment/compose
+            cat > deployment/compose/.env << 'EOF'
+            ${{ secrets.ENV_FILE }}
+            EOF
+            
+            # Debug: Check if .env was created and has content
+            echo "📋 Checking .env file:"
+            ls -lh deployment/compose/.env
+            echo "📄 .env has $(wc -l < deployment/compose/.env) lines"
             
             # Deploy with Docker Compose
             cd deployment/compose
