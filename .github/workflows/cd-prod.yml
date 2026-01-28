@@ -39,10 +39,21 @@ jobs:
               git fetch origin && git reset --hard origin/prod && git clean -fd
             fi
             
-            # Create .env file in compose directory
+            # Create .env file from individual secrets
             mkdir -p deployment/compose
-            cat > deployment/compose/.env << 'EOF'
-            ${{ secrets.ENV_FILE }}
+            cat > deployment/compose/.env << EOF
+            MYSQL_HOST=db
+            MYSQL_PORT=3306
+            MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+            MYSQL_USER=admin
+            MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+            MYSQL_DATABASE=markboard
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            FLASK_ENV=production
+            DEBUG=false
+            ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
+            ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+            SERVER_NAME=${{ secrets.SERVER_NAME }}
             EOF
             
             # Debug: Check if .env was created and has content
