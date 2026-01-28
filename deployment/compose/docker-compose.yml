@@ -12,13 +12,15 @@ services:
       - MYSQL_HOST=db
       - MYSQL_PORT=3306
       - MYSQL_USER=${MYSQL_USER:-admin}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}
       - MYSQL_DATABASE=${MYSQL_DATABASE:-markboard}
       - FLASK_ENV=production
       - DEBUG=false
-      - JWT_SECRET=${JWT_SECRET}
-      - ADMIN_EMAIL=${ADMIN_EMAIL}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:?ADMIN_EMAIL is required}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
+    volumes:
+      - markboard-app-data:/app/data
     depends_on:
       db:
         condition: service_healthy
@@ -50,10 +52,12 @@ services:
     expose:
       - "3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}
       - MYSQL_DATABASE=${MYSQL_DATABASE:-markboard}
       - MYSQL_USER=${MYSQL_USER:-admin}
+    volumes:
+      - markboard-db-data:/var/lib/mysql
     healthcheck:
       test: mysqladmin ping -h localhost -u$$MYSQL_USER -p$$MYSQL_PASSWORD
       interval: 10s
@@ -62,6 +66,10 @@ services:
     networks:
       - markboard-internal
     restart: unless-stopped
+
+volumes:
+  markboard-db-data:
+  markboard-app-data:
 
 networks:
   proxy:
