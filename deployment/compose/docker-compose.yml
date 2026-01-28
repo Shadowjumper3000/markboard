@@ -6,10 +6,13 @@ services:
   backend:
     build:
       context: ../..
-      dockerfile: deployment/docker/backend/Dockerfile
-    image: markboard-backend:v1.0.0
-    ports:
-      - "8000:8000"
+      dockerfile: deployment/docker/app/Dockerfile
+    image: markboard-app-prod:latest
+    container_name: markboard-app-prod
+    expose:
+      - "8000"
+    networks:
+      - markboard-internal
     environment:
       - MYSQL_HOST=${MYSQL_HOST:-db}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
@@ -30,22 +33,37 @@ services:
     build:
       context: ../../web
       dockerfile: ../deployment/docker/web/Dockerfile
-    image: markboard-web:v1.0.0
-    ports:
-      - "3000:3000"
+    image: markboard-web-prod:latest
+    container_name: markboard-web-prod
+    expose:
+      - "80"
+    networks:
+      - proxy
+      - markboard-internal
     restart: unless-stopped
 
   db:
     build:
-      context: ../../db
-      dockerfile: ../deployment/docker/database/Dockerfile
-    image: markboard-db:v1.0.0
-    container_name: markboard-db
-    ports:
-      - "3306:3306"
+      context: ../docker/db
+      dockerfile: Dockerfile
+    image: markboard-db-prod:latest
+    container_name: markboard-db-prod
+    expose:
+      - "3306"
+    networks:
+      - markboard-internal
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_DATABASE=${MYSQL_DATABASE:-markboard}
       - MYSQL_USER=${MYSQL_USER:-admin}
     restart: unless-stopped
+
+networks:
+  proxy:
+    external: true
+    name: proxy
+  markboard-internal:
+    driver: bridge
+    internal: false
+    name: markboard-internal

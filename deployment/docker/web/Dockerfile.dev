@@ -1,29 +1,23 @@
-# Update image name to markboard-frontend-dev
-FROM node:18-alpine
+FROM oven/bun:1.3-alpine AS deps
 
 WORKDIR /app
 
-# Install bun globally and wget for health checks
-RUN npm install -g bun && \
-    apk add --no-cache wget
+COPY package.json bun.lockb ./
+RUN bun install --frozen-lockfile
 
-# Copy package files
-COPY package*.json ./
-COPY bun.lockb ./
+FROM oven/bun:1.3-alpine
 
-# Install dependencies
-RUN bun install
-
-# Ensure correct filepaths for frontend dev container
 WORKDIR /app
+
+RUN apk add --no-cache wget
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json bun.lockb ./
 COPY . .
 
-# Expose port for Vite dev server
 EXPOSE 3000
 
-# Start development server with host binding for Docker
 CMD ["bun", "run", "dev"]
 
-# Add healthcheck for Vite dev server
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider --timeout=5 http://localhost:3000 || exit 1
