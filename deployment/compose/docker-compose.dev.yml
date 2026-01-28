@@ -5,8 +5,8 @@ services:
       dockerfile: deployment/docker/app/Dockerfile.dev
     image: markboard-app-dev:latest
     container_name: markboard-app-dev
-    expose:
-      - "8000"
+    ports:
+      - "8000:8000"
     environment:
       MYSQL_HOST: db
       MYSQL_PORT: 3306
@@ -29,8 +29,8 @@ services:
       dockerfile: ../deployment/docker/web/Dockerfile.dev
     image: markboard-web-dev:latest
     container_name: markboard-web-dev
-    expose:
-      - "3000"
+    ports:
+      - "80:3000"
     environment:
       VITE_API_URL: http://localhost:8000/api
     restart: unless-stopped

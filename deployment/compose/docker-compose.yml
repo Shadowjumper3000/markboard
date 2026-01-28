@@ -37,6 +37,8 @@ services:
     container_name: markboard-web-prod
     expose:
       - "80"
+    environment:
+      - SERVER_NAME=${SERVER_NAME:-markboard.davidhoerz.com}
     networks:
       - proxy
       - markboard-internal
