@@ -39,8 +39,8 @@ jobs:
               git fetch origin && git reset --hard origin/prod && git clean -fd
             fi
             
-            # Create .env file
-            echo '${{ secrets.ENV_FILE }}' > .env
+            # Create .env file in compose directory
+            echo '${{ secrets.ENV_FILE }}' > deployment/compose/.env
             
             # Deploy with Docker Compose
             cd deployment/compose
@@ -58,7 +58,6 @@ jobs:
             fi
             
             # Cleanup .env
-            cd ../..
             rm -f .env
-
-            docker compose ps
+            
+            docker compose -f docker-compose.yml ps
