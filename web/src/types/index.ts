@@ -2,6 +2,7 @@ export interface Team {
   id: number;
   name: string;
   description: string;
+  invite_code?: string;
   owner_id: number;
   file_count?: number;
   member_count?: number;

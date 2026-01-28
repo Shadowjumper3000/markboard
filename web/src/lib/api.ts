@@ -213,6 +213,18 @@ class ApiService extends BaseApiService {
     return this.handleResponse(response);
   }
 
+  async joinTeamByCode(inviteCode: string): Promise<{
+    message: string;
+  }> {
+    const response = await fetch(`${this.apiBase}/teams/join`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ invite_code: inviteCode }),
+    });
+
+    return this.handleResponse(response);
+  }
+
   async getAvailableTeams(): Promise<{
     teams: Array<{
       id: number;

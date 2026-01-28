@@ -100,7 +100,7 @@ def create_team():
 @teams_bp.route("/<int:team_id>/join", methods=["POST"])
 @require_auth
 def join_team(team_id):
-    """Join a team."""
+    """Join a team by team ID (deprecated - use join by code instead)."""
     try:
         user_id = g.current_user_id
         success, message = TeamService.join_team(team_id, user_id)
@@ -112,6 +112,33 @@ def join_team(team_id):
         return format_success_response({"message": message})
     except Exception as e:
         logger.error("Join team error: %s", e)
+        return format_error_response("Internal server error", 500)
+
+
+@teams_bp.route("/join", methods=["POST"])
+@require_auth
+def join_team_by_code():
+    """Join a team using an invite code."""
+    try:
+        user_id = g.current_user_id
+        data = request.get_json()
+
+        if not data:
+            return format_error_response("Request body is required", 400)
+
+        invite_code = data.get("invite_code", "").strip()
+
+        if not invite_code:
+            return format_error_response("Invite code is required", 400)
+
+        success, message = TeamService.join_team_by_code(invite_code, user_id)
+
+        if not success:
+            return format_error_response(message, 400)
+
+        return format_success_response({"message": message})
+    except Exception as e:
+        logger.error("Join team by code error: %s", e)
         return format_error_response("Internal server error", 500)
 
 

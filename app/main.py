@@ -4,6 +4,7 @@ import os
 from flask import Flask, jsonify
 from config import Config
 from app.infrastructure.database.connection import get_db
+from app.infrastructure.database.migrations import MigrationManager
 
 # Import blueprints from their respective files
 from app.api.routes.auth import auth_bp
@@ -42,6 +43,15 @@ def create_app():
     if not get_db().test_connection():
         logging.error("Failed to connect to database")
         sys.exit(1)
+
+    # Run pending migrations
+    try:
+        logging.info("Checking for pending migrations...")
+        MigrationManager.run_migrations()
+    except Exception as e:
+        logging.error("Migration error: %s", e)
+        # Don't exit - allow app to start even if migrations fail
+        # This prevents startup failures in production
 
     # Register blueprints with API prefix
     flask_app.register_blueprint(auth_bp, url_prefix="/api/auth")

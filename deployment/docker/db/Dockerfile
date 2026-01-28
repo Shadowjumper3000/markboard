@@ -5,8 +5,9 @@ FROM mysql:8.0
 ENV MYSQL_DATABASE=markboard \
     MYSQL_USER=admin
 
-# Copy the initialization SQL script from same directory
-COPY init.sql /docker-entrypoint-initdb.d/
+# Copy the initialization SQL script for fresh installs only
+# Migrations are handled by the application on startup
+COPY init.sql /docker-entrypoint-initdb.d/01-init.sql
 
 EXPOSE 3306
 

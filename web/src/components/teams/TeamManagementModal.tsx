@@ -21,7 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/lib/api';
 import { Team } from '@/types';
-import { Crown, Plus, Search, Settings, UserPlus, Users, X } from 'lucide-react';
+import { Check, Copy, Crown, Plus, Settings, UserPlus, Users, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 const MAX_TEAM_NAME_LENGTH = 20;
@@ -41,9 +41,8 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
   const [joinTeamCode, setJoinTeamCode] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
-  const [availableTeams, setAvailableTeams] = useState<Team[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isLeaving, setIsLeaving] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [isDisbanding, setIsDisbanding] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [isUserPopupOpen, setIsUserPopupOpen] = useState(false);
@@ -51,11 +50,37 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Filter available teams based on search
-  const filteredAvailableTeams = availableTeams.filter(team =>
-    team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    team.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleJoinByCode = async () => {
+    if (!joinTeamCode.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter an invite code.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsJoining(true);
+    try {
+      const response = await apiService.joinTeamByCode(joinTeamCode.trim());
+
+      toast({
+        title: "Joined team",
+        description: response.message,
+      });
+
+      setJoinTeamCode('');
+      onTeamsChange();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to join team.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsJoining(false);
+    }
+  };
 
   const handleCreateTeam = async () => {
     if (!newTeamName.trim()) {
@@ -130,29 +155,6 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
     }
   };
 
-  const handleJoinTeam = async (teamId: number) => {
-    setIsJoining(true);
-    try {
-      await apiService.joinTeam(teamId);
-
-      toast({
-        title: "Joined team",
-        description: "You have successfully joined the team.",
-      });
-
-      onTeamsChange();
-      loadAvailableTeams();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to join team.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsJoining(false);
-    }
-  };
-
   const handleLeaveTeam = async (teamId: number, teamName: string) => {
     setIsLeaving(true);
     try {
@@ -197,12 +199,21 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
     }
   };
 
-  const loadAvailableTeams = async () => {
+  const handleCopyInviteCode = async (code: string) => {
     try {
-      const response = await apiService.getAvailableTeams();
-      setAvailableTeams(response.teams || []);
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(code);
+      toast({
+        title: "Copied!",
+        description: "Invite code copied to clipboard.",
+      });
+      setTimeout(() => setCopiedCode(null), 2000);
     } catch (error) {
-      console.error('Error loading available teams:', error);
+      toast({
+        title: "Error",
+        description: "Failed to copy invite code.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -245,11 +256,7 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
     }
   };
 
-  useEffect(() => {
-    if (open) {
-      loadAvailableTeams();
-    }
-  }, [open]);
+
 
   // Adjust the teamCardStyle to make the cards smaller and more compact
   const teamCardStyle = "flex flex-col justify-between items-center p-3 bg-card shadow-md hover:shadow-lg transition-shadow rounded-md";
@@ -303,6 +310,29 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
                         )}
                       </CardHeader>
                       <CardContent className="pt-0 flex flex-col gap-2">
+                        {/* Show invite code for team owners */}
+                        {team.role === 'admin' && team.invite_code && (
+                          <div className="mb-2 p-2 bg-muted rounded-md">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex-1">
+                                <p className="text-xs text-muted-foreground mb-1">Invite Code</p>
+                                <code className="text-sm font-mono font-semibold">{team.invite_code}</code>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleCopyInviteCode(team.invite_code!)}
+                                className="h-8 w-8 p-0"
+                              >
+                                {copiedCode === team.invite_code ? (
+                                  <Check className="h-4 w-4 text-green-500" />
+                                ) : (
+                                  <Copy className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                         <div className="flex items-center justify-between text-sm text-muted-foreground">
                           <span>{team.member_count || 0} members</span>
                           {team.role === 'admin' && (
@@ -389,58 +419,48 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
 
           <TabsContent value="join" className="space-y-4">
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="search">Search Teams</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                  id="search"
-                  value={searchQuery}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-                  placeholder="Search for teams to join"
-                  className="pl-10"
-                  />
-                </div>
+              <div className="text-center py-6">
+                <UserPlus className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Join a Team</h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Enter an invite code to join a team.
+                </p>
               </div>
 
-              <div className="space-y-3 max-h-60 overflow-y-auto">
-                {filteredAvailableTeams.length === 0 ? (
-                  <div className="text-center py-8">
-                    <UserPlus className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">
-                      {searchQuery ? 'No teams match your search.' : 'No available teams to join.'}
-                    </p>
-                  </div>
-                ) : (
-                  filteredAvailableTeams.map((team) => (
-                    <Card key={team.id} className={teamCardStyle}>
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-base">{team.name}</CardTitle>
-                          <Button
-                            size="sm"
-                            onClick={() => handleJoinTeam(team.id)}
-                            disabled={isJoining}
-                          >
-                            {isJoining ? 'Joining...' : 'Join'}
-                          </Button>
-                        </div>
-                        {team.description && (
-                          <CardDescription className="text-sm">
-                            {team.description}
-                          </CardDescription>
-                        )}
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="flex items-center justify-between text-sm text-muted-foreground">
-                          <span>{team.member_count || 0} members</span>
-                          <span>{team.file_count || 0} files</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
+              <div className="space-y-2">
+                <Label htmlFor="invite-code">Invite Code</Label>
+                <Input
+                  id="invite-code"
+                  value={joinTeamCode}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setJoinTeamCode(e.target.value.toUpperCase())}
+                  placeholder="Enter invite code"
+                  maxLength={12}
+                  className="font-mono uppercase"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleJoinByCode();
+                    }
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Ask a team admin for an invite code to join their team.
+                </p>
               </div>
+
+              <Button
+                onClick={handleJoinByCode}
+                disabled={isJoining || !joinTeamCode.trim()}
+                className="w-full"
+              >
+                {isJoining ? (
+                  <>Joining...</>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Join Team
+                  </>
+                )}
+              </Button>
             </div>
           </TabsContent>
         </Tabs>
@@ -453,19 +473,29 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
                 <DialogTitle>Manage Users in {selectedTeam.name}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                {teamUsers.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between">
-                    <span>{user.name}</span>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleKickUser(user.id)}
-                    >
-                      <X className="h-4 w-4" />
-                      Kick
-                    </Button>
-                  </div>
-                ))}
+                {teamUsers.map((teamUser) => {
+                  const isCurrentUser = teamUser.id === Number(user?.id);
+                  return (
+                    <div key={teamUser.id} className="flex items-center justify-between">
+                      <span>
+                        {teamUser.name}
+                        {isCurrentUser && (
+                          <span className="ml-2 text-sm text-muted-foreground">(you)</span>
+                        )}
+                      </span>
+                      {!isCurrentUser && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleKickUser(teamUser.id)}
+                        >
+                          <X className="h-4 w-4" />
+                          Kick
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </DialogContent>
           </Dialog>

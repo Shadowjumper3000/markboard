@@ -6,6 +6,8 @@ Follows Single Responsibility Principle.
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 import logging
+import secrets
+import string
 from app.infrastructure.database.connection import get_db
 from app.utils.activity_logger import log_activity
 
@@ -14,6 +16,12 @@ logger = logging.getLogger(__name__)
 
 class TeamService:
     """Service class for team operations."""
+
+    @staticmethod
+    def _generate_invite_code(length: int = 8) -> str:
+        """Generate a random invite code."""
+        alphabet = string.ascii_uppercase + string.digits
+        return "".join(secrets.choice(alphabet) for _ in range(length))
 
     @staticmethod
     def get_user_team_count(user_id: int) -> int:
@@ -33,7 +41,7 @@ class TeamService:
     def get_user_teams(user_id: int) -> List[Dict]:
         """Get list of teams that the user is a member of."""
         query = """
-            SELECT DISTINCT t.id, t.name, t.description, t.owner_id,
+            SELECT DISTINCT t.id, t.name, t.description, t.invite_code, t.owner_id,
                    t.created_at, COUNT(DISTINCT f.id) as file_count,
                    COUNT(DISTINCT tm2.id) as member_count, tm.role
             FROM teams t
@@ -41,7 +49,7 @@ class TeamService:
             LEFT JOIN team_members tm2 ON t.id = tm2.team_id
             INNER JOIN team_members tm ON t.id = tm.team_id
             WHERE tm.user_id = %s
-            GROUP BY t.id, t.name, t.description, t.owner_id, t.created_at, tm.role
+            GROUP BY t.id, t.name, t.description, t.invite_code, t.owner_id, t.created_at, tm.role
             ORDER BY t.created_at DESC
         """
         return get_db().execute_query(query, (user_id,))
@@ -60,14 +68,14 @@ class TeamService:
 
         # Get team details with stats
         team_query = """
-            SELECT t.id, t.name, t.description, t.owner_id, t.created_at,
+            SELECT t.id, t.name, t.description, t.invite_code, t.owner_id, t.created_at,
                    COUNT(DISTINCT f.id) as file_count,
                    COUNT(DISTINCT tm.id) as member_count
             FROM teams t
             LEFT JOIN files f ON t.id = f.team_id
             LEFT JOIN team_members tm ON t.id = tm.team_id
             WHERE t.id = %s
-            GROUP BY t.id, t.name, t.description, t.owner_id, t.created_at
+            GROUP BY t.id, t.name, t.description, t.invite_code, t.owner_id, t.created_at
         """
 
         team = get_db().execute_one(team_query, (team_id,))
@@ -87,13 +95,21 @@ class TeamService:
             return False, "Team name already exists", None
 
         try:
+            # Generate unique invite code
+            invite_code = TeamService._generate_invite_code()
+            # Ensure uniqueness
+            while get_db().execute_one(
+                "SELECT id FROM teams WHERE invite_code = %s", (invite_code,)
+            ):
+                invite_code = TeamService._generate_invite_code()
+
             # Insert team and get new team_id (returns int)
             team_id = get_db().execute_modify(
                 """
-                INSERT INTO teams (name, description, owner_id, created_at)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO teams (name, description, invite_code, owner_id, created_at)
+                VALUES (%s, %s, %s, %s, %s)
                 """,
-                (name, description, owner_id, datetime.now(timezone.utc)),
+                (name, description, invite_code, owner_id, datetime.now(timezone.utc)),
             )
 
             # Add owner as admin member
@@ -151,6 +167,48 @@ class TeamService:
 
         except Exception as e:
             logger.error("Error joining team: %s", e)
+            return False, "Failed to join team"
+
+    @staticmethod
+    def join_team_by_code(invite_code: str, user_id: int) -> Tuple[bool, str]:
+        """Add user to a team using an invite code."""
+        # Find team by invite code
+        team = get_db().execute_one(
+            "SELECT id, name FROM teams WHERE invite_code = %s", (invite_code.upper(),)
+        )
+        if not team:
+            return False, "Invalid invite code"
+
+        team_id = team["id"]
+
+        # Check if user is already a member
+        existing_member = get_db().execute_one(
+            "SELECT id FROM team_members WHERE team_id = %s AND user_id = %s",
+            (team_id, user_id),
+        )
+        if existing_member:
+            # Return success with informative message instead of error
+            return True, f"You're already a member of {team['name']}"
+
+        try:
+            # Add user as member
+            get_db().execute_modify(
+                """
+                INSERT INTO team_members (team_id, user_id, role, joined_at)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (team_id, user_id, "member", datetime.now(timezone.utc)),
+            )
+
+            # Log activity
+            log_activity(
+                user_id, "team_joined", "team", team_id, f"Joined team: {team['name']}"
+            )
+
+            return True, f"Successfully joined team: {team['name']}"
+
+        except Exception as e:
+            logger.error("Error joining team by code: %s", e)
             return False, "Failed to join team"
 
     @staticmethod
