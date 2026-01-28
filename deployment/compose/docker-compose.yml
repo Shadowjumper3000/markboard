@@ -1,0 +1,71 @@
+# Docker Production Compose
+# Use this for production deployments
+# Secrets should be provided via environment variables or .env file
+
+services:
+  backend:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/app/Dockerfile
+    image: markboard-app-prod:latest
+    container_name: markboard-app-prod
+    expose:
+      - "8000"
+    networks:
+      - markboard-internal
+    environment:
+      - MYSQL_HOST=${MYSQL_HOST:-db}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER:-admin}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-markboard}
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - DEBUG=${DEBUG:-false}
+      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ../../web
+      dockerfile: ../deployment/docker/web/Dockerfile
+    image: markboard-web-prod:latest
+    container_name: markboard-web-prod
+    expose:
+      - "80"
+    environment:
+      - SERVER_NAME=${SERVER_NAME:-markboard.davidhoerz.com}
+    networks:
+      - proxy
+      - markboard-internal
+    restart: unless-stopped
+
+  db:
+    build:
+      context: ../docker/db
+      dockerfile: Dockerfile
+    image: markboard-db-prod:latest
+    container_name: markboard-db-prod
+    expose:
+      - "3306"
+    networks:
+      - markboard-internal
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-markboard}
+      - MYSQL_USER=${MYSQL_USER:-admin}
+    restart: unless-stopped
+
+networks:
+  proxy:
+    external: true
+    name: proxy
+  markboard-internal:
+    driver: bridge
+    internal: false
+    name: markboard-internal

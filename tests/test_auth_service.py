@@ -7,8 +7,8 @@ from datetime import datetime, timezone, timedelta
 from unittest.mock import patch
 import pytest
 import jwt
-from app.services.auth_service import AuthService
-from app.config import Config
+from app.core.services.auth_service import AuthService
+from config import Config
 
 
 def test_hash_password(mock_db):

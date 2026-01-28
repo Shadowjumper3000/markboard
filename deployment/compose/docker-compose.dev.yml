@@ -1,0 +1,51 @@
+services:
+  backend:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/app/Dockerfile.dev
+    image: markboard-app-dev:latest
+    container_name: markboard-app-dev
+    ports:
+      - "8000:8000"
+    environment:
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: adminpassword
+      MYSQL_DATABASE: markboard
+      FLASK_ENV: development
+      DEBUG: "true"
+      JWT_SECRET: dev_secret
+      ADMIN_EMAIL: admin@markboard.dev
+      ADMIN_PASSWORD: admin123dev
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ../../web
+      dockerfile: ../deployment/docker/web/Dockerfile.dev
+    image: markboard-web-dev:latest
+    container_name: markboard-web-dev
+    ports:
+      - "80:3000"
+    environment:
+      VITE_API_URL: http://localhost:8000/api
+    restart: unless-stopped
+
+  db:
+    build:
+      context: ../docker/db
+      dockerfile: Dockerfile
+    image: markboard-db-dev:latest
+    container_name: markboard-db-dev
+    expose:
+      - "3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: markboard
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: adminpassword
+    restart: unless-stopped

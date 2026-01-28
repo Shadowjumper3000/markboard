@@ -2,7 +2,7 @@
 Tests for database mocking setup.
 """
 
-from app.db import get_db
+from app.infrastructure.database.connection import get_db
 
 
 def test_db_mocking_works(mock_db):

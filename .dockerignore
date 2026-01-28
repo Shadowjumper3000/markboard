@@ -1,0 +1,69 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+docs/
+README.md
+
+# Tests
+tests/
+*.test.*
+test_*.py
+
+# Node (for web folder)
+web/node_modules/
+web/dist/
+web/build/
+web/.vite/
+
+# Environment files (should use docker secrets)
+.env
+.env.*
+!.env-example
+
+# Data directories (mount as volumes instead)
+data/
+storage/
+logs/
+
+# Deployment
+deployment/
+docker-compose*.yml
+Dockerfile*

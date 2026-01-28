@@ -1,0 +1,23 @@
+FROM oven/bun:1-alpine AS deps
+
+WORKDIR /app
+
+COPY package.json bun.lockb ./
+RUN bun install
+
+FROM oven/bun:1-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache wget
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json bun.lockb ./
+COPY . .
+
+EXPOSE 3000
+
+CMD ["bun", "run", "dev"]
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider --timeout=5 http://localhost:3000 || exit 1

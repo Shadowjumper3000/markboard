@@ -6,7 +6,7 @@ Covers file operations using a temporary directory.
 import os
 
 import pytest
-from app.file_storage import FileStorage
+from app.infrastructure.storage.file_storage import FileStorage
 
 
 @pytest.fixture

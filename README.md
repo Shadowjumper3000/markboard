@@ -7,10 +7,132 @@ Markboard is a web-based uml diagram editor. It uses Mermaid.js for rendering di
 - Save and manage diagrams in a database.
 
 ## Technologies Used
-- Frontend: react, typescript, tailwindcss
-- Backend: flask
-- Database: MySQL
-- Authentication: JWT
+- Frontend: React, TypeScript, TailwindCSS, Vite
+- Backend: Flask, Python 3.11
+- Database: MySQL 8.0
+- Authentication: JWT with bcrypt
+- Deployment: Docker, Azure Container Apps
+
+## Project Structure
+
+The project follows **Clean Architecture** principles with clear separation of concerns:
+
+```
+markboard/
+├── app/                          # Backend application (Flask API)
+│   ├── __init__.py
+│   ├── main.py                  # Application entry point & factory
+│   │
+│   ├── api/                     # 📡 API/Presentation Layer
+│   │   ├── middleware/          # Request/response middleware
+│   │   │   └── auth_decorators.py  # Authentication & authorization
+│   │   ├── routes/              # API endpoint blueprints
+│   │   │   ├── auth.py         # Authentication endpoints
+│   │   │   ├── admin.py        # Admin management endpoints
+│   │   │   ├── files.py        # File CRUD endpoints
+│   │   │   └── teams.py        # Team management endpoints
+│   │   └── response_formatter.py  # Standardized API responses
+│   │
+│   ├── core/                    # 💼 Business Logic Layer
+│   │   ├── services/            # Business logic services
+│   │   │   ├── auth_service.py     # User registration & authentication
+│   │   │   ├── admin_service.py    # Admin operations
+│   │   │   ├── file_service.py     # File business logic
+│   │   │   └── team_service.py     # Team operations
+│   │   ├── repositories/        # Data access abstractions
+│   │   │   └── file_repository.py  # File data access
+│   │   ├── domain/              # Domain models (future)
+│   │   └── permissions.py       # Access control logic
+│   │
+│   ├── infrastructure/          # 🔧 Infrastructure Layer
+│   │   ├── database/            # Database concerns
+│   │   │   ├── connection.py       # Connection pool manager
+│   │   │   └── seed_data.py        # Initial data seeding
+│   │   ├── security/            # Security infrastructure
+│   │   │   ├── jwt_service.py      # JWT token operations
+│   │   │   ├── password_service.py # Password hashing/verification
+│   │   │   └── sanitizer.py        # Input sanitization
+│   │   └── storage/             # File storage infrastructure
+│   │       ├── interface.py        # Storage abstraction
+│   │       └── file_storage.py     # Filesystem implementation
+│   │
+│   └── utils/                   # 🛠️ Shared Utilities
+│       ├── activity_logger.py   # User activity logging
+│       ├── formatters.py        # Data formatting utilities
+│       └── validators.py        # Input validation rules
+│
+├── config/                      # ⚙️ Configuration Management
+│   ├── __init__.py
+│   └── settings.py             # Centralized configuration loader
+│
+├── web/                         # 🎨 Frontend Application (React + TypeScript)
+│   ├── src/
+│   │   ├── components/         # React components
+│   │   │   ├── auth/          # Authentication components
+│   │   │   ├── editor/        # Diagram editor components
+│   │   │   ├── files/         # File management UI
+│   │   │   ├── layout/        # Layout components
+│   │   │   └── teams/         # Team management UI
+│   │   ├── pages/             # Page components
+│   │   ├── contexts/          # React contexts (Auth, etc.)
+│   │   ├── hooks/             # Custom React hooks
+│   │   ├── lib/               # API client & services
+│   │   └── types/             # TypeScript type definitions
+│   ├── public/
+│   └── package.json
+│
+├── deployment/                  # 🚀 Deployment Configurations
+│   ├── docker/                 # Dockerfiles by service
+│   │   ├── backend/
+│   │   │   ├── Dockerfile      # Production backend image
+│   │   │   └── Dockerfile.dev  # Development backend image
+│   │   ├── web/
+│   │   │   ├── Dockerfile      # Production web image
+│   │   │   └── Dockerfile.dev  # Development web image
+│   │   └── database/
+│   │       └── Dockerfile      # MySQL image
+│   └── compose/                # Docker Compose configurations
+│       ├── docker-compose.yml      # Production compose
+│       └── docker-compose.dev.yml  # Development compose
+│
+├── tests/                       # 🧪 Test Suite
+│   ├── test_*_api.py           # API endpoint tests
+│   ├── test_*_service.py       # Service layer tests
+│   └── conftest.py             # Pytest configuration
+│
+├── .dockerignore               # Docker ignore patterns
+├── .pylintrc                   # Pylint configuration
+├── pyproject.toml              # Python project metadata & tool configs
+├── requirements.txt            # Production dependencies
+├── requirements-dev.txt        # Development dependencies
+└── README.md                   # This file
+```
+
+### Architecture Highlights
+
+#### **Clean Architecture Layers**
+- **API Layer**: Handles HTTP requests/responses, no business logic
+- **Core Layer**: Contains all business logic, independent of frameworks
+- **Infrastructure Layer**: External concerns (database, file system, security)
+- **Utils Layer**: Shared utilities used across all layers
+
+#### **SOLID Principles Applied**
+- **Single Responsibility**: Each service/module has one clear purpose
+  - `jwt_service.py` - Only JWT operations
+  - `password_service.py` - Only password hashing
+  - `auth_decorators.py` - Only Flask authentication decorators
+- **Dependency Inversion**: Core logic depends on abstractions, not implementations
+  - Storage interface allows swapping file storage backends
+  - Repository pattern separates data access from business logic
+- **Interface Segregation**: Services expose only what clients need
+- **Open/Closed**: Easy to extend without modifying existing code
+
+#### **Benefits**
+✅ **Testability**: Easy to mock dependencies and test in isolation  
+✅ **Maintainability**: Clear boundaries make code easier to understand and modify  
+✅ **Scalability**: Can swap implementations (e.g., local storage → S3) without touching business logic  
+✅ **Team Collaboration**: Clear structure helps multiple developers work without conflicts  
+✅ **Code Quality**: Enforced through linting, formatting, and type hints
 
 ## Installation
 1. Clone the repository:
@@ -42,11 +164,11 @@ Markboard is a web-based uml diagram editor. It uses Mermaid.js for rendering di
     ```
 5. Use Docker Compose to set up the environment for local development:
    ```bash
-   docker compose -f 'docker-compose.dev.yml' up -d --build
+   docker compose -f deployment/compose/docker-compose.dev.yml up -d --build
    ```
    or run the dev container directly
 6. Access the application at
-   [http://localhost:80](http://localhost:80) or [http://localhost](http://localhost)
+   [http://localhost:3000](http://localhost:3000) (Frontend) and [http://localhost:8000](http://localhost:8000) (Backend API)
 
 ## Testing
 

@@ -23,7 +23,7 @@ def test_list_files_success(client, mock_db, auth_headers):
             "updated_at": "2025-10-03T10:00:00",
         }
     ]
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         response = client.get("/api/files", headers=auth_headers)
         assert response.status_code == 200
@@ -68,7 +68,7 @@ def test_get_file_success(client, mock_db, auth_headers):
         file_record,  # file fetch result
     ]
     with (
-        patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify,
+        patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify,
         patch("app.services.file_service.file_storage.read_file") as mock_read_file,
         patch("app.services.file_service.log_activity") as mock_log_activity,
     ):
@@ -98,7 +98,7 @@ def test_get_nonexistent_file(client, mock_db, auth_headers):
         {"id": 1},  # access check result (simulate access granted)
         None,  # file fetch result (not found)
     ]
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
         response = client.get("/api/files/999", headers=auth_headers)
         assert response.status_code == 404
@@ -146,7 +146,7 @@ def test_create_file_success(client, mock_db, auth_headers):
         mock_save_file.return_value = (50, "checksum")
 
         # Mock JWT verification
-        with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+        with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
             mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
 
             # Create test file data
@@ -180,7 +180,7 @@ def test_create_file_missing_fields(client, auth_headers):
     """Test file creation with missing required fields."""
     # Mock JWT verification
 
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
 
         # Missing name field
@@ -238,7 +238,7 @@ def test_update_file_success(client, mock_db, auth_headers):
         patch("app.services.file_service.file_storage.save_file") as mock_save_file,
         patch("app.services.file_service.log_activity") as mock_log_activity,
         patch("app.services.file_service.check_file_access") as mock_check_access,
-        patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify,
+        patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify,
     ):
         mock_sanitize.return_value = "updated.md"
         mock_save_file.return_value = (150, "checksum")
@@ -290,7 +290,7 @@ def test_update_nonexistent_file(client, mock_db, auth_headers):
     # Patch check_file_access to allow file existence check
     with (
         patch("app.services.file_service.check_file_access") as mock_check_access,
-        patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify,
+        patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify,
     ):
         mock_check_access.return_value = True
         mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
@@ -335,7 +335,7 @@ def test_delete_file_success(client, mock_db, auth_headers):
         mock_remove.return_value = True
 
         # Mock JWT verification
-        with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+        with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
             mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
 
             response = client.delete("/api/files/1", headers=auth_headers)
@@ -383,7 +383,7 @@ def test_get_file_content_success(client, mock_db, auth_headers):
         mock_read.return_value = "# Test Markdown Content"
 
         # Mock JWT verification
-        with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+        with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
             mock_verify.return_value = {"user_id": 1, "email": "test@example.com"}
 
             response = client.get("/api/files/1/content", headers=auth_headers)
@@ -417,7 +417,7 @@ def test_list_files(client, mock_db):
         }
     ]
     with patch(
-        "app.services.auth_service.AuthService.verify_jwt",
+        "app.api.middleware.auth_decorators.verify_jwt",
         return_value={"user_id": 1, "email": "test@example.com"},
     ):
         response = client.get(
@@ -461,7 +461,7 @@ def test_create_file(client, mock_db):
         ) as mock_generate_path,
         patch("app.services.file_service.file_storage.save_file") as mock_save_file,
         patch("app.services.file_service.log_activity") as mock_log_activity,
-        patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify,
+        patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify,
     ):
         mock_sanitize.return_value = "test.md"
         mock_generate_path.return_value = "/data/files/000/test.md"

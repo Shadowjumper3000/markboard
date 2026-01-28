@@ -19,7 +19,7 @@ def test_get_stats_success(client, mock_db, auth_headers):
         {"count": 7},  # Recent activity
     ]
 
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {
             "user_id": 1,
             "email": "admin@example.com",
@@ -65,7 +65,7 @@ def test_list_activity_success(client, mock_db, auth_headers):
         },
     ]
 
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {
             "user_id": 1,
             "email": "admin@example.com",
@@ -117,7 +117,7 @@ def test_list_users_success(client, mock_db, auth_headers):
     ]
 
     # Patch only AuthService.verify_jwt to ensure 'is_admin' is present
-    with patch("app.services.auth_service.AuthService.verify_jwt") as mock_verify:
+    with patch("app.api.middleware.auth_decorators.verify_jwt") as mock_verify:
         mock_verify.return_value = {
             "user_id": 1,
             "email": "admin@example.com",

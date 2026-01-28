@@ -4,6 +4,7 @@
 
 # Virtual environment
 .venv
+.vscode/
 
 # Python cache files and directories
 __pycache__/
