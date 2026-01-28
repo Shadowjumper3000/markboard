@@ -13,7 +13,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/lib/api';
 import { Activity, Clock, FileText, Search, TrendingUp, Users, UserPlus, Building } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface User {
   id: number;
@@ -84,7 +84,7 @@ export default function AdminDashboard() {
     return nameMatch || ownerMatch;
   });
 
-  const fetchAdminData = async () => {
+  const fetchAdminData = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
@@ -126,11 +126,11 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchAdminData();
-  }, []);
+  }, [fetchAdminData]);
 
   const getActivityIcon = (action: string) => {
     switch (action) {

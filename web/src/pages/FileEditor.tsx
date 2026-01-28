@@ -25,7 +25,7 @@ import {
   Share2, 
   X 
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 
@@ -107,7 +107,7 @@ export default function FileEditor() {
     setHasUnsavedChanges(true);
   }, [content]);
 
-  const handleSave = async (isAutoSave = false) => {
+  const handleSave = useCallback(async (isAutoSave = false) => {
     if (!fileId || isAutoSaving) return;
 
     setIsAutoSaving(true);
@@ -132,7 +132,18 @@ export default function FileEditor() {
     } finally {
       setIsAutoSaving(false);
     }
-  };
+  }, [fileId, isAutoSaving, content, toast]);
+
+  // Auto-save functionality
+  useEffect(() => {
+    if (!content || isLoading || !fileId || !hasUnsavedChanges) return;
+
+    const autoSaveTimer = setTimeout(async () => {
+      await handleSave(true); // Auto-save
+    }, 2000);
+
+    return () => clearTimeout(autoSaveTimer);
+  }, [content, isLoading, fileId, hasUnsavedChanges, handleSave]);
 
   const handleDownloadMd = () => {
     const blob = new Blob([content], { type: 'text/markdown' });

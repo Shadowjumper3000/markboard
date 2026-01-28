@@ -15,6 +15,12 @@ logger = logging.getLogger(__name__)
 def seed_admin_user(force=False):
     """Seed only the admin user. Returns admin_id."""
     logger.info("🌱 Seeding admin user...")
+
+    # Check if admin credentials are configured
+    if not Config.ADMIN_EMAIL or not Config.ADMIN_PASSWORD:
+        logger.warning("Admin credentials not configured, skipping admin user seeding")
+        return None
+
     existing_admin = get_db().execute_one(
         "SELECT id FROM users WHERE email = %s", (Config.ADMIN_EMAIL,)
     )
@@ -163,8 +169,7 @@ def seed_other_data(admin_id):
             else:
                 logger.info("User %d already member of team %d", user_id, team_id)
 
-        sample_files = [
-        ]
+        sample_files = []
 
         for file_data in sample_files:
             existing_file = get_db().execute_one(

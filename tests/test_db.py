@@ -1,12 +1,12 @@
 """
-Unit tests for the real Database class in app.db, using mock MySQL connections/cursors.
+Unit tests for the real Database class in app.infrastructure.database.connection, using mock MySQL connections/cursors.
 """
 
 from unittest.mock import patch, MagicMock
 from app.infrastructure.database.connection import Database
 
 
-@patch("app.db.MySQLConnectionPool")
+@patch("app.infrastructure.database.connection.MySQLConnectionPool")
 def test_execute_query_returns_results(mock_pool):
     # Setup mock connection and cursor
     mock_conn = MagicMock()
@@ -22,7 +22,7 @@ def test_execute_query_returns_results(mock_pool):
     mock_cursor.close.assert_called_once()
 
 
-@patch("app.db.MySQLConnectionPool")
+@patch("app.infrastructure.database.connection.MySQLConnectionPool")
 def test_execute_one_returns_single_result(mock_pool):
     mock_conn = MagicMock()
     mock_cursor = MagicMock()
@@ -37,7 +37,7 @@ def test_execute_one_returns_single_result(mock_pool):
     mock_cursor.close.assert_called_once()
 
 
-@patch("app.db.MySQLConnectionPool")
+@patch("app.infrastructure.database.connection.MySQLConnectionPool")
 def test_execute_modify_returns_affected_rows(mock_pool):
     mock_conn = MagicMock()
     mock_cursor = MagicMock()
@@ -57,7 +57,7 @@ def test_execute_modify_returns_affected_rows(mock_pool):
     mock_cursor.close.assert_called_once()
 
 
-@patch("app.db.MySQLConnectionPool")
+@patch("app.infrastructure.database.connection.MySQLConnectionPool")
 def test_execute_modify_returns_lastrowid_for_insert(mock_pool):
     mock_conn = MagicMock()
     mock_cursor = MagicMock()
@@ -77,7 +77,7 @@ def test_execute_modify_returns_lastrowid_for_insert(mock_pool):
     mock_cursor.close.assert_called_once()
 
 
-@patch("app.db.MySQLConnectionPool")
+@patch("app.infrastructure.database.connection.MySQLConnectionPool")
 def test_test_connection_success(mock_pool):
     mock_conn = MagicMock()
     mock_cursor = MagicMock()
@@ -91,7 +91,7 @@ def test_test_connection_success(mock_pool):
     mock_cursor.close.assert_called_once()
 
 
-@patch("app.db.MySQLConnectionPool")
+@patch("app.infrastructure.database.connection.MySQLConnectionPool")
 def test_execute_transaction_success(mock_pool):
     mock_conn = MagicMock()
     mock_cursor = MagicMock()

@@ -14,6 +14,11 @@ from app.infrastructure.security.jwt_service import JwtService
 logger = logging.getLogger(__name__)
 
 
+def verify_jwt(token: str):
+    """Wrapper for JwtService.verify_token for testing."""
+    return JwtService.verify_token(token)
+
+
 def require_auth(f):
     """Decorator to require authentication for endpoints."""
 
@@ -27,7 +32,7 @@ def require_auth(f):
         try:
             # Extract token from "Bearer <token>"
             token = auth_header.split(" ")[1]
-            payload = JwtService.verify_token(token)
+            payload = verify_jwt(token)
 
             # Store user info in Flask's g object for use in the view
             g.current_user_id = payload["user_id"]
