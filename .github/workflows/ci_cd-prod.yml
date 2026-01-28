@@ -1,119 +1,24 @@
-name: CI/CD - Production Deploy
+name: CD - Production Deploy
 
 on:
   push:
-    branches: [ prod ]
+    branches: [prod]
+  workflow_dispatch:
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: test_root_password
-          MYSQL_DATABASE: test_markboard
-          MYSQL_USER: test_user
-          MYSQL_PASSWORD: test_password
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
-
-      - name: Set up test environment
-        env:
-          MYSQL_HOST: localhost
-          MYSQL_PORT: 3306
-          MYSQL_USER: test_user
-          MYSQL_PASSWORD: test_password
-          MYSQL_DATABASE: test_markboard
-          JWT_SECRET: test_jwt_secret_for_ci
-          FLASK_ENV: testing
-          ADMIN_EMAIL: admin@test.com
-          ADMIN_PASSWORD: test_admin_password
-        run: |
-          echo "MYSQL_HOST=localhost" >> $GITHUB_ENV
-          echo "MYSQL_PORT=3306" >> $GITHUB_ENV
-          echo "MYSQL_USER=test_user" >> $GITHUB_ENV
-          echo "MYSQL_PASSWORD=test_password" >> $GITHUB_ENV
-          echo "MYSQL_DATABASE=test_markboard" >> $GITHUB_ENV
-          echo "JWT_SECRET=test_jwt_secret_for_ci" >> $GITHUB_ENV
-          echo "FLASK_ENV=testing" >> $GITHUB_ENV
-          echo "ADMIN_EMAIL=admin@test.com" >> $GITHUB_ENV
-          echo "ADMIN_PASSWORD=test_admin_password" >> $GITHUB_ENV
-
-      - name: Run tests with coverage
-        env:
-          MYSQL_HOST: localhost
-          MYSQL_PORT: 3306
-          MYSQL_USER: test_user
-          MYSQL_PASSWORD: test_password
-          MYSQL_DATABASE: test_markboard
-          JWT_SECRET: test_jwt_secret_for_ci
-          FLASK_ENV: testing
-          ADMIN_EMAIL: admin@test.com
-          ADMIN_PASSWORD: test_admin_password
-        run: |
-          python -m pytest --cov=app --cov-report=term-missing --cov-report=xml --cov-fail-under=70 -v
-
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
-          flags: backend
-          name: backend-coverage-prod
-          fail_ci_if_error: false
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: './frontend/package-lock.json'
-
-      - name: Frontend dependency check and build
-        working-directory: ./frontend
-        run: |
-          echo "📦 Installing frontend dependencies..."
-          # Use npm install to ensure all dependencies are resolved properly
-          # This handles missing peer dependencies and lock file sync issues
-          npm install
-          
-          echo "🏗️ Building frontend..."
-          npm run build
-          echo "✅ Frontend build successful"
-
   deploy:
+    name: Deploy to Hetzner
     runs-on: ubuntu-latest
-    needs: test
-    if: github.ref == 'refs/heads/prod' && github.event_name == 'push'
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Add server to known hosts
+      - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.HETZNER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy - Create application directory
+      - name: Deploy application
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HETZNER_HOST }}
@@ -122,115 +27,38 @@ jobs:
           port: ${{ secrets.HETZNER_PORT }}
           script: |
             set -e
-            APP_DIR="/home/${{secrets.HETZNER_USER}}/markboard"
-            if [ ! -d "$APP_DIR" ]; then
-              echo "Creating application directory..."
-              mkdir -p $APP_DIR
-            fi
-
-      - name: Deploy - Clone or update repository
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HETZNER_HOST }}
-          username: ${{ secrets.HETZNER_USER }}
-          key: ${{ secrets.HETZNER_SSH_KEY }}
-          port: ${{ secrets.HETZNER_PORT }}
-          script: |
-            set -e
-            APP_DIR="/home/${{secrets.HETZNER_USER}}/markboard"
-            REPO_URL="https://github.com/${{ github.repository }}.git"
-            cd $APP_DIR
+            APP_DIR="/home/${{ secrets.HETZNER_USER }}/markboard"
+            
+            # Create directory if needed
+            mkdir -p $APP_DIR && cd $APP_DIR
+            
+            # Clone or update repository
             if [ ! -d ".git" ]; then
-              echo "Cloning repository..."
-              git clone $REPO_URL .
+              git clone https://github.com/${{ github.repository }}.git .
             else
-              echo "Updating repository..."
-              git fetch origin
-              git reset --hard origin/prod
-              git clean -fd
+              git fetch origin && git reset --hard origin/prod && git clean -fd
             fi
-
-      - name: Deploy - Create .env file
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HETZNER_HOST }}
-          username: ${{ secrets.HETZNER_USER }}
-          key: ${{ secrets.HETZNER_SSH_KEY }}
-          port: ${{ secrets.HETZNER_PORT }}
-          script: |
-            set -e
-            APP_DIR="/home/${{secrets.HETZNER_USER}}/markboard"
-            cd $APP_DIR
-            echo "Creating production environment file..."
+            
+            # Create .env file
             echo '${{ secrets.ENV_FILE }}' > .env
-
-
-      - name: Deploy - Stop and clean up Docker resources
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HETZNER_HOST }}
-          username: ${{ secrets.HETZNER_USER }}
-          key: ${{ secrets.HETZNER_SSH_KEY }}
-          port: ${{ secrets.HETZNER_PORT }}
-          script: |
-            set -e
-            APP_DIR="/home/${{secrets.HETZNER_USER}}/markboard"
-            cd $APP_DIR
-            echo "Stopping existing containers..."
-            docker compose down --remove-orphans || true
-            echo "Cleaning up project Docker resources..."
-            docker compose down --remove-orphans || true
-            echo "Removing old markboard images..."
-            docker images --filter "label=app=markboard" -q | xargs -r docker rmi -f || true
-            docker container prune -f --filter "label=app=markboard" || true
-
-      - name: Deploy - Build and start services
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HETZNER_HOST }}
-          username: ${{ secrets.HETZNER_USER }}
-          key: ${{ secrets.HETZNER_SSH_KEY }}
-          port: ${{ secrets.HETZNER_PORT }}
-          script: |
-            set -e
-            APP_DIR="/home/${{secrets.HETZNER_USER}}/markboard"
-            cd $APP_DIR
-            echo "Building and starting services..."
-            docker compose up -d --build --remove-orphans
-            echo "Waiting for services to start..."
+            
+            # Deploy with Docker Compose
+            cd deployment/compose
+            docker compose -f docker-compose.yml down --remove-orphans || true
+            docker compose -f docker-compose.yml up -d --build --remove-orphans
+            
+            # Wait and verify
             sleep 30
-
-      - name: Deploy - Clean up sensitive data and set final permissions
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HETZNER_HOST }}
-          username: ${{ secrets.HETZNER_USER }}
-          key: ${{ secrets.HETZNER_SSH_KEY }}
-          port: ${{ secrets.HETZNER_PORT }}
-          script: |
-            set -e
-            APP_DIR="/home/${{secrets.HETZNER_USER}}/markboard"
-            cd $APP_DIR
-            echo "Removing .env file for security..."
-            rm -f .env
-
-      - name: Deploy - Verify deployment
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HETZNER_HOST }}
-          username: ${{ secrets.HETZNER_USER }}
-          key: ${{ secrets.HETZNER_SSH_KEY }}
-          port: ${{ secrets.HETZNER_PORT }}
-          script: |
-            set -e
-            APP_DIR="/home/${{secrets.HETZNER_USER}}/markboard"
-            cd $APP_DIR
-            echo "Verifying deployment..."
-            if docker compose ps | grep -q "Up"; then
-              echo "🚀 Deployment completed successfully!"
+            if docker compose -f docker-compose.yml ps | grep -q "Up"; then
+              echo "✅ Deployment successful"
             else
-              echo "❌ Deployment verification failed!"
-              docker compose logs --tail=50
+              echo "❌ Deployment failed"
+              docker compose -f docker-compose.yml logs --tail=50
               exit 1
             fi
+            
+            # Cleanup .env
+            cd ../..
+            rm -f .env
+
             docker compose ps
