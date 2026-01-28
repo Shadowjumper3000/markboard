@@ -5,7 +5,7 @@ Tests for app.seed_data seeding functions.
 import os
 from unittest.mock import patch
 import pytest
-import app.seed_data as seed_data
+import app.infrastructure.database.seed_data as seed_data
 
 
 @pytest.fixture(autouse=True)
@@ -19,7 +19,7 @@ def setup_test_env():
 @pytest.fixture(autouse=True)
 def patch_file_storage():
     """Patch file storage to avoid actual file operations."""
-    with patch("app.seed_data.file_storage") as mock_fs:
+    with patch("app.infrastructure.database.seed_data.file_storage") as mock_fs:
         mock_fs.generate_file_path.return_value = "/tmp/fakepath.md"
         mock_fs.save_file.return_value = (123, "checksum123")
         yield mock_fs

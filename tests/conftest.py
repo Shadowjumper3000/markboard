@@ -10,6 +10,17 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+# Mock external dependencies before importing anything
+sys.modules['mysql'] = MagicMock()
+sys.modules['mysql.connector'] = MagicMock()
+sys.modules['mysql.connector.pooling'] = MagicMock()
+sys.modules['bcrypt'] = MagicMock()
+sys.modules['dotenv'] = MagicMock()
+sys.modules['jwt'] = MagicMock()
+sys.modules['flask'] = MagicMock()
+sys.modules['flask_cors'] = MagicMock()
+
+# Create mock database instance
 mock_db_instance = MagicMock()
 mock_db_instance.test_connection.return_value = True
 mock_db_instance.execute_query.return_value = []
@@ -18,8 +29,11 @@ mock_db_instance.execute_modify.return_value = 1
 mock_db_instance.execute_one.side_effect = None
 mock_db_instance.execute_query.side_effect = None
 mock_db_instance.execute_modify.side_effect = None
-patcher = patch("app.infrastructure.database.connection.get_db", return_value=mock_db_instance)
-patcher.start()
+
+# Create a mock connection module and patch it before any imports
+mock_connection = MagicMock()
+mock_connection.get_db = MagicMock(return_value=mock_db_instance)
+sys.modules['app.infrastructure.database.connection'] = mock_connection
 sys.modules["_test_mock_db_instance"] = (
     mock_db_instance  # For access in fixtures if needed
 )
