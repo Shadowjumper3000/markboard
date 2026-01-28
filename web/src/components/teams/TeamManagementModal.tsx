@@ -259,14 +259,14 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
 
 
   // Adjust the teamCardStyle to make the cards smaller and more compact
-  const teamCardStyle = "flex flex-col justify-between items-center p-3 bg-card shadow-md hover:shadow-lg transition-shadow rounded-md";
+  const teamCardStyle = "flex flex-col justify-between items-center p-2 bg-card shadow-sm hover:shadow-md transition-shadow rounded-md";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl h-[600px] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
@@ -274,15 +274,15 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="my-teams" className="w-full">
+        <Tabs defaultValue="my-teams" className="w-full flex-1 flex flex-col">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="my-teams">My Teams</TabsTrigger>
             <TabsTrigger value="create">Create Team</TabsTrigger>
             <TabsTrigger value="join">Join Team</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="my-teams" className="space-y-4">
-            <div className="space-y-3">
+          <TabsContent value="my-teams" className="flex-1 min-h-0 overflow-y-auto mt-4 pr-2">
+            <div className="space-y-2">
               {teams.length === 0 ? (
                 <div className="text-center py-8">
                   <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -292,83 +292,28 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {teams.map((team) => (
-                    <Card key={team.id} className={teamCardStyle}>
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg flex items-center gap-2">
-                            {team.name}
-                            {team.role === 'admin' && (
-                              <Crown className="h-4 w-4 text-yellow-500" />
-                            )}
-                          </CardTitle>
-                          <Badge variant="secondary" label={`${team.file_count || 0} files`} />
-                        </div>
+                    <Card 
+                      key={team.id} 
+                      className={`${teamCardStyle} cursor-pointer`}
+                      onClick={() => handleOpenUserPopup(team)}
+                    >
+                      <CardHeader className="pb-1 pt-2 px-2">
+                        <CardTitle className="text-base flex items-center gap-1.5">
+                          {team.name}
+                          {team.role === 'admin' && (
+                            <Crown className="h-3.5 w-3.5 text-yellow-500" />
+                          )}
+                        </CardTitle>
                         {team.description && (
-                          <CardDescription>{team.description}</CardDescription>
+                          <CardDescription className="text-xs line-clamp-2">{team.description}</CardDescription>
                         )}
                       </CardHeader>
-                      <CardContent className="pt-0 flex flex-col gap-2">
-                        {/* Show invite code for team owners */}
-                        {team.role === 'admin' && team.invite_code && (
-                          <div className="mb-2 p-2 bg-muted rounded-md">
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex-1">
-                                <p className="text-xs text-muted-foreground mb-1">Invite Code</p>
-                                <code className="text-sm font-mono font-semibold">{team.invite_code}</code>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleCopyInviteCode(team.invite_code!)}
-                                className="h-8 w-8 p-0"
-                              >
-                                {copiedCode === team.invite_code ? (
-                                  <Check className="h-4 w-4 text-green-500" />
-                                ) : (
-                                  <Copy className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                        <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <CardContent className="pt-0 px-2 pb-2">
+                        <div className="text-sm text-muted-foreground">
                           <span>{team.member_count || 0} members</span>
-                          {team.role === 'admin' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleOpenUserPopup(team)}
-                            >
-                              <Settings className="h-4 w-4" />
-                            </Button>
-                          )}
                         </div>
-                        {/* Disband Team button logic */}
-                        {team.role === 'admin' && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            className="mt-2"
-                            disabled={isDisbanding}
-                            onClick={() => {
-                              if (team.member_count === 1) {
-                                if (window.confirm('Disbanding this team will also delete all files associated with it. Are you sure you want to continue?')) {
-                                  handleDisbandTeam(team.id, team.name);
-                                }
-                              } else if (team.file_count > 0) {
-                                window.alert('You must delete or move all files before disbanding a team with multiple members.');
-                              } else {
-                                if (window.confirm('Are you sure you want to disband this team?')) {
-                                  handleDisbandTeam(team.id, team.name);
-                                }
-                              }
-                            }}
-                          >
-                            {isDisbanding ? 'Disbanding...' : 'Disband Team'}
-                          </Button>
-                        )}
                       </CardContent>
                     </Card>
                   ))}
@@ -377,7 +322,7 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
             </div>
           </TabsContent>
 
-          <TabsContent value="create" className="space-y-4">
+          <TabsContent value="create" className="flex-1 overflow-y-auto mt-4 pr-2">
             <div className="space-y-4">
                 <div className="space-y-2">
                 <Label htmlFor="team-name">Team Name</Label>
@@ -417,7 +362,7 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
             </div>
           </TabsContent>
 
-          <TabsContent value="join" className="space-y-4">
+          <TabsContent value="join" className="flex-1 overflow-y-auto mt-4 pr-2">
             <div className="space-y-4">
               <div className="text-center py-6">
                 <UserPlus className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -470,32 +415,90 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
           <Dialog open={isUserPopupOpen} onOpenChange={setIsUserPopupOpen}>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Manage Users in {selectedTeam.name}</DialogTitle>
+                <DialogTitle>Manage Team: {selectedTeam.name}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                {teamUsers.map((teamUser) => {
-                  const isCurrentUser = teamUser.id === Number(user?.id);
-                  return (
-                    <div key={teamUser.id} className="flex items-center justify-between">
-                      <span>
-                        {teamUser.name}
-                        {isCurrentUser && (
-                          <span className="ml-2 text-sm text-muted-foreground">(you)</span>
+                {/* Invite Code Section */}
+                {selectedTeam.role === 'admin' && selectedTeam.invite_code && (
+                  <div className="p-3 bg-muted rounded-md">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium mb-1">Invite Code</p>
+                        <code className="text-base font-mono font-semibold">{selectedTeam.invite_code}</code>
+                        <p className="text-xs text-muted-foreground mt-1">Share this code with others to invite them</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCopyInviteCode(selectedTeam.invite_code!)}
+                        className="h-8 w-8 p-0"
+                      >
+                        {copiedCode === selectedTeam.invite_code ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
                         )}
-                      </span>
-                      {!isCurrentUser && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleKickUser(teamUser.id)}
-                        >
-                          <X className="h-4 w-4" />
-                          Kick
-                        </Button>
-                      )}
+                      </Button>
                     </div>
-                  );
-                })}
+                  </div>
+                )}
+
+                {/* Team Members Section */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Team Members</h4>
+                  <div className="space-y-2">
+                    {teamUsers.map((teamUser) => {
+                      const isCurrentUser = teamUser.id === Number(user?.id);
+                      return (
+                        <div key={teamUser.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
+                          <span>
+                            {teamUser.name}
+                            {isCurrentUser && (
+                              <span className="ml-2 text-sm text-muted-foreground">(you)</span>
+                            )}
+                          </span>
+                          {!isCurrentUser && selectedTeam.role === 'admin' && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleKickUser(teamUser.id)}
+                            >
+                              <X className="h-4 w-4" />
+                              Kick
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Disband Team Section */}
+                {selectedTeam.role === 'admin' && (
+                  <div className="pt-2 border-t">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="w-full"
+                      disabled={isDisbanding}
+                      onClick={() => {
+                        if (selectedTeam.member_count === 1) {
+                          if (window.confirm('Disbanding this team will also delete all files associated with it. Are you sure you want to continue?')) {
+                            handleDisbandTeam(selectedTeam.id, selectedTeam.name);
+                          }
+                        } else if (selectedTeam.file_count > 0) {
+                          window.alert('You must delete or move all files before disbanding a team with multiple members.');
+                        } else {
+                          if (window.confirm('Are you sure you want to disband this team?')) {
+                            handleDisbandTeam(selectedTeam.id, selectedTeam.name);
+                          }
+                        }
+                      }}
+                    >
+                      {isDisbanding ? 'Disbanding...' : 'Disband Team'}
+                    </Button>
+                  </div>
+                )}
               </div>
             </DialogContent>
           </Dialog>
