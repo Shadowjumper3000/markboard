@@ -7,7 +7,7 @@ RUN bun install --frozen-lockfile --no-progress
 
 COPY . .
 
-ARG VITE_API_URL=http://backend:8000/api
+ARG VITE_API_URL=http://app:8000/api
 ENV VITE_API_URL=$VITE_API_URL
 
 RUN bun run build
