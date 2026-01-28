@@ -18,7 +18,7 @@ mock_db_instance.execute_modify.return_value = 1
 mock_db_instance.execute_one.side_effect = None
 mock_db_instance.execute_query.side_effect = None
 mock_db_instance.execute_modify.side_effect = None
-patcher = patch("app.db.get_db", return_value=mock_db_instance)
+patcher = patch("app.infrastructure.database.connection.get_db", return_value=mock_db_instance)
 patcher.start()
 sys.modules["_test_mock_db_instance"] = (
     mock_db_instance  # For access in fixtures if needed
