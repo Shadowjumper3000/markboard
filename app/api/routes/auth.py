@@ -3,7 +3,7 @@ Authentication endpoints - refactored to use services.
 """
 
 import logging
-from flask import Blueprint, request
+from flask import Blueprint, request, g
 from app.api.response_formatter import format_error_response, format_success_response
 from app.core.services.auth_service import AuthService
 from app.api.middleware.auth_decorators import require_auth
@@ -61,4 +61,22 @@ def login():
 
     except Exception as e:
         logger.error("Login error: %s", e)
+        return format_error_response("Internal server error", 500)
+
+
+@auth_bp.route("/me", methods=["GET"])
+@require_auth
+def get_current_user():
+    """Get current authenticated user's information."""
+    try:
+        user_id = g.current_user_id
+        success, message, user_data = AuthService.get_user_by_id(user_id)
+
+        if not success:
+            return format_error_response(message, 404)
+
+        return format_success_response(user_data, "User retrieved successfully")
+
+    except Exception as e:
+        logger.error("Get current user error: %s", e)
         return format_error_response("Internal server error", 500)

@@ -134,6 +134,34 @@ class AuthService:
         return PasswordService.hash_password(password)
 
     @staticmethod
+    def get_user_by_id(user_id: int) -> Tuple[bool, str, Optional[Dict]]:
+        """Get user information by ID."""
+        try:
+            user = get_db().execute_one(
+                "SELECT id, email, is_admin, created_at, last_login FROM users WHERE id = %s",
+                (user_id,),
+            )
+
+            if not user:
+                return False, "User not found", None
+
+            return (
+                True,
+                "User found",
+                {
+                    "id": user["id"],
+                    "email": user["email"],
+                    "is_admin": user["is_admin"],
+                    "created_at": user["created_at"],
+                    "last_login": user["last_login"],
+                },
+            )
+
+        except Exception as e:
+            logger.error(f"Error fetching user by ID: {e}")
+            return False, "Failed to fetch user", None
+
+    @staticmethod
     def verify_password(password: str, password_hash: str) -> bool:
         """Verify a password against a hash."""
         return PasswordService.verify_password(password, password_hash)
