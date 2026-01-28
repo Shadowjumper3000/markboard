@@ -169,7 +169,9 @@ markboard/
    or run the dev container directly
 6. Access the application at
    [http://localhost:3000](http://localhost:3000) (Frontend) and [http://localhost:8000](http://localhost:8000) (Backend API)
-
+   Local default admin user:
+   - Email: admin@markboard.dev
+   - Password: AdminPass123!
 ## Testing
 
 ### Quick Test Run

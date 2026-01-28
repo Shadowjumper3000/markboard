@@ -7,10 +7,10 @@ import { Input } from '@/components/ui/input';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/lib/api';
-import { FileItem, Team, User } from '@/types';
+import { BackendFile, FileItem, Team, User } from '@/types';
 import { formatDisplayName } from '@/utils/fileFormatting';
 import { Filter, Grid, List, Search } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 
@@ -68,7 +68,7 @@ export default function Dashboard() {
     }
   };
 
-  const fetchFiles = async () => {
+  const fetchFiles = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
@@ -84,7 +84,7 @@ export default function Dashboard() {
       const data = await apiService.listFiles();
       
       // Convert backend file format to frontend FileItem format
-      const convertedFiles: FileItem[] = data.files?.map((file: any) => {
+      const convertedFiles: FileItem[] = data.files?.map((file: BackendFile) => {
         // Calculate time difference for lastModified
         const updatedAt = new Date(file.updated_at);
         const now = new Date();
@@ -133,7 +133,7 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [teams, toast]);
 
   useEffect(() => {
     fetchTeams();
@@ -142,7 +142,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchFiles();
-  }, [teams]);
+  }, [fetchFiles]);
 
   function getTeamName(teamId: string): string {
     if (teamId === 'personal') {

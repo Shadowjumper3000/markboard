@@ -30,3 +30,15 @@ export interface FileItem {
   starred: boolean;
   type: 'personal' | 'team';
 }
+
+export interface BackendFile {
+  id: number;
+  name: string;
+  file_size: number;
+  mime_type: string;
+  owner_id: number;
+  team_id: number | null;
+  team_name?: string;
+  created_at: string;
+  updated_at: string;
+}

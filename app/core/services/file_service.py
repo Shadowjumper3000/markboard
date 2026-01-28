@@ -142,7 +142,17 @@ class FileService:
         if not file_record:
             return False, "File not found", None
 
+        # Check if no updates provided
+        if content is None and (name is None or not name.strip()):
+            return False, "No updates provided", None
+
         try:
+            # Validate name early if provided
+            if name is not None and name.strip():
+                clean_name = sanitize_filename(name.strip())
+                if not clean_name:
+                    return False, "Invalid file name", None
+
             # Update content if provided
             if content is not None:
                 file_size, checksum = file_storage.save_file(
@@ -153,9 +163,6 @@ class FileService:
             # Update name if provided
             if name and name.strip():
                 clean_name = sanitize_filename(name.strip())
-                if not clean_name:
-                    return False, "Invalid file name", None
-
                 # Check for duplicate
                 if FileRepository.check_duplicate_file(
                     clean_name, file_record["owner_id"], file_record["team_id"]
@@ -176,7 +183,11 @@ class FileService:
 
             # Log activity
             log_activity(
-                user_id, "file_updated", "file", file_id, f"Updated file: {updated_file['name']}"
+                user_id,
+                "file_updated",
+                "file",
+                file_id,
+                f"Updated file: {updated_file['name']}",
             )
 
             return True, "File updated successfully", updated_file
@@ -204,7 +215,11 @@ class FileService:
 
             # Log activity
             log_activity(
-                user_id, "file_deleted", "file", file_id, f"Deleted file: {file_record['name']}"
+                user_id,
+                "file_deleted",
+                "file",
+                file_id,
+                f"Deleted file: {file_record['name']}",
             )
 
             return True, "File deleted successfully"
@@ -212,3 +227,35 @@ class FileService:
         except Exception as e:
             logger.error("Error deleting file: %s", e)
             return False, "Failed to delete file"
+
+    @staticmethod
+    def get_file_content(file_id: int, user_id: int) -> Tuple[bool, str, Optional[str]]:
+        """Get file content if user has access."""
+        if not check_file_access(user_id, file_id):
+            return False, "Access denied", None
+
+        file_record = FileRepository.get_file_by_id(file_id)
+        if not file_record:
+            return False, "File not found", None
+
+        try:
+            content = file_storage.read_file(file_record["file_path"])
+            return True, "Success", content
+        except FileNotFoundError:
+            logger.error("File content not found: %s", file_record["file_path"])
+            return False, "File content not found", None
+        except Exception as e:
+            logger.error("Error reading file: %s", e)
+            return False, "Failed to read file", None
+
+    @staticmethod
+    def get_file_name(file_id: int, user_id: int) -> Tuple[bool, str, Optional[str]]:
+        """Get file name if user has access."""
+        if not check_file_access(user_id, file_id):
+            return False, "Access denied", None
+
+        file_record = FileRepository.get_file_by_id(file_id)
+        if not file_record:
+            return False, "File not found", None
+
+        return True, "Success", file_record["name"]
