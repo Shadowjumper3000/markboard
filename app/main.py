@@ -43,26 +43,23 @@ def create_app():
         logging.error("Failed to connect to database")
         sys.exit(1)
 
-    # Configure CORS for development only
-    if Config.DEBUG and CORS:
-        CORS(
-            flask_app,
-            origins=[
-                "http://localhost",
-                "http://localhost:80",
-                "http://localhost:3000",
-                "http://localhost:5173",
-                "http://127.0.0.1:3000",
-            ],
-            allow_headers=["Content-Type", "Authorization"],
-            methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        )
-
     # Register blueprints with API prefix
     flask_app.register_blueprint(auth_bp, url_prefix="/api/auth")
     flask_app.register_blueprint(files_bp, url_prefix="/api/files")
     flask_app.register_blueprint(admin_bp, url_prefix="/api/admin")
     flask_app.register_blueprint(teams_bp, url_prefix="/api/teams")
+
+    # Configure CORS for development only (after blueprints)
+    if Config.DEBUG and CORS:
+        cors_origins = Config.CORS_ORIGINS.split(",")
+        CORS(
+            flask_app,
+            origins=cors_origins,
+            allow_headers=["Content-Type", "Authorization"],
+            methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            supports_credentials=True,
+            resources={r"/api/*": {"origins": cors_origins}},
+        )
 
     @flask_app.route("/")
     def index():

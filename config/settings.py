@@ -34,6 +34,10 @@ class SecurityConfig:
     JWT_SECRET: str = os.getenv("JWT_SECRET", "your-secret-key-change-in-production")
     JWT_EXPIRY_HOURS: int = int(os.getenv("JWT_EXPIRY_HOURS", "24"))
     BCRYPT_ROUNDS: int = int(os.getenv("BCRYPT_ROUNDS", "12"))
+    CORS_ORIGINS: str = os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost,http://localhost:80,http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:80",
+    )
 
     @classmethod
     def validate_production_security(cls) -> None:
@@ -75,6 +79,7 @@ class Config:
     JWT_SECRET = SecurityConfig.JWT_SECRET
     JWT_EXPIRY_HOURS = SecurityConfig.JWT_EXPIRY_HOURS
     BCRYPT_ROUNDS = SecurityConfig.BCRYPT_ROUNDS
+    CORS_ORIGINS = SecurityConfig.CORS_ORIGINS
 
     # Application
     FLASK_ENV = AppConfig.FLASK_ENV
