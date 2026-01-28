@@ -102,20 +102,48 @@ class AuthService:
             )
 
             # Generate JWT token
-            token = JwtService.generate_token(user["id"], user["email"], user["is_admin"])
+            token = JwtService.generate_token(
+                user["id"], user["email"], user["is_admin"]
+            )
 
             # Log activity
-            log_activity(user["id"], "user_login", "user", user["id"], f"User {email} logged in")
+            log_activity(
+                user["id"], "user_login", "user", user["id"], f"User {email} logged in"
+            )
 
-            return True, "Login successful", {
-                "token": token,
-                "user": {
-                    "id": user["id"],
-                    "email": user["email"],
-                    "is_admin": user["is_admin"],
+            return (
+                True,
+                "Login successful",
+                {
+                    "token": token,
+                    "user": {
+                        "id": user["id"],
+                        "email": user["email"],
+                        "is_admin": user["is_admin"],
+                    },
                 },
-            }
+            )
 
         except Exception as e:
             logger.error(f"Error authenticating user: {e}")
             return False, "Authentication failed", None
+
+    @staticmethod
+    def hash_password(password: str) -> str:
+        """Hash a password using the password service."""
+        return PasswordService.hash_password(password)
+
+    @staticmethod
+    def verify_password(password: str, password_hash: str) -> bool:
+        """Verify a password against a hash."""
+        return PasswordService.verify_password(password, password_hash)
+
+    @staticmethod
+    def generate_jwt(user_id: int, email: str, is_admin: bool = False) -> str:
+        """Generate a JWT token."""
+        return JwtService.generate_token(user_id, email, is_admin)
+
+    @staticmethod
+    def verify_jwt(token: str) -> Dict:
+        """Verify a JWT token and return the payload."""
+        return JwtService.verify_token(token)
