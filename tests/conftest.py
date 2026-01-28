@@ -15,10 +15,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 mock_mysql = MagicMock()
 mock_mysql_connector = MagicMock()
 mock_mysql_pooling = MagicMock()
-sys.modules['mysql'] = mock_mysql
-sys.modules['mysql.connector'] = mock_mysql_connector
-sys.modules['mysql.connector.pooling'] = mock_mysql_pooling
-sys.modules['mysql.connector'].Error = Exception  # Make Error a real exception class
+sys.modules["mysql"] = mock_mysql
+sys.modules["mysql.connector"] = mock_mysql_connector
+sys.modules["mysql.connector.pooling"] = mock_mysql_pooling
+sys.modules["mysql.connector"].Error = Exception  # Make Error a real exception class
 
 mock_bcrypt = MagicMock()
 mock_bcrypt.gensalt = MagicMock(return_value=b"$2b$12$mocksaltmocksaltmocksalt")
@@ -45,6 +45,7 @@ sys.modules["_test_mock_db_instance"] = mock_db_instance
 
 # Patch get_db function at module level - import the module and patch it directly
 from unittest.mock import patch as mock_patch
+
 # We'll patch get_db in the app fixture and other places as needed
 
 
