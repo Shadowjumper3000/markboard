@@ -13,7 +13,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Clock, FileText, Folders, Star, Users } from 'lucide-react';
+import { Clock, FileText, Folders, Settings, Star, Users } from 'lucide-react';
 
 interface Team {
   id: number;
@@ -114,6 +114,7 @@ export function AppSidebar({ selectedTeam, onTeamSelect, onFileSelect, teams = [
             >
               <Users className="h-4 w-4" />
               My Teams
+              <Settings className="h-3 w-3 ml-auto text-muted-foreground" />
             </Button>
           </TeamManagementModal>
           <SidebarGroupContent className="mt-2">
