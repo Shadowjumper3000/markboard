@@ -22,17 +22,43 @@ def seed_admin_user(force=False):
         return None
 
     existing_admin = get_db().execute_one(
-        "SELECT id FROM users WHERE email = %s", (Config.ADMIN_EMAIL,)
+        "SELECT id, password_hash, is_admin FROM users WHERE email = %s",
+        (Config.ADMIN_EMAIL,),
     )
-    if existing_admin and not force:
+
+    if existing_admin:
+        admin_id = existing_admin["id"]
+
+        password_matches = False
+        stored_hash = existing_admin.get("password_hash")
+        if stored_hash:
+            try:
+                password_matches = bcrypt.checkpw(
+                    Config.ADMIN_PASSWORD.encode("utf-8"),
+                    stored_hash.encode("utf-8"),
+                )
+            except Exception:
+                password_matches = False
+
+        needs_sync = force or (not password_matches) or (not existing_admin.get("is_admin"))
+
+        if needs_sync:
+            salt = bcrypt.gensalt(rounds=Config.BCRYPT_ROUNDS)
+            hashed_password = bcrypt.hashpw(
+                Config.ADMIN_PASSWORD.encode("utf-8"), salt
+            ).decode("utf-8")
+
+            get_db().execute_modify(
+                "UPDATE users SET password_hash = %s, is_admin = %s WHERE id = %s",
+                (hashed_password, True, admin_id),
+            )
+            logger.info("Synchronized admin credentials for %s", Config.ADMIN_EMAIL)
+
         print("✅ Admin user already exists")
         print(f"🔐 Admin: {Config.ADMIN_EMAIL}")
-        return existing_admin["id"]
-    elif existing_admin and force:
-        print("🔄 Force mode: Checking and creating admin user...")
-        admin_id = existing_admin["id"]
-    else:
-        admin_id = None
+        return admin_id
+
+    admin_id = None
 
     salt = bcrypt.gensalt(rounds=Config.BCRYPT_ROUNDS)
     hashed_password = bcrypt.hashpw(Config.ADMIN_PASSWORD.encode("utf-8"), salt).decode(

@@ -54,7 +54,7 @@ jobs:
             
             # Create .env file from individual secrets
             mkdir -p deployment/compose
-            cat > deployment/compose/.env << EOF
+            cat > deployment/compose/.env << 'EOF'
             MYSQL_HOST=db
             MYSQL_PORT=3306
             MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
