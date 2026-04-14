@@ -12,9 +12,10 @@ import {
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiService } from '@/lib/api';
+import { subscribeTeamsUpdated } from '@/lib/teamEvents';
 import { Team } from '@/types';
 import { ArrowLeft, FileText, Home, LogOut, Plus, Settings, Shield } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 // Safe hook to use sidebar context - returns null if not within SidebarProvider
@@ -35,25 +36,35 @@ export function Header() {
   const isAdminPage = location.pathname === '/admin';
   const isEditorPage = location.pathname.startsWith('/editor/');
   const isDashboardPage = location.pathname === '/dashboard';
+  const isCompactHeader = isEditorPage;
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [teams, setTeams] = useState<Team[]>([]);
 
-  // Fetch teams when component mounts
-  useEffect(() => {
-    const fetchTeams = async () => {
-      try {
-        const data = await apiService.listTeams();
-        setTeams(data.teams || []);
-      } catch (error) {
-        console.error('Error fetching teams:', error);
-      }
-    };
-
-    fetchTeams();
+  const fetchTeams = useCallback(async () => {
+    try {
+      const data = await apiService.listTeams();
+      setTeams(data.teams || []);
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+    }
   }, []);
 
+  // Fetch teams when component mounts
+  useEffect(() => {
+    void fetchTeams();
+  }, [fetchTeams]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeTeamsUpdated(() => {
+      void fetchTeams();
+    });
+
+    return unsubscribe;
+  }, [fetchTeams]);
+
   const handleNewFile = () => {
+    void fetchTeams();
     setIsCreateModalOpen(true);
   };
 
@@ -65,8 +76,8 @@ export function Header() {
   };
 
   return (
-    <header className="h-header border-b bg-card/50 backdrop-blur-md sticky top-0 z-50">
-      <div className="flex h-full items-center justify-between px-6">
+    <header className={`${isCompactHeader ? 'h-12' : 'h-header'} border-b bg-card/50 backdrop-blur-md sticky top-0 z-50`}>
+      <div className={`flex h-full items-center justify-between ${isCompactHeader ? 'px-4' : 'px-6'}`}>
         {/* Left section */}
         <div className="flex items-center space-x-4">
           {sidebarContext && !isEditorPage && (
@@ -81,8 +92,8 @@ export function Header() {
           ) : (
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <FileText className="h-6 w-6 text-primary" />
-                <span className="text-xl font-bold text-foreground">UML Editor</span>
+                <FileText className={`${isCompactHeader ? 'h-5 w-5' : 'h-6 w-6'} text-primary`} />
+                <span className={`${isCompactHeader ? 'text-lg' : 'text-xl'} font-bold text-foreground`}>UML Editor</span>
               </div>
               {!isDashboardPage && !isEditorPage && (
                 <Link to="/">
@@ -135,9 +146,9 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="relative h-10 w-10 rounded-full hover:bg-accent transition-fast"
+                className={`relative ${isCompactHeader ? 'h-8 w-8' : 'h-10 w-10'} rounded-full hover:bg-accent transition-fast`}
               >
-                <Avatar className="h-10 w-10">
+                <Avatar className={`${isCompactHeader ? 'h-8 w-8' : 'h-10 w-10'}`}>
                   <AvatarFallback className="bg-gradient-primary text-primary-foreground font-medium">
                     {user?.name?.charAt(0).toUpperCase() || 'U'}
                   </AvatarFallback>

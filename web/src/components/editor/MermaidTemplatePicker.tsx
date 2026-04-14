@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { stripMermaidFence } from '@/lib/mermaidBlocks';
 import {
     BarChart3,
     Database,
@@ -165,7 +166,7 @@ export function MermaidTemplatePicker({ onTemplateSelect, trigger }: MermaidTemp
                   <ScrollArea className="h-full">
                     <div className="p-4">
                       <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono">
-                        {previewTemplate.insertText}
+                        {stripMermaidFence(previewTemplate.insertText)}
                       </pre>
                     </div>
                   </ScrollArea>
