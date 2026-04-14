@@ -20,6 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/lib/api';
+import { emitTeamsUpdated } from '@/lib/teamEvents';
 import { Team } from '@/types';
 import { Check, Copy, Crown, Plus, Settings, UserPlus, Users, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
@@ -71,6 +72,7 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
 
       setJoinTeamCode('');
       onTeamsChange();
+      emitTeamsUpdated();
     } catch (error) {
       toast({
         title: "Error",
@@ -144,6 +146,7 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
       setNewTeamName('');
       setNewTeamDescription('');
       onTeamsChange();
+      emitTeamsUpdated();
     } catch (error) {
       toast({
         title: "Error",
@@ -166,6 +169,7 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
       });
 
       onTeamsChange();
+      emitTeamsUpdated();
     } catch (error) {
       toast({
         title: "Error",
@@ -188,6 +192,7 @@ export function TeamManagementModal({ children, teams, onTeamsChange }: TeamMana
       });
 
       onTeamsChange();
+      emitTeamsUpdated();
     } catch (error) {
       toast({
         title: "Error",

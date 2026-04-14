@@ -1,3 +1,6 @@
+import { extractMermaidBlocks } from '@/lib/mermaidBlocks';
+import mermaid from 'mermaid';
+
 // Render all Mermaid diagrams in markdown as separate PNGs
 export const renderAllMermaidToPngs = async (markdownContent: string): Promise<Blob[]> => {
   mermaid.initialize({
@@ -83,7 +86,6 @@ export const renderAllMermaidToPngs = async (markdownContent: string): Promise<B
   }
   return pngs;
 };
-import mermaid from 'mermaid';
 
 export const renderMermaidToPng = async (markdownContent: string): Promise<Blob | null> => {
   try {
@@ -210,21 +212,6 @@ export const renderMermaidToPng = async (markdownContent: string): Promise<Blob 
     console.error('Error rendering mermaid to PNG:', error);
     throw error;
   }
-};
-
-const extractMermaidBlocks = (markdown: string): string[] => {
-  const blocks: string[] = [];
-  const codeBlockRegex = /```mermaid\s*([\s\S]*?)```/g;
-  let match;
-  
-  while ((match = codeBlockRegex.exec(markdown)) !== null) {
-    const blockContent = match[1].trim();
-    if (blockContent) {
-      blocks.push(blockContent);
-    }
-  }
-  
-  return blocks;
 };
 
 const svgToPng = (svgString: string, width: number, height: number): Promise<Blob> => {

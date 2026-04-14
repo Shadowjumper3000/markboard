@@ -1,9 +1,11 @@
 import { MermaidPreview } from '@/components/editor/MermaidPreview';
+import { MermaidTemplatePicker } from '@/components/editor/MermaidTemplatePicker';
+import { MermaidTemplate } from '@/components/editor/MermaidTemplates';
 import { MonacoEditor } from '@/components/editor/MonacoEditor';
-import { SimpleMermaidToolbar } from '@/components/editor/SimpleMermaidToolbar';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/lib/api';
+import { stripMermaidFence } from '@/lib/mermaidBlocks';
 import { renderMermaidToPng } from '@/lib/mermaidToPng';
 import { 
   ArrowLeft, 
@@ -22,7 +25,7 @@ import {
   FileImage, 
   FileText as FileTextIcon,
   Loader2, 
-  Share2, 
+  MoreHorizontal,
   X 
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -44,15 +47,15 @@ export default function FileEditor() {
   const [isEditingFileName, setIsEditingFileName] = useState(false);
   const [editedFileName, setEditedFileName] = useState('');
 
-  // Template insertion handler
   const handleTemplateInsert = (templateContent: string) => {
-    const newContent = content + (content && !content.endsWith('\n') ? '\n\n' : '\n') + templateContent + '\n';
+    const normalizedTemplate = stripMermaidFence(templateContent);
+    const separator = content ? (content.endsWith('\n') ? '\n' : '\n\n') : '';
+    const newContent = `${content}${separator}${normalizedTemplate}\n`;
     setContent(newContent);
-    
-    toast({
-      title: "Template inserted",
-      description: "Mermaid template has been added to your document.",
-    });
+  };
+
+  const handleTemplateSelect = (template: MermaidTemplate) => {
+    handleTemplateInsert(template.insertText || template.template);
   };
 
 
@@ -90,17 +93,6 @@ export default function FileEditor() {
 
     loadFile();
   }, [fileId, navigate, toast]);
-
-  // Auto-save functionality
-  useEffect(() => {
-    if (!content || isLoading || !fileId || !hasUnsavedChanges) return;
-
-    const autoSaveTimer = setTimeout(async () => {
-      await handleSave(true); // Auto-save
-    }, 2000);
-
-    return () => clearTimeout(autoSaveTimer);
-  }, [content, isLoading, fileId, hasUnsavedChanges]);
 
   // Track content changes
   useEffect(() => {
@@ -286,7 +278,7 @@ export default function FileEditor() {
           
           {/* Editor Header */}
           <div className="border-b bg-card/50 backdrop-blur-md">
-            <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center justify-between px-4 py-2">
               <div className="flex items-center space-x-4 group">
                 <Button
                   variant="ghost"
@@ -312,7 +304,7 @@ export default function FileEditor() {
                               handleCancelEditing();
                             }
                           }}
-                          className="text-xl font-semibold bg-background border-input"
+                          className="h-8 text-base font-semibold bg-background border-input"
                           autoFocus
                         />
                         <Button
@@ -334,7 +326,7 @@ export default function FileEditor() {
                       </div>
                     ) : (
                       <div className="flex items-center space-x-2">
-                        <h1 className="text-xl font-semibold text-foreground">
+                        <h1 className="text-lg font-semibold text-foreground">
                           {fileName.toLowerCase().endsWith('.md') ? fileName.slice(0, -3) : fileName}
                         </h1>
                         <Button
@@ -348,7 +340,7 @@ export default function FileEditor() {
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <div className="flex items-center space-x-2 text-xs text-muted-foreground">
                     <span>
                       {isAutoSaving ? 'Saving...' : hasUnsavedChanges ? 'Unsaved changes' : `Saved ${formatLastSaved(lastSaved)}`}
                     </span>
@@ -363,6 +355,20 @@ export default function FileEditor() {
               </div>
               
               <div className="flex items-center space-x-3">
+                <MermaidTemplatePicker
+                  onTemplateSelect={handleTemplateSelect}
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      aria-label="Insert template"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  }
+                />
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -390,45 +396,41 @@ export default function FileEditor() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="transition-fast"
-                >
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share
-                </Button>
               </div>
             </div>
           </div>
 
           {/* Editor Content */}
-          <div className="flex-1 flex overflow-hidden">
-            {/* Left Panel - Monaco Editor */}
-            <div className="flex-1 flex flex-col bg-muted/30">
-              {/* Template Toolbar */}
-              <SimpleMermaidToolbar onTemplateInsert={handleTemplateInsert} />
-              
-              {/* Editor */}
-              <div className="flex-1 p-6 pt-0">
-                <div className="h-full">
-                  <MonacoEditor
-                    value={content}
-                    onChange={setContent}
-                    language="markdown"
-                    theme="vs-dark"
-                  />
+          <div className="flex-1 overflow-hidden">
+            <ResizablePanelGroup direction="horizontal" className="h-full">
+              {/* Left Panel - Monaco Editor */}
+              <ResizablePanel defaultSize={55} minSize={30}>
+                <div className="h-full flex flex-col bg-muted/30">
+                  {/* Editor */}
+                  <div className="flex-1 p-4">
+                    <div className="h-full">
+                      <MonacoEditor
+                        value={content}
+                        onChange={setContent}
+                        language="markdown"
+                        theme="vs-dark"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </ResizablePanel>
 
-            {/* Right Panel - Mermaid Preview */}
-            <div className="flex-1 p-6 bg-background border-l">
-              <div className="h-full">
-                <MermaidPreview content={content} />
-              </div>
-            </div>
+              <ResizableHandle withHandle className="bg-border/70 hover:bg-primary/30 transition-colors" />
+
+              {/* Right Panel - Mermaid Preview */}
+              <ResizablePanel defaultSize={45} minSize={25}>
+                <div className="h-full p-4 bg-background border-l">
+                  <div className="h-full">
+                    <MermaidPreview content={content} />
+                  </div>
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
           </div>
         </main>
       </div>

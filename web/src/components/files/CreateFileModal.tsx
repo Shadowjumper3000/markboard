@@ -23,7 +23,7 @@ import { apiService } from '@/lib/api';
 import { Team } from '@/types';
 import { FILE_CONSTRAINTS } from '@/constants';
 import { FileText, Upload, User, Users } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface CreateFileModalProps {
   isOpen: boolean;
@@ -44,6 +44,17 @@ export function CreateFileModal({ isOpen, onClose, onSuccess, teams }: CreateFil
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (selectedTeam === 'personal') {
+      return;
+    }
+
+    const teamStillExists = teams.some((team) => team.id.toString() === selectedTeam);
+    if (!teamStillExists) {
+      setSelectedTeam('personal');
+    }
+  }, [selectedTeam, teams]);
 
   const handleClose = () => {
     // Reset form state
@@ -138,7 +149,7 @@ export function CreateFileModal({ isOpen, onClose, onSuccess, teams }: CreateFil
         team_id?: number;
       } = {
         name: finalFileName,
-        content: fileContent || '# ' + finalFileName.replace('.md', '') + '\n\nStart writing your content here...',
+        content: fileContent || '',
       };
 
       // Add team_id if not personal
