@@ -1,27 +1,31 @@
-name: CD - Production Deploy
+name: Deploy Manual
 
 on:
-  push:
-    branches: [prod]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      deploy_branch:
+        description: Branch to deploy to production
+        required: true
+        default: prod
+        type: string
 
 jobs:
   deploy:
-    name: Deploy to Hetzner
+    name: Deploy Selected Branch to Hetzner
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://${{ secrets.SERVER_NAME }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Setup SSH
+      - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.HETZNER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy application
+      - name: Deploy selected branch
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HETZNER_HOST }}
@@ -30,16 +34,22 @@ jobs:
           port: ${{ secrets.HETZNER_PORT }}
           script: |
             set -e
+            DEPLOY_BRANCH="${{ github.event.inputs.deploy_branch || 'prod' }}"
             APP_DIR="/home/${{ secrets.HETZNER_USER }}/markboard"
+
+            echo "Deploying branch: $DEPLOY_BRANCH"
             
             # Create directory if needed
-            mkdir -p $APP_DIR && cd $APP_DIR
+            mkdir -p "$APP_DIR" && cd "$APP_DIR"
             
             # Clone or update repository
             if [ ! -d ".git" ]; then
-              git clone https://github.com/${{ github.repository }}.git .
+              git clone --branch "$DEPLOY_BRANCH" --single-branch https://github.com/${{ github.repository }}.git .
             else
-              git fetch origin && git reset --hard origin/prod && git clean -fd
+              git fetch origin "$DEPLOY_BRANCH"
+              git checkout -B "$DEPLOY_BRANCH" "origin/$DEPLOY_BRANCH"
+              git reset --hard "origin/$DEPLOY_BRANCH"
+              git clean -fd
             fi
             
             # Create .env file from individual secrets
