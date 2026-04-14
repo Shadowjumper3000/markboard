@@ -21,6 +21,25 @@ if os.getenv("FLASK_ENV", "production") != "production":
         CORS = None
 
 
+def run_startup_seeding(flask_app: Flask) -> None:
+    """Seed startup data for the current environment."""
+    with flask_app.app_context():
+        try:
+            from app.infrastructure.database.seed_data import (
+                seed_development_data,
+                seed_production_data,
+            )
+
+            if Config.DEBUG:
+                seed_development_data()
+            else:
+                seed_production_data()
+        except ImportError:
+            logging.warning("seed_data functions are not available.")
+        except Exception as e:
+            logging.error("Startup seed error: %s", e)
+
+
 def create_app():
     """Create and configure Flask application."""
     flask_app = Flask(__name__)
@@ -133,25 +152,16 @@ def create_app():
         """Handle 500 errors."""
         return jsonify({"error": "Internal server error"}), 500
 
+    if os.getenv("RUN_STARTUP_SEED", "false").lower() == "true":
+        run_startup_seeding(flask_app)
+
     return flask_app
 
 
 if __name__ == "__main__":
     app = create_app()
 
-    # Seed data on startup
-    with app.app_context():
-        try:
-            from app.infrastructure.database.seed_data import (
-                seed_development_data,
-                seed_production_data,
-            )
-
-            if Config.DEBUG:
-                seed_development_data()
-            else:
-                seed_production_data()
-        except ImportError:
-            logging.warning("seed_data functions are not available.")
+    if os.getenv("RUN_STARTUP_SEED", "false").lower() != "true":
+        run_startup_seeding(app)
 
     app.run(host="0.0.0.0", port=8000, debug=Config.DEBUG)

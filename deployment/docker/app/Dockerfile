@@ -27,6 +27,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     MYSQL_DATABASE=markboard \
     FLASK_ENV=production \
     DEBUG=false \
+    RUN_STARTUP_SEED=true \
     JWT_EXPIRY_HOURS=24 \
     BCRYPT_ROUNDS=12
 
@@ -50,4 +51,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-CMD ["python", "-m", "app.main"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "1", "--access-logfile", "-", "--error-logfile", "-", "app.main:create_app()"]
