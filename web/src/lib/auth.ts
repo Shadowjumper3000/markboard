@@ -32,7 +32,10 @@ export const authService = {
     }
 
     const data = await response.json();
-    const token = data.token; // Fixed: data.token instead of data.data.token
+    const token = data.token || data.access_token || data.data?.token || data.data?.access_token;
+    if (!token) {
+      throw new Error('Login failed: missing token in response');
+    }
     
     // Store JWT token in both cookie and localStorage for compatibility
     Cookies.set('auth-token', token, { expires: 7 });
@@ -47,12 +50,13 @@ export const authService = {
     
     if (userResponse.ok) {
       const userData = await userResponse.json();
+      const resolvedUser = userData.user || userData;
       return {
-        id: userData.id.toString(), // Fixed: userData.id instead of userData.data.id
-        email: userData.email, // Fixed: userData.email instead of userData.data.email
-        name: userData.name || userData.email.split('@')[0],
-        role: userData.is_admin ? 'admin' : 'user', // Fixed: userData.is_admin instead of userData.data.is_admin
-        createdAt: userData.created_at, // Fixed: userData.created_at instead of userData.data.created_at
+        id: resolvedUser.id?.toString() || '',
+        email: resolvedUser.email || '',
+        name: resolvedUser.name || resolvedUser.email?.split('@')[0] || '',
+        role: resolvedUser.is_admin ? 'admin' : 'user',
+        createdAt: resolvedUser.created_at || new Date().toISOString(),
       };
     }
     

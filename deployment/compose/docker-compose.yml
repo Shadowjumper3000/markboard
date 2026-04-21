@@ -16,6 +16,7 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE:-markboard}
       - FLASK_ENV=production
       - DEBUG=false
+      - RUN_STARTUP_SEED=true
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
       - ADMIN_EMAIL=${ADMIN_EMAIL:?ADMIN_EMAIL is required}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
@@ -25,7 +26,9 @@ services:
       db:
         condition: service_healthy
     networks:
-      - markboard-internal
+      markboard-internal:
+        aliases:
+          - markboard-api
     restart: unless-stopped
 
   web:
@@ -38,6 +41,7 @@ services:
       - "80"
     environment:
       - SERVER_NAME=${SERVER_NAME:-markboard.davidhoerz.com}
+      - API_UPSTREAM_HOST=markboard-api
     networks:
       - proxy
       - markboard-internal
