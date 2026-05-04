@@ -1,6 +1,5 @@
 import Editor from '@monaco-editor/react';
-import { useEffect, useRef } from 'react';
-import { MermaidTemplate } from './MermaidTemplates';
+import { useRef } from 'react';
 
 interface EnhancedMonacoEditorProps {
   value: string;
@@ -8,7 +7,6 @@ interface EnhancedMonacoEditorProps {
   language?: string;
   theme?: string;
   readOnly?: boolean;
-  onTemplateInsert?: (template: MermaidTemplate) => void;
 }
 
 export function EnhancedMonacoEditor({ 
@@ -16,8 +14,7 @@ export function EnhancedMonacoEditor({
   onChange, 
   language = 'markdown', 
   theme = 'vs-dark',
-  readOnly = false,
-  onTemplateInsert
+  readOnly = false
 }: EnhancedMonacoEditorProps) {
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
@@ -83,14 +80,6 @@ export function EnhancedMonacoEditor({
         }
 
         return { suggestions };
-      }
-    });
-
-    // Add command for inserting templates
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyT, () => {
-      if (onTemplateInsert) {
-        // This would trigger template picker
-        console.log('Template insertion triggered');
       }
     });
 
@@ -250,45 +239,6 @@ export function EnhancedMonacoEditor({
       }
     ];
   };
-
-  // Method to insert template at cursor
-  const insertTemplate = (template: MermaidTemplate) => {
-    if (editorRef.current) {
-      const selection = editorRef.current.getSelection();
-      const range = new monacoRef.current.Range(
-        selection.startLineNumber,
-        selection.startColumn,
-        selection.endLineNumber,
-        selection.endColumn
-      );
-      
-      const op = {
-        range: range,
-        text: template.insertText,
-        forceMoveMarkers: true
-      };
-      
-      editorRef.current.executeEdits('insert-template', [op]);
-      
-      // Set cursor position if specified
-      if (template.cursorPosition) {
-        editorRef.current.setPosition({
-          lineNumber: selection.startLineNumber + template.cursorPosition.line - 1,
-          column: template.cursorPosition.column
-        });
-      }
-      
-      editorRef.current.focus();
-    }
-  };
-
-  // Expose insertTemplate method
-  useEffect(() => {
-    if (onTemplateInsert) {
-      // Store reference for external access
-      (window as any).insertMermaidTemplate = insertTemplate;
-    }
-  }, [onTemplateInsert]);
 
   return (
     <div className="h-full w-full border rounded-lg overflow-hidden bg-card">

@@ -1,11 +1,8 @@
 import { MermaidPreview } from '@/components/editor/MermaidPreview';
-import { MermaidTemplatePicker } from '@/components/editor/MermaidTemplatePicker';
-import { MermaidTemplate } from '@/components/editor/MermaidTemplates';
 import { MonacoEditor } from '@/components/editor/MonacoEditor';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +12,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/lib/api';
-import { stripMermaidFence } from '@/lib/mermaidBlocks';
 import { renderMermaidToPng } from '@/lib/mermaidToPng';
 import { 
   ArrowLeft, 
@@ -25,11 +21,13 @@ import {
   FileImage, 
   FileText as FileTextIcon,
   Loader2, 
-  MoreHorizontal,
+  Minimize2,
+  Maximize2,
   X 
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTheme } from 'next-themes';
 
 
 
@@ -37,6 +35,7 @@ export default function FileEditor() {
   const { fileId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { theme } = useTheme();
   
   const [content, setContent] = useState('');
   const [fileName, setFileName] = useState('');
@@ -46,17 +45,11 @@ export default function FileEditor() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isEditingFileName, setIsEditingFileName] = useState(false);
   const [editedFileName, setEditedFileName] = useState('');
+  const [overlayMinimized, setOverlayMinimized] = useState(false);
+  const [renderErrors, setRenderErrors] = useState<string[]>([]);
+  const [showDotMatrix, setShowDotMatrix] = useState(true);
 
-  const handleTemplateInsert = (templateContent: string) => {
-    const normalizedTemplate = stripMermaidFence(templateContent);
-    const separator = content ? (content.endsWith('\n') ? '\n' : '\n\n') : '';
-    const newContent = `${content}${separator}${normalizedTemplate}\n`;
-    setContent(newContent);
-  };
-
-  const handleTemplateSelect = (template: MermaidTemplate) => {
-    handleTemplateInsert(template.insertText || template.template);
-  };
+  const editorTheme = theme === 'dark' ? 'vs-dark' : 'vs-light';
 
 
 
@@ -277,8 +270,8 @@ export default function FileEditor() {
           <Header />
           
           {/* Editor Header */}
-          <div className="border-b bg-card/50 backdrop-blur-md">
-            <div className="flex items-center justify-between px-4 py-2">
+           <div className="border-b bg-card/50 backdrop-blur-md">
+             <div className="flex items-center justify-between px-4 py-1.5">
               <div className="flex items-center space-x-4 group">
                 <Button
                   variant="ghost"
@@ -290,7 +283,7 @@ export default function FileEditor() {
                   Back to Dashboard
                 </Button>
                 
-                <div className="flex flex-col">
+                 <div className="flex flex-col">
                   <div className="flex items-center space-x-2">
                     {isEditingFileName ? (
                       <div className="flex items-center space-x-2">
@@ -340,7 +333,7 @@ export default function FileEditor() {
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                       <div className="flex items-center space-x-2 text-[11px] text-muted-foreground">
                     <span>
                       {isAutoSaving ? 'Saving...' : hasUnsavedChanges ? 'Unsaved changes' : `Saved ${formatLastSaved(lastSaved)}`}
                     </span>
@@ -354,21 +347,15 @@ export default function FileEditor() {
                 </div>
               </div>
               
-              <div className="flex items-center space-x-3">
-                <MermaidTemplatePicker
-                  onTemplateSelect={handleTemplateSelect}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                      aria-label="Insert template"
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  }
-                />
-
+               <div className="flex items-center space-x-2">
+                 <Button
+                   variant="ghost"
+                   size="sm"
+                   className="h-8"
+                   onClick={() => setShowDotMatrix((prev) => !prev)}
+                 >
+                   {showDotMatrix ? 'Hide Grid' : 'Show Grid'}
+                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -401,37 +388,68 @@ export default function FileEditor() {
           </div>
 
           {/* Editor Content */}
-          <div className="flex-1 overflow-hidden">
-            <ResizablePanelGroup direction="horizontal" className="h-full">
-              {/* Left Panel - Monaco Editor */}
-              <ResizablePanel defaultSize={55} minSize={30}>
-                <div className="h-full flex flex-col bg-muted/30">
-                  {/* Editor */}
-                  <div className="flex-1 p-4">
-                    <div className="h-full">
-                      <MonacoEditor
-                        value={content}
-                        onChange={setContent}
-                        language="markdown"
-                        theme="vs-dark"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </ResizablePanel>
+           <div className="flex-1 overflow-hidden relative">
+             <div className="absolute inset-0 p-4">
+                <MermaidPreview
+                  content={content}
+                  className="h-full"
+                  fullscreen
+                  showDotMatrix={showDotMatrix}
+                  onRenderErrors={setRenderErrors}
+                />
+             </div>
 
-              <ResizableHandle withHandle className="bg-border/70 hover:bg-primary/30 transition-colors" />
+             <div
+               className={`absolute left-4 top-4 z-20 w-[420px] max-w-[92vw] rounded-xl border bg-card/90 backdrop-blur-xl shadow-lg transition-all ${
+                 overlayMinimized ? 'h-12' : 'h-[72vh] min-h-[420px]'
+               }`}
+             >
+               <div className="flex items-center justify-between border-b px-3 py-2">
+                 <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                   <span>Editor</span>
+                   <span className="text-[10px] uppercase tracking-[0.2em]">Mermaid</span>
+                 </div>
+                 <div className="flex items-center gap-1">
+                   <Button
+                     variant="ghost"
+                     size="icon"
+                     className="h-7 w-7"
+                     onClick={() => setOverlayMinimized((prev) => !prev)}
+                     aria-label={overlayMinimized ? 'Expand editor' : 'Minimize editor'}
+                   >
+                     {overlayMinimized ? (
+                       <Maximize2 className="h-3.5 w-3.5" />
+                     ) : (
+                       <Minimize2 className="h-3.5 w-3.5" />
+                     )}
+                   </Button>
+                 </div>
+               </div>
 
-              {/* Right Panel - Mermaid Preview */}
-              <ResizablePanel defaultSize={45} minSize={25}>
-                <div className="h-full p-4 bg-background border-l">
-                  <div className="h-full">
-                    <MermaidPreview content={content} />
-                  </div>
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          </div>
+               {!overlayMinimized && (
+                 <div className="flex h-[calc(100%-48px)] flex-col gap-3 p-3">
+                   {renderErrors.length > 0 && (
+                     <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                       <div className="font-medium">Diagram errors</div>
+                       <ul className="mt-1 space-y-1">
+                         {renderErrors.slice(0, 3).map((error) => (
+                           <li key={error}>{error}</li>
+                         ))}
+                       </ul>
+                     </div>
+                   )}
+                   <div className="flex-1">
+                    <MonacoEditor
+                      value={content}
+                      onChange={setContent}
+                      language="markdown"
+                      theme={editorTheme}
+                    />
+                   </div>
+                 </div>
+               )}
+             </div>
+           </div>
         </main>
       </div>
   );
