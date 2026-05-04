@@ -25,6 +25,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15m
+      timeout: 30s
+      start_period: 40s
+      retries: 3
     networks:
       markboard-internal:
         aliases:
@@ -81,4 +87,3 @@ networks:
     name: proxy
   markboard-internal:
     driver: bridge
-
