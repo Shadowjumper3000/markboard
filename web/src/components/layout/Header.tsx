@@ -14,9 +14,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { apiService } from '@/lib/api';
 import { subscribeTeamsUpdated } from '@/lib/teamEvents';
 import { Team } from '@/types';
-import { ArrowLeft, FileText, Home, LogOut, Plus, Settings, Shield } from 'lucide-react';
+import { ArrowLeft, FileText, Home, LogOut, Moon, Settings, Shield, Sun } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTheme } from 'next-themes';
 
 // Safe hook to use sidebar context - returns null if not within SidebarProvider
 function useSidebarSafe() {
@@ -37,6 +38,7 @@ export function Header() {
   const isEditorPage = location.pathname.startsWith('/editor/');
   const isDashboardPage = location.pathname === '/dashboard';
   const isCompactHeader = isEditorPage;
+  const { theme, setTheme } = useTheme();
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -63,13 +65,8 @@ export function Header() {
     return unsubscribe;
   }, [fetchTeams]);
 
-  const handleNewFile = () => {
-    void fetchTeams();
-    setIsCreateModalOpen(true);
-  };
 
   const handleCreateModalSuccess = () => {
-    // Refresh the page or trigger a refresh in parent component
     if (isDashboardPage) {
       window.location.reload();
     }
@@ -77,9 +74,9 @@ export function Header() {
 
   return (
     <header className={`${isCompactHeader ? 'h-12' : 'h-header'} border-b bg-card/50 backdrop-blur-md sticky top-0 z-50`}>
-      <div className={`flex h-full items-center justify-between ${isCompactHeader ? 'px-4' : 'px-6'}`}>
+      <div className={`flex h-full items-center justify-between ${isCompactHeader ? 'px-3' : 'px-6'}`}>
         {/* Left section */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           {sidebarContext && !isEditorPage && (
             <SidebarTrigger className="hover:bg-accent transition-fast" />
           )}
@@ -92,8 +89,8 @@ export function Header() {
           ) : (
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <FileText className={`${isCompactHeader ? 'h-5 w-5' : 'h-6 w-6'} text-primary`} />
-                <span className={`${isCompactHeader ? 'text-lg' : 'text-xl'} font-bold text-foreground`}>UML Editor</span>
+                <FileText className={`${isCompactHeader ? 'h-4 w-4' : 'h-6 w-6'} text-primary`} />
+                <span className={`${isCompactHeader ? 'text-base' : 'text-xl'} font-bold text-foreground`}>UML Editor</span>
               </div>
               {!isDashboardPage && !isEditorPage && (
                 <Link to="/">
@@ -111,22 +108,23 @@ export function Header() {
           )}
         </div>
 
-        {/* Center section - hide file actions on admin and editor pages */}
-        {!isAdminPage && !isEditorPage && (
-          <div className="flex items-center space-x-3">
-            <Button
-              onClick={handleNewFile}
-              size="sm"
-              className="bg-primary hover:bg-primary-hover transition-fast shadow-elegant-sm"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New File
-            </Button>
-          </div>
-        )}
+        {/* Center section intentionally empty on dashboard/editor */}
 
         {/* Right section */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="hover:bg-accent transition-fast"
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </Button>
           {/* Admin Dashboard Link - only show if not already on admin page */}
           {user?.role === 'admin' && !isAdminPage && (
             <Link to="/admin">

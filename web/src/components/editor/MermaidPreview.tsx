@@ -1,13 +1,15 @@
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { extractMermaidBlocks } from '@/lib/mermaidBlocks';
+import { stripMermaidFence } from '@/lib/mermaidBlocks';
 import { Move, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import mermaid from 'mermaid';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface MermaidPreviewProps {
   content: string;
   className?: string;
+  fullscreen?: boolean;
+  showDotMatrix?: boolean;
+  onRenderErrors?: (errors: string[]) => void;
 }
 
 interface RenderedDiagram {
@@ -15,12 +17,18 @@ interface RenderedDiagram {
   svg: string;
 }
 
-export function MermaidPreview({ content, className = '' }: MermaidPreviewProps) {
+
+export function MermaidPreview({
+  content,
+  className = '',
+  fullscreen = false,
+  showDotMatrix = false,
+  onRenderErrors,
+}: MermaidPreviewProps) {
   const panStartRef = useRef<{ x: number; y: number } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [renderedDiagrams, setRenderedDiagrams] = useState<RenderedDiagram[]>([]);
   const [renderErrors, setRenderErrors] = useState<string[]>([]);
-  const [fullscreenDiagram, setFullscreenDiagram] = useState<RenderedDiagram | null>(null);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
@@ -34,16 +42,6 @@ export function MermaidPreview({ content, className = '' }: MermaidPreviewProps)
     setOffset({ x: 0, y: 0 });
     setIsPanning(false);
     panStartRef.current = null;
-  };
-
-  const openFullscreen = (diagram: RenderedDiagram) => {
-    setFullscreenDiagram(diagram);
-    resetView();
-  };
-
-  const closeFullscreen = () => {
-    setFullscreenDiagram(null);
-    resetView();
   };
 
   const adjustZoom = (multiplier: number) => {
@@ -88,12 +86,21 @@ export function MermaidPreview({ content, className = '' }: MermaidPreviewProps)
     panStartRef.current = null;
   };
 
+  const resolvedDiagram = useMemo(() => {
+    if (!content.trim()) {
+      return '';
+    }
+
+    const stripped = stripMermaidFence(content);
+    return stripped.trim();
+  }, [content]);
+
   useEffect(() => {
     mermaid.initialize({
       startOnLoad: false,
       theme: 'default',
       securityLevel: 'loose',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
+      fontFamily: '"Space Grotesk", "Inter", system-ui, sans-serif',
       fontSize: 14,
       flowchart: {
         useMaxWidth: true,
@@ -106,21 +113,11 @@ export function MermaidPreview({ content, className = '' }: MermaidPreviewProps)
     let isCancelled = false;
 
     const renderDiagrams = async () => {
-      if (!content.trim()) {
+      if (!resolvedDiagram.trim()) {
         if (!isCancelled) {
           setRenderedDiagrams([]);
           setRenderErrors([]);
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      const mermaidBlocks = extractMermaidBlocks(content);
-
-      if (mermaidBlocks.length === 0) {
-        if (!isCancelled) {
-          setRenderedDiagrams([]);
-          setRenderErrors([]);
+          onRenderErrors?.([]);
           setIsLoading(false);
         }
         return;
@@ -134,22 +131,19 @@ export function MermaidPreview({ content, className = '' }: MermaidPreviewProps)
       const errors: string[] = [];
 
       try {
-        for (let i = 0; i < mermaidBlocks.length; i++) {
-          const block = mermaidBlocks[i];
-          const elementId = `mermaid-${Date.now()}-${i}`;
-
-          try {
-            const { svg } = await mermaid.render(elementId, block);
-            diagrams.push({ id: elementId, svg });
-          } catch (renderError) {
-            const errorMessage = renderError instanceof Error ? renderError.message : 'Failed to render diagram.';
-            errors.push(`Diagram ${i + 1}: ${errorMessage}`);
-          }
+        const elementId = `mermaid-${Date.now()}`;
+        try {
+          const { svg } = await mermaid.render(elementId, resolvedDiagram);
+          diagrams.push({ id: elementId, svg });
+        } catch (renderError) {
+          const errorMessage = renderError instanceof Error ? renderError.message : 'Failed to render diagram.';
+          errors.push(errorMessage);
         }
 
         if (!isCancelled) {
           setRenderedDiagrams(diagrams);
           setRenderErrors(errors);
+          onRenderErrors?.(errors);
         }
       } finally {
         if (!isCancelled) {
@@ -165,23 +159,12 @@ export function MermaidPreview({ content, className = '' }: MermaidPreviewProps)
       isCancelled = true;
       clearTimeout(debounceTimer);
     };
-  }, [content]);
-
-  useEffect(() => {
-    if (!fullscreenDiagram) {
-      return;
-    }
-
-    const stillExists = renderedDiagrams.some((diagram) => diagram.id === fullscreenDiagram.id);
-    if (!stillExists) {
-      closeFullscreen();
-    }
-  }, [fullscreenDiagram, renderedDiagrams]);
+  }, [content, resolvedDiagram, onRenderErrors]);
 
   return (
     <>
       <div className={`h-full w-full overflow-hidden bg-background border rounded-lg ${className}`}>
-        <div className="h-full overflow-auto p-4">
+        <div className="h-full overflow-hidden">
           {isLoading && (
             <div className="flex items-center justify-center h-full">
               <div className="text-center space-y-2">
@@ -199,108 +182,74 @@ export function MermaidPreview({ content, className = '' }: MermaidPreviewProps)
             </div>
           )}
 
-          {!isLoading && renderErrors.length > 0 && (
-            <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
-              <div className="font-medium mb-1">Diagram render issues</div>
-              <ul className="list-disc pl-4 space-y-1">
-                {renderErrors.slice(0, 4).map((error) => (
-                  <li key={error}>{error}</li>
-                ))}
-              </ul>
-              {renderErrors.length > 4 && (
-                <div className="mt-1 text-xs text-destructive/80">+{renderErrors.length - 4} more errors</div>
-              )}
-            </div>
-          )}
-
           {!isLoading && renderedDiagrams.length > 0 && (
-            <div className="space-y-8">
-              {renderedDiagrams.map((diagram, index) => (
-                <button
-                  key={diagram.id}
-                  type="button"
-                  onClick={() => openFullscreen(diagram)}
-                  className="w-full text-left group"
-                >
-                  <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Diagram {index + 1}</span>
-                    <span className="opacity-70 group-hover:opacity-100">Click to expand</span>
-                  </div>
-                  <div
-                    className="bg-white rounded-lg p-6 shadow-sm border transition-shadow group-hover:shadow-md [&>svg]:h-auto [&>svg]:max-w-full [&>svg]:mx-auto"
-                    dangerouslySetInnerHTML={{ __html: diagram.svg }}
-                  />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <Dialog open={Boolean(fullscreenDiagram)} onOpenChange={(open) => !open && closeFullscreen()}>
-        <DialogContent className="max-w-[95vw] w-[95vw] h-[92vh] p-0 overflow-hidden">
-          <DialogTitle className="sr-only">Fullscreen Mermaid Diagram</DialogTitle>
-
-          <div className="flex h-full flex-col">
-            <div className="flex items-center justify-between border-b px-4 py-2 bg-card">
-              <div className="text-xs text-muted-foreground flex items-center gap-2">
-                <Move className="h-3.5 w-3.5" />
-                Drag to pan, scroll to zoom, double-click to reset.
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground w-16 text-center">{Math.round(zoom * 100)}%</span>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={() => adjustZoom(0.9)}
-                  className="h-8 w-8"
-                >
-                  <ZoomOut className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={() => adjustZoom(1.1)}
-                  className="h-8 w-8"
-                >
-                  <ZoomIn className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={resetView}
-                  className="h-8 w-8"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
             <div
-              className={`relative flex-1 overflow-hidden bg-muted/20 ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
+              className={`relative h-full w-full ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
               onWheel={handleWheelZoom}
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
               onPointerCancel={handlePointerUp}
               onDoubleClick={resetView}
+              onKeyDown={(event) => {
+                if (event.key === '0' || event.key.toLowerCase() === 'r') {
+                  resetView();
+                } else if (event.key === '+' || event.key === '=') {
+                  adjustZoom(1.1);
+                } else if (event.key === '-' || event.key === '_') {
+                  adjustZoom(0.9);
+                }
+              }}
+              onClick={(event) => {
+                const target = event.currentTarget;
+                if (target) {
+                  target.focus();
+                }
+              }}
+              tabIndex={0}
             >
-              {fullscreenDiagram && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div
-                    className="[&_svg]:pointer-events-none [&>svg]:h-auto [&>svg]:max-w-none"
-                    style={{
-                      transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
-                      transformOrigin: 'center center',
-                    }}
-                    dangerouslySetInnerHTML={{ __html: fullscreenDiagram.svg }}
-                  />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div
+                  className="relative pointer-events-none"
+                  style={{
+                    transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+                    transformOrigin: 'center center',
+                  }}
+                >
+                  {showDotMatrix && (
+                    <div className="absolute -inset-[140vh] bg-[radial-gradient(circle_at_1px_1px,rgba(148,163,184,0.35)_1px,transparent_0)] bg-[length:24px_24px]" />
+                  )}
+                  {renderedDiagrams.map((diagram) => (
+                    <div key={diagram.id} className="relative flex items-center justify-center">
+                      <div
+                        className="relative [&_svg]:pointer-events-none [&>svg]:h-auto [&>svg]:max-w-none"
+                        dangerouslySetInnerHTML={{ __html: diagram.svg }}
+                      />
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
+              <div className="absolute right-4 top-4 flex items-center gap-2 rounded-full border bg-card/90 px-3 py-1 text-[11px] text-muted-foreground shadow-sm">
+                <Move className="h-3 w-3" />
+                Drag to pan, scroll to zoom
+              </div>
+              <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-full border bg-card/90 p-1 shadow-sm pointer-events-auto">
+                <Button size="icon" variant="ghost" onClick={() => adjustZoom(0.9)} className="h-7 w-7">
+                  <ZoomOut className="h-3.5 w-3.5" />
+                </Button>
+                <span className="text-[11px] text-muted-foreground w-12 text-center">{Math.round(zoom * 100)}%</span>
+                <Button size="icon" variant="ghost" onClick={() => adjustZoom(1.1)} className="h-7 w-7">
+                  <ZoomIn className="h-3.5 w-3.5" />
+                </Button>
+                <Button size="icon" variant="ghost" onClick={resetView} className="h-7 w-7">
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          )}
+        </div>
+      </div>
+      {fullscreen && null}
     </>
   );
 }
